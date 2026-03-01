@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PublicApartmentController;
 use App\Http\Controllers\Api\PublicRentalRequestController;
 use App\Http\Controllers\Api\RentalRequestController;
+use App\Http\Controllers\Api\ConversationController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('api')->get('/health', function () {
@@ -41,6 +42,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('tenant/payments', [PaymentController::class, 'tenantIndex']);
     Route::get('rental-requests', [RentalRequestController::class, 'index']);
     Route::put('rental-requests/{rentalRequest}', [RentalRequestController::class, 'update']);
+    Route::post('conversations', [ConversationController::class, 'store']);
+    Route::get('conversations', [ConversationController::class, 'index']);
+    Route::get('conversations/{conversation}/messages', [ConversationController::class, 'messages']);
+    Route::post('conversations/{conversation}/messages', [ConversationController::class, 'storeMessage']);
+    Route::post('conversations/{conversation}/read', [ConversationController::class, 'markRead']);
 });
 
 Route::middleware('throttle:60,1')->group(function () {

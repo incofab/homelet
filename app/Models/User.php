@@ -86,4 +86,15 @@ class User extends Authenticatable
     {
         return $this->hasMany(Payment::class, 'tenant_id');
     }
+
+    public function conversations()
+    {
+        return $this->belongsToMany(Conversation::class, 'conversation_participants')
+            ->withTimestamps();
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
 }
