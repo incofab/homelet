@@ -46,4 +46,9 @@ class Apartment extends Model
     {
         return $this->hasMany(RentalRequest::class);
     }
+
+    public function maintenanceRequests()
+    {
+        return $this->hasMany(MaintenanceRequest::class);
+    }
 }

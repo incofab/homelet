@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\RentalRequestController;
 use App\Http\Controllers\Api\ConversationController;
 use App\Http\Controllers\Api\Dashboard\AdminDashboardController;
 use App\Http\Controllers\Api\Dashboard\TenantDashboardController;
+use App\Http\Controllers\Api\MaintenanceRequestController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('api')->get('/health', function () {
@@ -51,6 +52,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('conversations/{conversation}/read', [ConversationController::class, 'markRead']);
     Route::get('dashboard/admin', AdminDashboardController::class);
     Route::get('dashboard/tenant', TenantDashboardController::class);
+    Route::post('maintenance-requests', [MaintenanceRequestController::class, 'store']);
+    Route::get('maintenance-requests', [MaintenanceRequestController::class, 'index']);
+    Route::put('maintenance-requests/{maintenanceRequest}', [MaintenanceRequestController::class, 'update']);
 });
 
 Route::middleware('throttle:60,1')->group(function () {
