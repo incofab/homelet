@@ -580,9 +580,20 @@ These are Artisan commands executed by the scheduler; not HTTP endpoints.
 ### `leases:expire`
 - Runs daily.
 - Expires active leases with `end_date < today`.
-- Sets apartment to `vacant` if no other active lease exists.
+- Sets apartment to `vacant` and `is_public = true` if no other active lease exists.
+- Generates quit notice and emails tenant to vacate within one month.
 
 ### `leases:send-renewal-reminders`
 - Runs daily.
 - Sends reminder email to tenants exactly 90 days before `end_date`.
 - Uses queued job `SendRenewalReminderEmail`.
+
+## Tenancy Agreement + Quit Notice (Behavioral)
+
+When a tenant is assigned to an apartment:
+- A tenancy agreement is generated and emailed to the tenant.
+- Agreement includes a clause stating that a quit notice will be issued automatically if the lease expires without renewal.
+
+When a lease expires without renewal:
+- A quit notice is generated and emailed to the tenant.
+- Apartment becomes immediately available to the public (`status = vacant`, `is_public = true`).

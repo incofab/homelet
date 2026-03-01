@@ -10,6 +10,7 @@ use App\Models\Apartment;
 use App\Models\Building;
 use App\Models\Role;
 use App\Models\User;
+use App\Jobs\SendTenancyAgreementEmail;
 use App\Services\LeaseService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -120,6 +121,10 @@ class ApartmentController extends Controller
 
             $apartment->update(['status' => 'occupied']);
         });
+
+        if ($lease) {
+            SendTenancyAgreementEmail::dispatch($lease);
+        }
 
         return $this->success('Tenant assigned.', [
             'tenant' => $tenant,

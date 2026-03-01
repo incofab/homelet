@@ -3,14 +3,17 @@
 use App\Models\Apartment;
 use App\Models\Lease;
 use App\Models\User;
+use App\Mail\QuitNoticeMail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Mail;
 
 uses(RefreshDatabase::class);
 
 test('expire command marks lease expired and vacates apartment when no other active lease', function () {
     Carbon::setTestNow(Carbon::parse('2026-03-10'));
+    Mail::fake();
 
     $tenant = User::factory()->create();
     $apartment = Apartment::factory()->create(['status' => 'occupied']);
@@ -26,10 +29,16 @@ test('expire command marks lease expired and vacates apartment when no other act
 
     expect($lease->refresh()->status)->toBe('expired');
     expect($apartment->refresh()->status)->toBe('vacant');
+    expect($apartment->refresh()->is_public)->toBeTrue();
+
+    Mail::assertSent(QuitNoticeMail::class, function ($mail) use ($tenant) {
+        return $mail->hasTo($tenant->email);
+    });
 });
 
 test('expire command keeps apartment occupied when another active lease exists', function () {
     Carbon::setTestNow(Carbon::parse('2026-03-10'));
+    Mail::fake();
 
     $tenant = User::factory()->create();
     $otherTenant = User::factory()->create();
@@ -54,4 +63,6 @@ test('expire command keeps apartment occupied when another active lease exists',
     expect($expiredLease->refresh()->status)->toBe('expired');
     expect($activeLease->refresh()->status)->toBe('active');
     expect($apartment->refresh()->status)->toBe('occupied');
+
+    Mail::assertNothingSent();
 });

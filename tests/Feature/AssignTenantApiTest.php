@@ -4,13 +4,17 @@ use App\Models\Apartment;
 use App\Models\Building;
 use App\Models\Lease;
 use App\Models\User;
+use App\Mail\TenancyAgreementMail;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 test('admin can assign tenant and create lease', function () {
+    Mail::fake();
+
     $owner = User::factory()->create();
     $admin = User::factory()->create();
 
@@ -49,6 +53,10 @@ test('admin can assign tenant and create lease', function () {
 
     expect($apartment->refresh()->status)->toBe('occupied');
     expect($apartment->tenants()->where('users.id', $tenant->id)->exists())->toBeTrue();
+
+    Mail::assertSent(TenancyAgreementMail::class, function ($mail) use ($tenant) {
+        return $mail->hasTo($tenant->email);
+    });
 });
 
 test('assigning tenant fails when active lease exists', function () {

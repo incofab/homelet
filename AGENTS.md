@@ -48,7 +48,7 @@ we are building a property management system for tenants and landlords
 
 ## Important Notes
 
-- Every feature you Implement, write good covering tests, then update the docs/api.md and the neccessary tenants-fe/docs files
+- Every feature you Implement, write good covering tests, then update the docs/api.md and the neccessary `/fe/docs` files
 - If you have questions or need any clarifications on the feature I want you to build, ask those questions at once and get properly clarification from me before you start.
 - You are allowed to make changes to the PRD, API Documentation and the task list if you think it is necessary.
 - Always follow standard practices and conventions, make reasonable assumptions where necessary if the issue is not confusing enough to ask me.

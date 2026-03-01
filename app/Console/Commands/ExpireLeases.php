@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Lease;
+use App\Jobs\SendQuitNoticeEmail;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
@@ -35,7 +36,12 @@ class ExpireLeases extends Command
                             ->exists();
 
                         if (! $hasOtherActive && $lease->apartment) {
-                            $lease->apartment->update(['status' => 'vacant']);
+                            $lease->apartment->update([
+                                'status' => 'vacant',
+                                'is_public' => true,
+                            ]);
+
+                            SendQuitNoticeEmail::dispatch($lease);
                         }
                     });
                 }
