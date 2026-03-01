@@ -10,5 +10,6 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         $schedule->command('leases:expire')->daily();
+        $schedule->command('leases:send-renewal-reminders')->daily();
     }
 }
