@@ -10,15 +10,13 @@ return new class extends Migration
     {
         Schema::table('buildings', function (Blueprint $table) {
             $table->boolean('for_sale')->default(false)->after('description');
-            $table->unsignedBigInteger('sale_price')->nullable()->after('for_sale');
-            $table->index(['for_sale', 'sale_price']);
+            $table->decimal('sale_price', 15, 2)->nullable()->after('for_sale');
         });
     }
 
     public function down(): void
     {
         Schema::table('buildings', function (Blueprint $table) {
-            $table->dropIndex(['for_sale', 'sale_price']);
             $table->dropColumn(['for_sale', 'sale_price']);
         });
     }

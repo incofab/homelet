@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\TrimDecimal;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -24,6 +25,7 @@ class Building extends Model
 
     protected $casts = [
         'for_sale' => 'boolean',
+        'sale_price' => TrimDecimal::class,
     ];
 
     protected static function booted(): void

@@ -12,11 +12,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('lease_id')->constrained('leases')->cascadeOnDelete();
             $table->foreignId('tenant_id')->constrained('users')->cascadeOnDelete();
-            $table->unsignedBigInteger('amount');
-            $table->enum('payment_method', ['manual', 'online']);
+            $table->decimal('amount', 15, 2);
+            $table->string('payment_method');// ['manual', 'online']
             $table->string('transaction_reference')->nullable();
             $table->date('payment_date');
-            $table->enum('status', ['pending', 'paid', 'failed'])->default('paid');
+            $table->string('status')->default('paid');//['pending', 'paid', 'failed']
             $table->json('metadata')->nullable();
             $table->timestamps();
 

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\TrimDecimal;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -24,6 +25,7 @@ class Apartment extends Model
     protected $casts = [
         'is_public' => 'boolean',
         'amenities' => 'array',
+        'yearly_price' => TrimDecimal::class,
     ];
 
     public function building()

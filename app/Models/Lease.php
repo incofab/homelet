@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\TrimDecimal;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -21,6 +22,7 @@ class Lease extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'rent_amount' => TrimDecimal::class,
     ];
 
     public function apartment()

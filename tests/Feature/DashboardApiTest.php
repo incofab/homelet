@@ -75,14 +75,14 @@ test('admin dashboard returns scoped counts and sums', function () {
 
     Sanctum::actingAs($admin);
     $response = $this->getJson('/api/dashboard/admin');
-
+    
     $response->assertStatus(200)
         ->assertJsonPath('data.counts.buildings', 1)
         ->assertJsonPath('data.counts.apartments', 2)
         ->assertJsonPath('data.counts.vacant', 1)
         ->assertJsonPath('data.counts.occupied', 1)
         ->assertJsonPath('data.expiring_leases_next_90_days', 1)
-        ->assertJsonPath('data.total_income_paid', 100_000)
+        ->assertJsonPath('data.total_income_paid', '100000.00')
         ->assertJsonPath('data.pending_payments', 1);
 });
 

@@ -12,10 +12,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('apartment_id')->constrained('apartments')->cascadeOnDelete();
             $table->foreignId('tenant_id')->constrained('users')->cascadeOnDelete();
-            $table->unsignedBigInteger('rent_amount');
+            $table->decimal('rent_amount', 15, 2);
             $table->date('start_date');
             $table->date('end_date')->nullable();
-            $table->enum('status', ['active', 'expired', 'terminated'])->default('active');
+            $table->string('status')->default('active');//, ['active', 'expired', 'terminated'])->default('active');
             $table->timestamps();
 
             $table->index(['apartment_id', 'status']);

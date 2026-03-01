@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\TrimDecimal;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -23,6 +24,7 @@ class Payment extends Model
     protected $casts = [
         'payment_date' => 'date',
         'metadata' => 'array',
+        'amount' => TrimDecimal::class,
     ];
 
     public function lease()
