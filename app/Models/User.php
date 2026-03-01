@@ -69,4 +69,11 @@ class User extends Authenticatable
             })
             ->exists();
     }
+
+    public function buildings()
+    {
+        return $this->belongsToMany(Building::class, 'building_users')
+            ->withPivot('role_in_building')
+            ->withTimestamps();
+    }
 }
