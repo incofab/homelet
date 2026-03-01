@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ApartmentController;
 use App\Http\Controllers\Api\BuildingController;
 use App\Http\Controllers\Api\BuildingManagerController;
+use App\Http\Controllers\Api\PublicApartmentController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('api')->get('/health', function () {
@@ -25,4 +27,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('buildings', BuildingController::class);
     Route::post('buildings/{building}/managers', [BuildingManagerController::class, 'store']);
     Route::delete('buildings/{building}/managers/{user}', [BuildingManagerController::class, 'destroy']);
+    Route::post('buildings/{building}/apartments', [ApartmentController::class, 'store']);
+    Route::get('buildings/{building}/apartments', [ApartmentController::class, 'index']);
+    Route::get('apartments/{apartment}', [ApartmentController::class, 'show']);
+    Route::put('apartments/{apartment}', [ApartmentController::class, 'update']);
+    Route::delete('apartments/{apartment}', [ApartmentController::class, 'destroy']);
 });
+
+Route::get('public/apartments', [PublicApartmentController::class, 'index']);

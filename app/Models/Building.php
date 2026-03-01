@@ -44,4 +44,9 @@ class Building extends Model
             ->withPivot('role_in_building')
             ->withTimestamps();
     }
+
+    public function apartments()
+    {
+        return $this->hasMany(Apartment::class);
+    }
 }

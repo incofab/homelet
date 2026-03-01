@@ -14,6 +14,11 @@ class ApartmentPolicy
             || $apartment->tenants()->where('users.id', $user->id)->exists();
     }
 
+    public function viewAny(User $user, Building $building): bool
+    {
+        return $this->hasBuildingAccess($user, $building);
+    }
+
     public function create(User $user, Building $building): bool
     {
         return $this->hasBuildingAccess($user, $building);
