@@ -21,6 +21,8 @@ class BuildingFactory extends Factory
             'state' => $this->faker->state,
             'country' => $this->faker->country,
             'description' => $this->faker->optional()->sentence,
+            'for_sale' => false,
+            'sale_price' => null,
         ];
     }
 }

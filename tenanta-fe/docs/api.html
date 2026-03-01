@@ -115,7 +115,9 @@ Money: integer kobo
   "city": "Lagos",
   "state": "Lagos",
   "country": "NG",
-  "description": "Modern apartments"
+  "description": "Modern apartments",
+  "for_sale": false,
+  "sale_price": null
 }</code></pre>
         <pre><code>{
   "success": true,
@@ -138,7 +140,9 @@ Money: integer kobo
 }</code></pre></div>
       <div class="card"><h4>PUT /api/buildings/{building}</h4><pre><code>{
   "name": "Sunrise Apts",
-  "description": "Updated description"
+  "description": "Updated description",
+  "for_sale": true,
+  "sale_price": 120000000
 }</code></pre></div>
       <div class="card"><h4>DELETE /api/buildings/{building}</h4><pre><code>{
   "success": true,
@@ -264,6 +268,19 @@ Money: integer kobo
       "type": "one_bedroom",
       "yearly_price": 1200000,
       "building": { "id": 1, "name": "Sunrise Apartments", "city": "Lagos" }
+    }
+  ],
+  "errors": null
+}</code></pre></div>
+      <div class="card"><h4>GET /api/public/buildings-for-sale</h4><pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": [
+    {
+      "id": 1,
+      "name": "Sunrise Apartments",
+      "for_sale": true,
+      "sale_price": 120000000
     }
   ],
   "errors": null
@@ -408,6 +425,45 @@ collection: images|videos</code></pre></div>
       <div class="card"><h4>POST /api/profile/media</h4><pre><code>multipart/form-data
 file: &lt;image&gt;
 collection: profile</code></pre></div>
+
+      <h3>Reviews</h3>
+      <p>Reviews use a polymorphic <code>reviewable</code> target so they can be attached to any entity type (currently buildings and apartments).</p>
+      <div class="card"><h4>GET /api/buildings/{building}/reviews</h4><pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": [ { "id": 1, "rating": 4, "verified": false } ],
+  "errors": null
+}</code></pre></div>
+      <div class="card"><h4>POST /api/buildings/{building}/reviews</h4>
+        <pre><code>{
+  "rating": 4,
+  "comment": "Great place to live."
+}</code></pre>
+        <pre><code>{
+  "success": true,
+  "message": "Building review created.",
+  "data": { "review": { "id": 1, "rating": 4, "verified": false } },
+  "errors": null
+}</code></pre>
+      </div>
+      <div class="card"><h4>GET /api/apartments/{apartment}/reviews</h4><pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": [ { "id": 2, "rating": 5, "verified": true } ],
+  "errors": null
+}</code></pre></div>
+      <div class="card"><h4>POST /api/apartments/{apartment}/reviews</h4>
+        <pre><code>{
+  "rating": 5,
+  "comment": "Verified tenant review."
+}</code></pre>
+        <pre><code>{
+  "success": true,
+  "message": "Apartment review created.",
+  "data": { "review": { "id": 2, "rating": 5, "verified": true } },
+  "errors": null
+}</code></pre>
+      </div>
 
       <h3>Dashboards</h3>
       <div class="card"><h4>GET /api/dashboard/admin</h4>

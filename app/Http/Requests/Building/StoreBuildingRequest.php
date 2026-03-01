@@ -21,6 +21,8 @@ class StoreBuildingRequest extends ApiRequest
             'state' => ['required', 'string', 'max:255'],
             'country' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'for_sale' => ['nullable', 'boolean'],
+            'sale_price' => ['nullable', 'integer', 'min:0', 'required_if:for_sale,1,true'],
         ];
     }
 }

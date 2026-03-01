@@ -112,4 +112,9 @@ class User extends Authenticatable
     {
         return $this->morphOne(Media::class, 'model')->where('collection', 'profile');
     }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
 }

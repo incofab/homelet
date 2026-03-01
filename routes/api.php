@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\BuildingController;
 use App\Http\Controllers\Api\BuildingManagerController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PublicApartmentController;
+use App\Http\Controllers\Api\PublicBuildingForSaleController;
 use App\Http\Controllers\Api\PublicRentalRequestController;
 use App\Http\Controllers\Api\RentalRequestController;
 use App\Http\Controllers\Api\ConversationController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\Api\BuildingMediaController;
 use App\Http\Controllers\Api\ApartmentMediaController;
 use App\Http\Controllers\Api\MaintenanceRequestMediaController;
 use App\Http\Controllers\Api\ProfileMediaController;
+use App\Http\Controllers\Api\ReviewController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('api')->get('/health', function () {
@@ -67,9 +69,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('maintenance-requests/{maintenanceRequest}/media', [MaintenanceRequestMediaController::class, 'store']);
     Route::get('profile/media', [ProfileMediaController::class, 'show']);
     Route::post('profile/media', [ProfileMediaController::class, 'store']);
+    Route::get('buildings/{building}/reviews', [ReviewController::class, 'indexBuilding']);
+    Route::post('buildings/{building}/reviews', [ReviewController::class, 'storeBuilding']);
+    Route::get('apartments/{apartment}/reviews', [ReviewController::class, 'indexApartment']);
+    Route::post('apartments/{apartment}/reviews', [ReviewController::class, 'storeApartment']);
 });
 
 Route::middleware('throttle:60,1')->group(function () {
     Route::get('public/apartments', [PublicApartmentController::class, 'index']);
+    Route::get('public/buildings-for-sale', [PublicBuildingForSaleController::class, 'index']);
     Route::post('public/rental-requests', [PublicRentalRequestController::class, 'store']);
 });

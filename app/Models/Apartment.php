@@ -56,4 +56,9 @@ class Apartment extends Model
     {
         return $this->morphMany(Media::class, 'model');
     }
+
+    public function reviews()
+    {
+        return $this->morphMany(Review::class, 'reviewable');
+    }
 }

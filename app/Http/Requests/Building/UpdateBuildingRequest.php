@@ -21,6 +21,8 @@ class UpdateBuildingRequest extends ApiRequest
             'state' => ['sometimes', 'string', 'max:255'],
             'country' => ['sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'for_sale' => ['sometimes', 'boolean'],
+            'sale_price' => ['nullable', 'integer', 'min:0', 'required_if:for_sale,1,true'],
         ];
     }
 }

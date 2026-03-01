@@ -83,7 +83,9 @@ Request body:
   "city": "Lagos",
   "state": "Lagos",
   "country": "NG",
-  "description": "Modern apartments"
+  "description": "Modern apartments",
+  "for_sale": false,
+  "sale_price": null
 }
 ```
 
@@ -101,6 +103,9 @@ Update building details.
 
 Authorization:
 - Owner/admin/manager only.
+
+Notes:
+- If `for_sale` is `true`, `sale_price` is required (integer kobo).
 
 ### DELETE `/api/buildings/{building}`
 Delete a building.
@@ -250,6 +255,9 @@ Public routes are throttled via `throttle:60,1`.
 
 ### GET `/api/public/apartments`
 List vacant public apartments with building summary.
+
+### GET `/api/public/buildings-for-sale`
+List buildings marked for sale with their prices.
 
 ### POST `/api/public/rental-requests`
 Create a rental request.
@@ -441,6 +449,85 @@ Multipart form-data:
 ```
 file: <image>
 collection: profile
+```
+
+## Reviews (Buildings + Apartments)
+
+Any authenticated user can create reviews. Reviews are stored with a polymorphic `reviewable` target so they can be attached to any entity type (currently buildings and apartments). Reviews include a 1–5 star rating and comment.
+Verified reviews are automatically marked when the user has an active or past lease for the apartment.
+
+### GET `/api/buildings/{building}/reviews`
+List reviews for a building.
+
+Authorization:
+- Authenticated user.
+
+### POST `/api/buildings/{building}/reviews`
+Create a building review.
+
+Authorization:
+- Authenticated user.
+
+Request body:
+```json
+{
+  "rating": 4,
+  "comment": "Great place to live."
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Building review created.",
+  "data": {
+    "review": {
+      "id": 1,
+      "rating": 4,
+      "comment": "Great place to live.",
+      "verified": false
+    }
+  },
+  "errors": null
+}
+```
+
+### GET `/api/apartments/{apartment}/reviews`
+List reviews for an apartment.
+
+Authorization:
+- Authenticated user.
+
+### POST `/api/apartments/{apartment}/reviews`
+Create an apartment review.
+
+Authorization:
+- Authenticated user.
+
+Request body:
+```json
+{
+  "rating": 5,
+  "comment": "Verified tenant review."
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Apartment review created.",
+  "data": {
+    "review": {
+      "id": 2,
+      "rating": 5,
+      "comment": "Verified tenant review.",
+      "verified": true
+    }
+  },
+  "errors": null
+}
 ```
 
 ## Dashboards

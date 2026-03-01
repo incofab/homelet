@@ -2,27 +2,6 @@
 
 we are building a property management system for tenants and landlords
 
-- The system should be able to handle multiple buildings and apartments
-- The system should be able to handle multiple tenants and leases
-- The system should be able to handle multiple payments and transactions
-- The system should be able to handle multiple chat conversations and messages
-- The system should be able to handle multiple maintenance requests and issues
-- The system should be able to handle multiple rental requests and inquiries
-- The system should be able to handle multiple dashboard views for admin and tenant
-- The system should be able to handle multiple renewal reminders and notifications
-- The system should be able to handle multiple chat conversations and messages
-- The system should be able to handle multiple maintenance requests and issues
-- The system should be able to handle multiple rental requests and inquiries
-- The system should be able to handle multiple dashboard views for admin and tenant
-- The system should be able to handle multiple renewal reminders and notifications
-
-## Guides
-
-- The PRD is in the docs/prd.md file
-- The API Documentation is in the docs/api.md file
-- The task list is in the docs/tasks.md file
-- Make your code implementation favour reusability and scalability always
-
 ## Project Structure & Module Organization
 
 - `app/`: Core Laravel application code (controllers, models, policies, etc.).
@@ -66,3 +45,10 @@ we are building a property management system for tenants and landlords
 
 - Copy `.env.example` to `.env` and set required secrets; never commit `.env`.
 - For local DB, `composer run setup` will migrate using the configured connection.
+
+## Important Notes
+
+- Every feature you Implement, write good covering tests, then update the docs/api.md and the neccessary tenants-fe/docs files
+- If you have questions or need any clarifications on the feature I want you to build, ask those questions at once and get properly clarification from me before you start.
+- You are allowed to make changes to the PRD, API Documentation and the task list if you think it is necessary.
+- Always follow standard practices and conventions, make reasonable assumptions where necessary if the issue is not confusing enough to ask me.

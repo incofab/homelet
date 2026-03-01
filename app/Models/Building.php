@@ -18,6 +18,12 @@ class Building extends Model
         'state',
         'country',
         'description',
+        'for_sale',
+        'sale_price',
+    ];
+
+    protected $casts = [
+        'for_sale' => 'boolean',
     ];
 
     protected static function booted(): void
@@ -53,5 +59,10 @@ class Building extends Model
     public function media()
     {
         return $this->morphMany(Media::class, 'model');
+    }
+
+    public function reviews()
+    {
+        return $this->morphMany(Review::class, 'reviewable');
     }
 }
