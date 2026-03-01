@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\BuildingController;
 use App\Http\Controllers\Api\BuildingManagerController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PublicApartmentController;
+use App\Http\Controllers\Api\PublicRentalRequestController;
+use App\Http\Controllers\Api\RentalRequestController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('api')->get('/health', function () {
@@ -37,6 +39,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('payments', [PaymentController::class, 'store']);
     Route::get('payments', [PaymentController::class, 'index']);
     Route::get('tenant/payments', [PaymentController::class, 'tenantIndex']);
+    Route::get('rental-requests', [RentalRequestController::class, 'index']);
+    Route::put('rental-requests/{rentalRequest}', [RentalRequestController::class, 'update']);
 });
 
-Route::get('public/apartments', [PublicApartmentController::class, 'index']);
+Route::middleware('throttle:60,1')->group(function () {
+    Route::get('public/apartments', [PublicApartmentController::class, 'index']);
+    Route::post('public/rental-requests', [PublicRentalRequestController::class, 'store']);
+});
