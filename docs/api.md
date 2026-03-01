@@ -1,276 +1,501 @@
-## 2) API Endpoints (Controllers + Requests + Policies)
+# API Documentation
+
+This document describes all available API routes, request/response payloads, and authorization rules.
+
+## Conventions
+
+- Base URL: `/api`
+- Auth: Bearer token via Sanctum for all non-public routes.
+- Response envelope (success):
+  ```json
+  {
+    "success": true,
+    "message": "...",
+    "data": { ... },
+    "errors": null
+  }
+  ```
+- Response envelope (validation errors):
+  ```json
+  {
+    "success": false,
+    "message": "Validation failed.",
+    "data": null,
+    "errors": {
+      "field": ["Error message"]
+    }
+  }
+  ```
+- Dates: `YYYY-MM-DD`
+- Money: integer kobo
+
+## Authentication
+
+### POST `/api/auth/register`
+Create a new user account.
+
+Request body:
+```json
+{
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "password": "secret",
+  "password_confirmation": "secret"
+}
+```
+
+Response: authenticated user + token.
+
+### POST `/api/auth/login`
+Login and receive an auth token.
+
+Request body:
+```json
+{
+  "email": "jane@example.com",
+  "password": "secret"
+}
+```
+
+Response: authenticated user + token.
+
+### GET `/api/auth/me`
+Returns the current authenticated user.
+
+### POST `/api/auth/logout`
+Invalidates the current auth token.
+
+## Buildings
+
+### POST `/api/buildings`
+Create a building.
+
+Authorization:
+- Authenticated user.
+- Owner is the authenticated user.
+
+Request body:
+```json
+{
+  "name": "Sunrise Apartments",
+  "address_line1": "12 Main St",
+  "address_line2": "Suite 4",
+  "city": "Lagos",
+  "state": "Lagos",
+  "country": "NG",
+  "description": "Modern apartments"
+}
+```
+
+### GET `/api/buildings`
+List buildings accessible to the user (owner/admin/manager).
+
+### GET `/api/buildings/{building}`
+Get a single building.
+
+Authorization:
+- Owner/admin/manager only.
+
+### PUT `/api/buildings/{building}`
+Update building details.
+
+Authorization:
+- Owner/admin/manager only.
 
-### Task 2.1 — Buildings API
+### DELETE `/api/buildings/{building}`
+Delete a building.
 
-Endpoints:
+Authorization:
+- Owner/admin only.
 
-- `POST /api/buildings`
-- `GET /api/buildings`
-- `GET /api/buildings/{building}`
-- `PUT /api/buildings/{building}`
-- `DELETE /api/buildings/{building}`
+## Building Managers
 
-Rules:
+### POST `/api/buildings/{building}/managers`
+Add a manager to a building (by email). If user does not exist, it is created.
 
-- Only authenticated.
-- Only owner/admin updates.
-- Managers can view/update if assigned.
+Authorization:
+- Owner/admin only.
 
-**Acceptance**
+Request body:
+```json
+{
+  "email": "manager@example.com",
+  "name": "Manager Name"
+}
+```
 
-- Feature tests cover: owner vs manager vs tenant access.
+Response: manager user object.
 
----
+### DELETE `/api/buildings/{building}/managers/{user}`
+Remove a manager from a building.
+
+Authorization:
+- Owner/admin only.
+
+## Apartments
+
+### POST `/api/buildings/{building}/apartments`
+Create an apartment in a building.
+
+Authorization:
+- Owner/admin/manager only.
+
+Request body:
+```json
+{
+  "unit_code": "A1",
+  "type": "one_bedroom",
+  "yearly_price": 1200000,
+  "description": "Large 1BR",
+  "floor": "2",
+  "status": "vacant",
+  "is_public": true,
+  "amenities": ["wifi", "parking"]
+}
+```
 
-### Task 2.2 — Building managers API
+### GET `/api/buildings/{building}/apartments`
+List apartments for a building.
 
-Endpoints:
+Authorization:
+- Owner/admin/manager only.
 
-- `POST /api/buildings/{building}/managers` (add manager by email)
-- `DELETE /api/buildings/{building}/managers/{userId}`
+### GET `/api/apartments/{apartment}`
+Get a single apartment.
 
-Rules:
+Authorization:
+- Owner/admin/manager for the building.
+- Tenant can view only if assigned to the apartment.
 
-- Only building owner/admin can manage managers.
+### PUT `/api/apartments/{apartment}`
+Update apartment details.
 
-**Acceptance**
+Authorization:
+- Owner/admin/manager only.
 
-- Adding manager creates building_users row with `manager`.
-- Manager permissions activated for that building scope only.
+### DELETE `/api/apartments/{apartment}`
+Delete an apartment.
 
----
+Authorization:
+- Owner/admin/manager only.
+- Blocked if apartment is occupied or has tenants.
 
-### Task 2.3 — Apartments API
+## Assign Tenant + Lease
 
-Endpoints:
+### POST `/api/apartments/{apartment}/assign-tenant`
+Assign a tenant to an apartment and create an active lease.
 
-- `POST /api/buildings/{building}/apartments`
-- `GET /api/buildings/{building}/apartments`
-- `GET /api/apartments/{apartment}`
-- `PUT /api/apartments/{apartment}`
-- `DELETE /api/apartments/{apartment}`
+Authorization:
+- Owner/admin/manager only.
 
-Rules:
+Behavior:
+- Creates tenant user if missing and assigns `tenant` role.
+- Creates active lease with `end_date = start_date + 1 year`.
+- Sets apartment status to `occupied`.
+- Entire operation is transactional.
 
-- Only building admin/manager.
-- Cannot delete if apartment has active lease.
+Request body:
+```json
+{
+  "tenant_email": "tenant@example.com",
+  "tenant_name": "Tenant Name",
+  "start_date": "2026-03-01",
+  "rent_amount": 1200000
+}
+```
+
+Notes:
+- `rent_amount` defaults to apartment `yearly_price` when omitted.
+
+## Payments
+
+### POST `/api/payments`
+Record a payment.
+
+Authorization:
+- Tenant can submit `online` payments for their own lease.
+- Admin/manager can submit `manual` payments for leases in their building.
+
+Request body:
+```json
+{
+  "lease_id": 1,
+  "amount": 150000,
+  "payment_method": "online",
+  "transaction_reference": "TRX-12345",
+  "payment_date": "2026-03-01",
+  "status": "paid",
+  "metadata": {
+    "channel": "card",
+    "processor": "paystack"
+  }
+}
+```
+
+### GET `/api/payments`
+List payments for buildings the admin/manager owns/manages.
 
-**Acceptance**
+Authorization:
+- Owner/admin/manager only.
 
-- Tests confirm constraint.
+### GET `/api/tenant/payments`
+List payments for the authenticated tenant.
 
----
+Authorization:
+- Tenant only.
 
-### Task 2.4 — Tenant assignment + lease API
+## Public Listings + Rental Requests
 
-Endpoints:
+Public routes are throttled via `throttle:60,1`.
 
-- `POST /api/apartments/{apartment}/assign-tenant`
-  - payload: tenant email/name, start_date, rent_amount (defaults to apartment yearly_price), term=1 year
+### GET `/api/public/apartments`
+List vacant public apartments with building summary.
 
-- `GET /api/leases` (admin/manager scoped)
-- `GET /api/tenant/lease` (tenant own active lease)
+### POST `/api/public/rental-requests`
+Create a rental request.
 
-Rules:
+Request body:
+```json
+{
+  "apartment_id": 1,
+  "name": "Prospective Tenant",
+  "email": "lead@example.com",
+  "phone": "1234567890",
+  "message": "Interested in the unit"
+}
+```
 
-- Assign tenant creates tenant user if not exists (role=tenant).
-- Transaction: create lease + set apartment occupied.
+### GET `/api/rental-requests`
+List rental requests scoped to buildings the admin/manager owns/manages.
 
-**Acceptance**
+Authorization:
+- Owner/admin/manager only.
 
-- Only building admin/manager can assign.
-- Tenant sees accurate start/end dates.
+### PUT `/api/rental-requests/{rentalRequest}`
+Update rental request status.
 
----
+Authorization:
+- Owner/admin/manager only.
 
-### Task 2.5 — Payments API
+Request body:
+```json
+{
+  "status": "contacted"
+}
+```
 
-Endpoints:
+## Chat (Conversations + Messages)
 
-- `POST /api/payments` (tenant online payment initiation OR admin manual record)
-- `GET /api/payments` (admin/manager scoped)
-- `GET /api/tenant/payments` (tenant own)
+### POST `/api/conversations`
+Create a conversation tied to a building or apartment.
 
-Rules:
+Authorization:
+- Tenant must have an active lease for the apartment/building.
+- Admin/manager/owner only within their building scope.
+- No tenant-to-tenant conversations.
 
-- Tenant can only pay for own lease.
-- Admin/manager can record manual payments for their building leases.
+Request body:
+```json
+{
+  "building_id": 1,
+  "apartment_id": 2,
+  "participant_ids": [10, 11]
+}
+```
 
-**Acceptance**
+Notes:
+- Either `building_id` or `apartment_id` is required.
+- The authenticated user is auto-added as a participant.
 
-- Tests: tenant cannot record for another tenant.
+### GET `/api/conversations`
+List conversations the user participates in.
 
----
+### GET `/api/conversations/{conversation}/messages`
+List all messages for a conversation.
 
-### Task 2.6 — Public vacancy listing + rental request
+Authorization:
+- Participant only.
 
-Endpoints:
+### POST `/api/conversations/{conversation}/messages`
+Send a message to a conversation.
 
-- `GET /api/public/apartments` (vacant + is_public)
-- `POST /api/public/rental-requests`
+Authorization:
+- Participant only.
 
-**Acceptance**
+Request body:
+```json
+{
+  "body": "Hello there"
+}
+```
 
-- Public listing returns building + apartment summary.
-- Rental request stored.
+### POST `/api/conversations/{conversation}/read`
+Marks all messages not sent by the current user as read (sets `read_at`).
 
----
+Authorization:
+- Participant only.
 
-### Task 2.7 — Chat API
+## Maintenance Requests
 
-Endpoints:
+### POST `/api/maintenance-requests`
+Create a maintenance request.
 
-- `POST /api/conversations` (create for apartment/building)
-- `GET /api/conversations`
-- `GET /api/conversations/{conversation}/messages`
-- `POST /api/conversations/{conversation}/messages`
-- `POST /api/conversations/{conversation}/read` (mark read)
+Authorization:
+- Tenant only, and must have an active lease for the apartment.
 
-Rules:
+Request body:
+```json
+{
+  "apartment_id": 1,
+  "title": "Leaking pipe",
+  "description": "Pipe under sink is leaking."
+}
+```
 
-- Tenant can only create/join conversation tied to their apartment/building.
-- Admin/manager can chat within buildings they manage.
-- No tenant-to-tenant.
+### GET `/api/maintenance-requests`
+List maintenance requests.
 
-**Acceptance**
+Authorization:
+- Tenant: only their own requests.
+- Owner/admin/manager: requests for their buildings.
 
-- Policy tests enforce participant-only messaging.
+### PUT `/api/maintenance-requests/{maintenanceRequest}`
+Update maintenance request status.
 
----
+Authorization:
+- Owner/admin/manager only.
 
-### Task 2.8 — Maintenance Requests API (optional but recommended)
+Request body:
+```json
+{
+  "status": "in_progress"
+}
+```
 
-Endpoints:
+## Media Uploads (Images/Videos)
 
-- `POST /api/maintenance-requests`
-- `GET /api/maintenance-requests` (scoped)
-- `PUT /api/maintenance-requests/{id}`
+All media uploads are stored using the configured filesystem disk (`FILESYSTEM_DISK`). For production, set this to `s3_public`.
 
----
+Common request fields:
+- `file` (multipart file, required)
+- `collection` (optional): `images` or `videos` (defaults to `images`)
 
-## 3) Background jobs: lease expiry and reminders
+### GET `/api/buildings/{building}/media`
+List media for a building.
 
-### Task 3.1 — Lease expiry updater (daily)
+Authorization:
+- Owner/admin/manager for the building.
+
+### POST `/api/buildings/{building}/media`
+Upload building media (images/videos).
 
-**Goal:** Automatically flip leases to expired when end_date < today and set apartment vacant if no new lease.
+Authorization:
+- Owner/admin/manager for the building.
 
-- Create Artisan command: `leases:expire`
-- Schedule in `Kernel.php` daily.
-- Use DB transaction per lease.
+Multipart form-data:
+```
+file: <image or video>
+collection: images|videos
+```
 
-**Acceptance**
-
-- Simulated test sets end_date in past → status becomes expired, apartment becomes vacant.
-
----
-
-### Task 3.2 — Email reminder at 90 days before expiry (priority)
-
-**Goal:** Send reminder exactly at T-90 days (or within a window).
-
-- Create command: `leases:send-renewal-reminders`
-- Runs daily; selects active leases whose end_date is 90 days from today.
-- Dispatch queued job `SendRenewalReminderEmail`.
-
-**Acceptance**
-
-- Mail fake test ensures tenant receives reminder when end_date=now+90 days.
-
-(Using scheduler + queue aligns with Codex CLI’s “run commands/tests locally” workflow.) ([OpenAI Developers][2])
-
----
-
-## 4) Dashboards and reporting endpoints
-
-### Task 4.1 — Admin dashboard metrics endpoint
-
-Endpoint:
-
-- `GET /api/dashboard/admin`
-
-Return:
-
-- buildings_count
-- apartments_count
-- vacant_count
-- occupied_count
-- expiring_leases_next_90_days
-- total_income_paid
-- pending_payments
-
-**Acceptance**
-
-- Tests validate calculations.
-
----
-
-### Task 4.2 — Tenant dashboard endpoint
-
-Endpoint:
-
-- `GET /api/dashboard/tenant`
-
-Return:
-
-- active_lease details
-- next_due_date (end_date)
-- days_to_expiry
-- last_payment
-- payment_history summary
-
----
-
-## 5) Cross-cutting: validation, errors, and security
-
-### Task 5.1 — Request validation everywhere
-
-- FormRequest classes for create/update actions.
-- Enum validation for apartment types/status.
-- Currency stored as integer kobo? (assumption) OR decimal. Choose one.
-
-**Acceptance**
-
-- Invalid payload returns 422 with structured errors.
-
----
-
-### Task 5.2 — Authorization policies + scoping
-
-- Policies:
-  - BuildingPolicy
-  - ApartmentPolicy
-  - LeasePolicy
-  - PaymentPolicy
-  - ConversationPolicy
-
-- Global query scopes or service-layer checks for “building membership”.
-
-**Acceptance**
-
-- Tests confirm no data leakage across buildings.
-
----
-
-### Task 5.3 — Rate limiting for public endpoints
-
-- Apply `throttle` middleware for `/public/*`.
-
----
-
-## 6) Testing plan (Codex-friendly)
-
-### Task 6.1 — Feature tests per module
-
-Minimum tests:
-
-- Auth: register/login/logout
-- Building CRUD permissions
-- Apartment CRUD permissions + cannot delete occupied
-- Assign tenant creates lease and sets occupied
-- Reminder email triggers at 90 days
-- Public listing only vacant+public
-- Chat: tenant can’t message non-participant / tenant-to-tenant blocked
-
-**Acceptance**
-
-- `sail pest` green.
+### GET `/api/apartments/{apartment}/media`
+List media for an apartment.
+
+Authorization:
+- Owner/admin/manager for the building.
+- Tenant can view only if assigned to the apartment.
+
+### POST `/api/apartments/{apartment}/media`
+Upload apartment media (images/videos).
+
+Authorization:
+- Owner/admin/manager for the building.
+
+### GET `/api/maintenance-requests/{maintenanceRequest}/media`
+List media for a maintenance request.
+
+Authorization:
+- Tenant owner of the request.
+- Owner/admin/manager for the building.
+
+### POST `/api/maintenance-requests/{maintenanceRequest}/media`
+Upload maintenance request media (images/videos).
+
+Authorization:
+- Tenant owner of the request.
+- Owner/admin/manager for the building.
+
+### GET `/api/profile/media`
+Fetch the authenticated user's profile photo.
+
+Authorization:
+- Authenticated user.
+
+### POST `/api/profile/media`
+Upload or replace the authenticated user's profile photo.
+
+Authorization:
+- Authenticated user.
+
+Multipart form-data:
+```
+file: <image>
+collection: profile
+```
+
+## Dashboards
+
+### GET `/api/dashboard/admin`
+Admin/manager dashboard metrics (scoped to managed/owned buildings).
+
+Authorization:
+- Owner/admin/manager only.
+
+Response data:
+```json
+{
+  "counts": {
+    "buildings": 1,
+    "apartments": 10,
+    "vacant": 3,
+    "occupied": 7
+  },
+  "expiring_leases_next_90_days": 2,
+  "total_income_paid": 3500000,
+  "pending_payments": 4
+}
+```
+
+### GET `/api/dashboard/tenant`
+Tenant dashboard metrics.
+
+Authorization:
+- Tenant only.
+
+Response data:
+```json
+{
+  "active_lease": { "id": 1, "status": "active", "end_date": "2026-12-31" },
+  "days_to_expiry": 90,
+  "last_payment": { "id": 10, "status": "paid", "payment_date": "2026-03-01" },
+  "payment_summary": {
+    "paid": 3,
+    "pending": 1,
+    "failed": 0
+  }
+}
+```
+
+## Background Commands (Operational)
+
+These are Artisan commands executed by the scheduler; not HTTP endpoints.
+
+### `leases:expire`
+- Runs daily.
+- Expires active leases with `end_date < today`.
+- Sets apartment to `vacant` if no other active lease exists.
+
+### `leases:send-renewal-reminders`
+- Runs daily.
+- Sends reminder email to tenants exactly 90 days before `end_date`.
+- Uses queued job `SendRenewalReminderEmail`.

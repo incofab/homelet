@@ -77,13 +77,4 @@ class PaymentController extends Controller
         ], 201);
     }
 
-    private function success(string $message, mixed $data = null, int $status = 200): JsonResponse
-    {
-        return response()->json([
-            'success' => true,
-            'message' => $message,
-            'data' => $data,
-            'errors' => null,
-        ], $status);
-    }
 }

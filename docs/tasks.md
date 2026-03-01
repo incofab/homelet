@@ -183,8 +183,8 @@ Create migrations/models:
 
 ## Suggestions
 
-The building can have multiple images and videos
-The Apartment can have multiple images and videos
+The Buildings can have multiple images and videos
+The Apartments can have multiple images and videos
 Allow profile picture for users
 Maintainance request can have multiple images and videos
 Use your descretion to handle the images and videos upload gracefully (use AWS)

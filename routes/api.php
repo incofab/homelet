@@ -12,6 +12,10 @@ use App\Http\Controllers\Api\ConversationController;
 use App\Http\Controllers\Api\Dashboard\AdminDashboardController;
 use App\Http\Controllers\Api\Dashboard\TenantDashboardController;
 use App\Http\Controllers\Api\MaintenanceRequestController;
+use App\Http\Controllers\Api\BuildingMediaController;
+use App\Http\Controllers\Api\ApartmentMediaController;
+use App\Http\Controllers\Api\MaintenanceRequestMediaController;
+use App\Http\Controllers\Api\ProfileMediaController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('api')->get('/health', function () {
@@ -55,6 +59,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('maintenance-requests', [MaintenanceRequestController::class, 'store']);
     Route::get('maintenance-requests', [MaintenanceRequestController::class, 'index']);
     Route::put('maintenance-requests/{maintenanceRequest}', [MaintenanceRequestController::class, 'update']);
+    Route::get('buildings/{building}/media', [BuildingMediaController::class, 'index']);
+    Route::post('buildings/{building}/media', [BuildingMediaController::class, 'store']);
+    Route::get('apartments/{apartment}/media', [ApartmentMediaController::class, 'index']);
+    Route::post('apartments/{apartment}/media', [ApartmentMediaController::class, 'store']);
+    Route::get('maintenance-requests/{maintenanceRequest}/media', [MaintenanceRequestMediaController::class, 'index']);
+    Route::post('maintenance-requests/{maintenanceRequest}/media', [MaintenanceRequestMediaController::class, 'store']);
+    Route::get('profile/media', [ProfileMediaController::class, 'show']);
+    Route::post('profile/media', [ProfileMediaController::class, 'store']);
 });
 
 Route::middleware('throttle:60,1')->group(function () {

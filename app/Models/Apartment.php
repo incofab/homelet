@@ -51,4 +51,9 @@ class Apartment extends Model
     {
         return $this->hasMany(MaintenanceRequest::class);
     }
+
+    public function media()
+    {
+        return $this->morphMany(Media::class, 'model');
+    }
 }

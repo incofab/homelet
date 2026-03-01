@@ -59,6 +59,11 @@ class MaintenanceRequestPolicy
         return $this->update($user, $maintenanceRequest);
     }
 
+    public function addMedia(User $user, MaintenanceRequest $maintenanceRequest): bool
+    {
+        return $this->view($user, $maintenanceRequest);
+    }
+
     private function buildingIdsFor(User $user)
     {
         $owned = Building::query()->where('owner_id', $user->id)->pluck('id');

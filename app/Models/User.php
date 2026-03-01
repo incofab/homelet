@@ -102,4 +102,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(MaintenanceRequest::class, 'tenant_id');
     }
+
+    public function media()
+    {
+        return $this->morphMany(Media::class, 'model');
+    }
+
+    public function profileMedia()
+    {
+        return $this->morphOne(Media::class, 'model')->where('collection', 'profile');
+    }
 }

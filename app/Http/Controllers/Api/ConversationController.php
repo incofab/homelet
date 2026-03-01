@@ -88,7 +88,7 @@ class ConversationController extends Controller
 
         $conversation = null;
 
-        DB::transaction(function () use (&$conversation, $buildingId, $apartmentId, $participants, $request): void {
+        DB::transaction(function () use (&$conversation, $buildingId, $apartmentId, $participants, $actor): void {
             $conversation = Conversation::query()->create([
                 'building_id' => $buildingId,
                 'apartment_id' => $apartmentId,
@@ -255,13 +255,4 @@ class ConversationController extends Controller
             ->exists();
     }
 
-    private function success(string $message, mixed $data = null, int $status = 200): JsonResponse
-    {
-        return response()->json([
-            'success' => true,
-            'message' => $message,
-            'data' => $data,
-            'errors' => null,
-        ], $status);
-    }
 }

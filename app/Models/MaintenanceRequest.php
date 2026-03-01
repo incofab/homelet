@@ -26,4 +26,9 @@ class MaintenanceRequest extends Model
     {
         return $this->belongsTo(User::class, 'tenant_id');
     }
+
+    public function media()
+    {
+        return $this->morphMany(Media::class, 'model');
+    }
 }

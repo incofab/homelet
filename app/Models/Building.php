@@ -49,4 +49,9 @@ class Building extends Model
     {
         return $this->hasMany(Apartment::class);
     }
+
+    public function media()
+    {
+        return $this->morphMany(Media::class, 'model');
+    }
 }
