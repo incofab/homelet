@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ApartmentController;
 use App\Http\Controllers\Api\BuildingController;
 use App\Http\Controllers\Api\BuildingManagerController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PublicApartmentController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,6 +34,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('apartments/{apartment}', [ApartmentController::class, 'update']);
     Route::delete('apartments/{apartment}', [ApartmentController::class, 'destroy']);
     Route::post('apartments/{apartment}/assign-tenant', [ApartmentController::class, 'assignTenant']);
+    Route::post('payments', [PaymentController::class, 'store']);
+    Route::get('payments', [PaymentController::class, 'index']);
+    Route::get('tenant/payments', [PaymentController::class, 'tenantIndex']);
 });
 
 Route::get('public/apartments', [PublicApartmentController::class, 'index']);

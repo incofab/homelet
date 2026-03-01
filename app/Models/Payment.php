@@ -5,36 +5,33 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Lease extends Model
+class Payment extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'apartment_id',
+        'lease_id',
         'tenant_id',
-        'rent_amount',
-        'start_date',
-        'end_date',
+        'amount',
+        'payment_method',
+        'transaction_reference',
+        'payment_date',
         'status',
+        'metadata',
     ];
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
+        'payment_date' => 'date',
+        'metadata' => 'array',
     ];
 
-    public function apartment()
+    public function lease()
     {
-        return $this->belongsTo(Apartment::class);
+        return $this->belongsTo(Lease::class);
     }
 
     public function tenant()
     {
         return $this->belongsTo(User::class, 'tenant_id');
-    }
-
-    public function payments()
-    {
-        return $this->hasMany(Payment::class);
     }
 }
