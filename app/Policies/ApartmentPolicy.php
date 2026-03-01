@@ -29,6 +29,11 @@ class ApartmentPolicy
         return $this->hasBuildingAccess($user, $apartment->building);
     }
 
+    public function assignTenant(User $user, Apartment $apartment): bool
+    {
+        return $this->hasBuildingAccess($user, $apartment->building);
+    }
+
     public function delete(User $user, Apartment $apartment): bool
     {
         return $this->hasBuildingAccess($user, $apartment->building);

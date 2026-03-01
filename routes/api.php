@@ -32,6 +32,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('apartments/{apartment}', [ApartmentController::class, 'show']);
     Route::put('apartments/{apartment}', [ApartmentController::class, 'update']);
     Route::delete('apartments/{apartment}', [ApartmentController::class, 'destroy']);
+    Route::post('apartments/{apartment}/assign-tenant', [ApartmentController::class, 'assignTenant']);
 });
 
 Route::get('public/apartments', [PublicApartmentController::class, 'index']);
