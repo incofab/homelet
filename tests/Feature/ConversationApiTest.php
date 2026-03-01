@@ -151,7 +151,7 @@ test('participants can list conversations and send messages', function () {
 
     Sanctum::actingAs($tenant);
     $listResponse = $this->getJson('/api/conversations');
-    $listResponse->assertStatus(200)->assertJsonCount(1, 'data.conversations');
+    $listResponse->assertStatus(200)->assertJsonCount(1, 'data.conversations.data');
 
     $messageResponse = $this->postJson("/api/conversations/{$conversation->id}/messages", [
         'body' => 'Hello there',

@@ -33,7 +33,7 @@ test('owner can create and list apartments for a building', function () {
 
     $listResponse
         ->assertStatus(200)
-        ->assertJsonPath('data.apartments.0.unit_code', 'A1');
+        ->assertJsonPath('data.apartments.data.0.unit_code', 'A1');
 });
 
 test('manager can update apartment but tenant cannot', function () {
@@ -114,11 +114,13 @@ test('public apartments listing returns only vacant public units with building s
     $response
         ->assertStatus(200)
         ->assertJsonPath('success', true)
-        ->assertJsonCount(1, 'data.apartments')
+        ->assertJsonCount(1, 'data.apartments.data')
         ->assertJsonStructure([
             'data' => [
                 'apartments' => [
-                    ['building'],
+                    'data' => [
+                        ['building'],
+                    ],
                 ],
             ],
         ]);

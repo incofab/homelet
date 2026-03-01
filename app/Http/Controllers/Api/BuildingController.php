@@ -15,13 +15,13 @@ class BuildingController extends Controller
     {
         $user = $request->user();
 
-        $buildings = Building::query()
+        $buildings = paginateFromRequest(Building::query()
             ->where('owner_id', $user->id)
             ->orWhereHas('users', function ($query) use ($user) {
                 $query->where('users.id', $user->id);
             })
-            ->latest('id')
-            ->get();
+            ->with('media')
+            ->latest('id'));
 
         return $this->success('Buildings loaded.', [
             'buildings' => $buildings,
@@ -45,7 +45,7 @@ class BuildingController extends Controller
         $this->authorize('view', $building);
 
         return $this->success('Building loaded.', [
-            'building' => $building,
+            'building' => $building->load('media'),
         ]);
     }
 

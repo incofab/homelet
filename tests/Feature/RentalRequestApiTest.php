@@ -44,7 +44,7 @@ test('admin can list rental requests scoped to building', function () {
     Sanctum::actingAs($admin);
     $response = $this->getJson('/api/rental-requests');
 
-    $response->assertStatus(200)->assertJsonCount(1, 'data.rental_requests');
+    $response->assertStatus(200)->assertJsonCount(1, 'data.rental_requests.data');
 });
 
 test('manager can update rental request status and tenant cannot', function () {

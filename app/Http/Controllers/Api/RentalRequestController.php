@@ -23,12 +23,11 @@ class RentalRequestController extends Controller
             ->unique()
             ->values();
 
-        $requests = RentalRequest::query()
+        $requests = paginateFromRequest(RentalRequest::query()
             ->whereHas('apartment', function ($query) use ($buildingIds) {
                 $query->whereIn('building_id', $buildingIds);
             })
-            ->latest('id')
-            ->get();
+            ->latest('id'));
 
         return $this->success('Rental requests loaded.', [
             'rental_requests' => $requests,

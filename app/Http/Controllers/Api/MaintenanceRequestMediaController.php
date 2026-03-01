@@ -15,7 +15,7 @@ class MaintenanceRequestMediaController extends Controller
         $this->authorize('view', $maintenanceRequest);
 
         return $this->success('Maintenance request media loaded.', [
-            'media' => $maintenanceRequest->media()->latest('id')->get(),
+            'media' => paginateFromRequest($maintenanceRequest->media()->latest('id')),
         ]);
     }
 

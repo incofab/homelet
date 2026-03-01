@@ -56,7 +56,7 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         return $this->success('Profile loaded.', [
-            'user' => $request->user(),
+            'user' => $request->user()->load('profileMedia'),
         ]);
     }
 

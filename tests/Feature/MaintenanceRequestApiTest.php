@@ -73,7 +73,7 @@ test('admin can list maintenance requests scoped to building', function () {
     Sanctum::actingAs($admin);
     $response = $this->getJson('/api/maintenance-requests');
 
-    $response->assertStatus(200)->assertJsonCount(1, 'data.maintenance_requests');
+    $response->assertStatus(200)->assertJsonCount(1, 'data.maintenance_requests.data');
 });
 
 test('tenant can list their own maintenance requests only', function () {
@@ -95,7 +95,7 @@ test('tenant can list their own maintenance requests only', function () {
     Sanctum::actingAs($tenant);
     $response = $this->getJson('/api/maintenance-requests');
 
-    $response->assertStatus(200)->assertJsonCount(1, 'data.maintenance_requests');
+    $response->assertStatus(200)->assertJsonCount(1, 'data.maintenance_requests.data');
 });
 
 test('manager can update maintenance request status and tenant cannot', function () {

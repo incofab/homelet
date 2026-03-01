@@ -30,7 +30,10 @@
       "App\\": "app/",
       "Database\\Factories\\": "database/factories/",
       "Database\\Seeders\\": "database/seeders/"
-    }
+    },
+    "files": [
+      "app/helpers.php"
+    ]
   },
   "autoload-dev": {
     "psr-4": {
@@ -71,6 +74,10 @@
     ],
     "pre-package-uninstall": [
       "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
+    ],
+    "ide-helper": [
+      "@php artisan ide-helper:generate",
+      "@php artisan ide-helper:models --nowrite"
     ]
   },
   "extra": {

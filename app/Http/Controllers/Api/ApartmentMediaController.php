@@ -15,7 +15,7 @@ class ApartmentMediaController extends Controller
         $this->authorize('view', $apartment);
 
         return $this->success('Apartment media loaded.', [
-            'media' => $apartment->media()->latest('id')->get(),
+            'media' => paginateFromRequest($apartment->media()->latest('id')),
         ]);
     }
 

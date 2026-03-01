@@ -10,12 +10,11 @@ class PublicApartmentController extends Controller
 {
     public function index(): JsonResponse
     {
-        $apartments = Apartment::query()
+        $apartments = paginateFromRequest(Apartment::query()
             ->where('status', 'vacant')
             ->where('is_public', true)
-            ->with(['building:id,name,address_line1,address_line2,city,state,country'])
-            ->latest('id')
-            ->get();
+            ->with(['building:id,name,address_line1,address_line2,city,state,country', 'media'])
+            ->latest('id'));
 
         return response()->json([
             'success' => true,

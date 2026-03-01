@@ -15,7 +15,7 @@ class BuildingMediaController extends Controller
         $this->authorize('view', $building);
 
         return $this->success('Building media loaded.', [
-            'media' => $building->media()->latest('id')->get(),
+            'media' => paginateFromRequest($building->media()->latest('id')),
         ]);
     }
 

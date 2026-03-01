@@ -24,7 +24,9 @@ class ApartmentController extends Controller
     {
         $this->authorize('viewAny', [Apartment::class, $building]);
 
-        $apartments = $building->apartments()->latest('id')->get();
+        $apartments = paginateFromRequest(
+            $building->apartments()->with('media')->latest('id')
+        );
 
         return $this->success('Apartments loaded.', [
             'apartments' => $apartments,
@@ -47,7 +49,7 @@ class ApartmentController extends Controller
         $this->authorize('view', $apartment);
 
         return $this->success('Apartment loaded.', [
-            'apartment' => $apartment,
+            'apartment' => $apartment->load('media'),
         ]);
     }
 
@@ -58,7 +60,7 @@ class ApartmentController extends Controller
         $apartment->update($request->validated());
 
         return $this->success('Apartment updated.', [
-            'apartment' => $apartment->refresh(),
+            'apartment' => $apartment->refresh()->load('media'),
         ]);
     }
 
@@ -95,7 +97,7 @@ class ApartmentController extends Controller
                 ['email' => $email],
                 [
                     'name' => $name !== '' ? $name : Str::before($email, '@'),
-                    'password' => Hash::make(Str::random(16)),
+                    'password' => Hash::make('password'),
                 ]
             );
 
@@ -122,7 +124,7 @@ class ApartmentController extends Controller
         return $this->success('Tenant assigned.', [
             'tenant' => $tenant,
             'lease' => $lease,
-            'apartment' => $apartment->refresh(),
+            'apartment' => $apartment->refresh()->load('media'),
         ], 201);
     }
 

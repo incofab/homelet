@@ -32,6 +32,9 @@ we are building a property management system for tenants and landlords
 - `database/`: Migrations, factories, and seeders.
 - `tests/`: PHPUnit tests (`tests/Unit`, `tests/Feature`).
 - `config/`: Application configuration.
+- The PRD is in the docs/prd.md file
+- The API Documentation is in the docs/api.md file. Always update the api.md file when you make changes to the API or Controller methods.
+- The task list is in the docs/tasks.md file.
 
 ## Build, Test, and Development Commands
 

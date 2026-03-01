@@ -130,9 +130,9 @@ test('payments index is scoped for admins and tenant endpoint is scoped to tenan
 
     Sanctum::actingAs($admin);
     $adminResponse = $this->getJson('/api/payments');
-    $adminResponse->assertStatus(200)->assertJsonCount(1, 'data.payments');
+    $adminResponse->assertStatus(200)->assertJsonCount(1, 'data.payments.data');
 
     Sanctum::actingAs($tenant);
     $tenantResponse = $this->getJson('/api/tenant/payments');
-    $tenantResponse->assertStatus(200)->assertJsonCount(1, 'data.payments');
+    $tenantResponse->assertStatus(200)->assertJsonCount(1, 'data.payments.data');
 });

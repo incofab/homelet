@@ -26,12 +26,11 @@ class PaymentController extends Controller
             ->unique()
             ->values();
 
-        $payments = Payment::query()
+        $payments = paginateFromRequest(Payment::query()
             ->whereHas('lease.apartment', function ($query) use ($buildingIds) {
                 $query->whereIn('building_id', $buildingIds);
             })
-            ->latest('id')
-            ->get();
+            ->latest('id'));
 
         return $this->success('Payments loaded.', [
             'payments' => $payments,
@@ -44,10 +43,9 @@ class PaymentController extends Controller
 
         $user = $request->user('sanctum');
 
-        $payments = Payment::query()
+        $payments = paginateFromRequest(Payment::query()
             ->where('tenant_id', $user->id)
-            ->latest('id')
-            ->get();
+            ->latest('id'));
 
         return $this->success('Payments loaded.', [
             'payments' => $payments,

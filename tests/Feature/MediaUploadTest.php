@@ -34,7 +34,7 @@ test('admin can upload building media and list it', function () {
     expect(Media::count())->toBe(1);
 
     $listResponse = $this->getJson("/api/buildings/{$building->id}/media");
-    $listResponse->assertStatus(200)->assertJsonCount(1, 'data.media');
+    $listResponse->assertStatus(200)->assertJsonCount(1, 'data.media.data');
 });
 
 test('tenant cannot upload building media', function () {

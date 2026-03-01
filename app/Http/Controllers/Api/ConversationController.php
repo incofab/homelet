@@ -25,12 +25,11 @@ class ConversationController extends Controller
 
         $user = $request->user('sanctum');
 
-        $conversations = Conversation::query()
+        $conversations = paginateFromRequest(Conversation::query()
             ->whereHas('participants', function ($query) use ($user) {
                 $query->where('users.id', $user->id);
             })
-            ->latest('id')
-            ->get();
+            ->latest('id'));
 
         return $this->success('Conversations loaded.', [
             'conversations' => $conversations,
@@ -107,9 +106,9 @@ class ConversationController extends Controller
     {
         $this->authorize('view', $conversation);
 
-        $messages = $conversation->messages()
-            ->orderBy('id')
-            ->get();
+        $messages = paginateFromRequest(
+            $conversation->messages()->orderBy('id')
+        );
 
         return $this->success('Messages loaded.', [
             'messages' => $messages,

@@ -20,10 +20,10 @@ class MaintenanceRequestController extends Controller
         $user = $request->user('sanctum');
 
         if ($user->hasRole('tenant')) {
-            $requests = MaintenanceRequest::query()
+            $requests = paginateFromRequest(MaintenanceRequest::query()
                 ->where('tenant_id', $user->id)
-                ->latest('id')
-                ->get();
+                ->with('media')
+                ->latest('id'));
 
             return $this->success('Maintenance requests loaded.', [
                 'maintenance_requests' => $requests,
@@ -37,12 +37,12 @@ class MaintenanceRequestController extends Controller
             ->unique()
             ->values();
 
-        $requests = MaintenanceRequest::query()
+        $requests = paginateFromRequest(MaintenanceRequest::query()
             ->whereHas('apartment', function ($query) use ($buildingIds) {
                 $query->whereIn('building_id', $buildingIds);
             })
-            ->latest('id')
-            ->get();
+            ->with('media')
+            ->latest('id'));
 
         return $this->success('Maintenance requests loaded.', [
             'maintenance_requests' => $requests,
@@ -64,7 +64,7 @@ class MaintenanceRequestController extends Controller
         ]);
 
         return $this->success('Maintenance request created.', [
-            'maintenance_request' => $maintenanceRequest,
+            'maintenance_request' => $maintenanceRequest->load('media'),
         ], 201);
     }
 
@@ -75,7 +75,7 @@ class MaintenanceRequestController extends Controller
         $maintenanceRequest->update($request->validated());
 
         return $this->success('Maintenance request updated.', [
-            'maintenance_request' => $maintenanceRequest->refresh(),
+            'maintenance_request' => $maintenanceRequest->refresh()->load('media'),
         ]);
     }
 
