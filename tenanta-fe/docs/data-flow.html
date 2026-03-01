@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tenanta Frontend Spec — Data Flow</title>
+  <link rel="stylesheet" href="_styles.css" />
+  <style>
+    .diagram { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px; overflow-x: auto; }
+    svg text { font-family: "IBM Plex Sans", sans-serif; font-size: 12px; fill: #1c1c1c; }
+    .node { fill: #f9f5ef; stroke: #cdbfae; stroke-width: 1; }
+    .node-accent { fill: #e6f4f1; stroke: #9bd2cb; }
+    .arrow { stroke: #0f766e; stroke-width: 1.5; marker-end: url(#arrow); }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <nav>
+    <h1>Tenanta FE Spec</h1>
+    <p>Flutter + GetX | v1.0</p>
+    <a href="index.html">Overview</a>
+    <a href="prd.html">PRD</a>
+    <a href="tech.html">Technical</a>
+    <a href="pages.html">Pages</a>
+    <a href="routing.html">Routing Map</a>
+    <a href="data-flow.html">Data Flow</a>
+    <a href="sequence.html">Sequence Flows</a>
+    <a href="api.html">API</a>
+  </nav>
+  <main>
+    <section>
+      <h2>Data Flow (GetX + Repository)</h2>
+      <p>Each module follows the same flow: UI Widget → Controller → Repository → API client → Backend → Response → Controller → UI.</p>
+      <div class="diagram">
+        <svg width="1100" height="360" viewBox="0 0 1100 360" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="3" orient="auto">
+              <path d="M0,0 L10,3 L0,6" fill="#0f766e" />
+            </marker>
+          </defs>
+          <rect class="node" x="30" y="60" width="150" height="50" rx="8" />
+          <text x="55" y="90">UI Widget</text>
+
+          <rect class="node-accent" x="210" y="60" width="180" height="50" rx="8" />
+          <text x="235" y="90">GetxController</text>
+
+          <rect class="node" x="420" y="60" width="160" height="50" rx="8" />
+          <text x="450" y="90">Repository</text>
+
+          <rect class="node" x="610" y="60" width="170" height="50" rx="8" />
+          <text x="645" y="90">API Client</text>
+
+          <rect class="node" x="810" y="60" width="160" height="50" rx="8" />
+          <text x="845" y="90">Backend</text>
+
+          <line class="arrow" x1="180" y1="85" x2="210" y2="85" />
+          <line class="arrow" x1="390" y1="85" x2="420" y2="85" />
+          <line class="arrow" x1="580" y1="85" x2="610" y2="85" />
+          <line class="arrow" x1="780" y1="85" x2="810" y2="85" />
+
+          <rect class="node" x="210" y="160" width="180" height="50" rx="8" />
+          <text x="245" y="190">Rx State</text>
+
+          <rect class="node" x="420" y="160" width="160" height="50" rx="8" />
+          <text x="445" y="190">Model Map</text>
+
+          <line class="arrow" x1="810" y1="110" x2="780" y2="170" />
+          <line class="arrow" x1="780" y1="170" x2="600" y2="170" />
+          <line class="arrow" x1="600" y1="170" x2="420" y2="170" />
+          <line class="arrow" x1="420" y1="170" x2="390" y2="185" />
+          <line class="arrow" x1="390" y1="185" x2="210" y2="185" />
+          <line class="arrow" x1="210" y1="210" x2="120" y2="270" />
+
+          <rect class="node" x="30" y="240" width="160" height="50" rx="8" />
+          <text x="60" y="270">UI Updates</text>
+        </svg>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tenanta Frontend Spec — API</title>
+  <link rel="stylesheet" href="_styles.css" />
+</head>
+<body>
+<div class="layout">
+  <nav>
+    <h1>Tenanta FE Spec</h1>
+    <p>Flutter + GetX | v1.0</p>
+    <a href="index.html">Overview</a>
+    <a href="prd.html">PRD</a>
+    <a href="tech.html">Technical</a>
+    <a href="pages.html">Pages</a>
+    <a href="routing.html">Routing Map</a>
+    <a href="data-flow.html">Data Flow</a>
+    <a href="sequence.html">Sequence Flows</a>
+    <a href="api.html">API</a>
+  </nav>
+  <main>
+    <section>
+      <h2>API Reference (From docs/api.md)</h2>
+
+      <h3>Conventions</h3>
+      <pre><code>Base URL: /api
+Authorization: Bearer &lt;token&gt; for all non-public routes
+Date format: YYYY-MM-DD
+Money: integer kobo
+</code></pre>
+
+      <h3>Response Envelopes</h3>
+      <pre><code>// success
+{
+  "success": true,
+  "message": "...",
+  "data": { ... },
+  "errors": null
+}
+
+// validation error
+{
+  "success": false,
+  "message": "Validation failed.",
+  "data": null,
+  "errors": {
+    "field": ["Error message"]
+  }
+}
+</code></pre>
+
+      <h3>Authentication</h3>
+      <div class="card">
+        <h4>POST /api/auth/register</h4>
+        <pre><code>{
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "password": "secret",
+  "password_confirmation": "secret"
+}</code></pre>
+        <pre><code>{
+  "success": true,
+  "message": "Registered",
+  "data": {
+    "user": { "id": 1, "name": "Jane Doe", "email": "jane@example.com", "role": "admin" },
+    "token": "..."
+  },
+  "errors": null
+}</code></pre>
+      </div>
+      <div class="card">
+        <h4>POST /api/auth/login</h4>
+        <pre><code>{
+  "email": "jane@example.com",
+  "password": "secret"
+}</code></pre>
+        <pre><code>{
+  "success": true,
+  "message": "Authenticated",
+  "data": {
+    "user": { "id": 1, "name": "Jane Doe", "email": "jane@example.com", "role": "admin" },
+    "token": "..."
+  },
+  "errors": null
+}</code></pre>
+      </div>
+      <div class="card">
+        <h4>GET /api/auth/me</h4>
+        <pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": { "id": 1, "name": "Jane Doe", "email": "jane@example.com", "role": "admin" },
+  "errors": null
+}</code></pre>
+      </div>
+      <div class="card">
+        <h4>POST /api/auth/logout</h4>
+        <pre><code>{
+  "success": true,
+  "message": "Logged out",
+  "data": null,
+  "errors": null
+}</code></pre>
+      </div>
+
+      <h3>Buildings</h3>
+      <div class="card">
+        <h4>POST /api/buildings</h4>
+        <pre><code>{
+  "name": "Sunrise Apartments",
+  "address_line1": "12 Main St",
+  "address_line2": "Suite 4",
+  "city": "Lagos",
+  "state": "Lagos",
+  "country": "NG",
+  "description": "Modern apartments"
+}</code></pre>
+        <pre><code>{
+  "success": true,
+  "message": "Building created",
+  "data": { "id": 1, "name": "Sunrise Apartments", "city": "Lagos" },
+  "errors": null
+}</code></pre>
+      </div>
+      <div class="card"><h4>GET /api/buildings</h4><pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": [ { "id": 1, "name": "Sunrise Apartments" } ],
+  "errors": null
+}</code></pre></div>
+      <div class="card"><h4>GET /api/buildings/{building}</h4><pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": { "id": 1, "name": "Sunrise Apartments", "address_line1": "12 Main St" },
+  "errors": null
+}</code></pre></div>
+      <div class="card"><h4>PUT /api/buildings/{building}</h4><pre><code>{
+  "name": "Sunrise Apts",
+  "description": "Updated description"
+}</code></pre></div>
+      <div class="card"><h4>DELETE /api/buildings/{building}</h4><pre><code>{
+  "success": true,
+  "message": "Building deleted",
+  "data": null,
+  "errors": null
+}</code></pre></div>
+
+      <h3>Building Managers</h3>
+      <div class="card"><h4>POST /api/buildings/{building}/managers</h4>
+        <pre><code>{
+  "email": "manager@example.com",
+  "name": "Manager Name"
+}</code></pre>
+        <pre><code>{
+  "success": true,
+  "message": "Manager added",
+  "data": { "id": 10, "name": "Manager Name", "email": "manager@example.com" },
+  "errors": null
+}</code></pre>
+      </div>
+      <div class="card"><h4>DELETE /api/buildings/{building}/managers/{user}</h4><pre><code>{
+  "success": true,
+  "message": "Manager removed",
+  "data": null,
+  "errors": null
+}</code></pre></div>
+
+      <h3>Apartments</h3>
+      <div class="card"><h4>POST /api/buildings/{building}/apartments</h4>
+        <pre><code>{
+  "unit_code": "A1",
+  "type": "one_bedroom",
+  "yearly_price": 1200000,
+  "description": "Large 1BR",
+  "floor": "2",
+  "status": "vacant",
+  "is_public": true,
+  "amenities": ["wifi", "parking"]
+}</code></pre>
+      </div>
+      <div class="card"><h4>GET /api/buildings/{building}/apartments</h4><pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": [ { "id": 2, "unit_code": "A1", "status": "vacant" } ],
+  "errors": null
+}</code></pre></div>
+      <div class="card"><h4>GET /api/apartments/{apartment}</h4><pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": { "id": 2, "unit_code": "A1", "status": "vacant" },
+  "errors": null
+}</code></pre></div>
+      <div class="card"><h4>PUT /api/apartments/{apartment}</h4><pre><code>{
+  "description": "Updated",
+  "status": "maintenance"
+}</code></pre></div>
+      <div class="card"><h4>DELETE /api/apartments/{apartment}</h4><pre><code>{
+  "success": true,
+  "message": "Apartment deleted",
+  "data": null,
+  "errors": null
+}</code></pre></div>
+
+      <h3>Assign Tenant + Lease</h3>
+      <div class="card"><h4>POST /api/apartments/{apartment}/assign-tenant</h4>
+        <pre><code>{
+  "tenant_email": "tenant@example.com",
+  "tenant_name": "Tenant Name",
+  "start_date": "2026-03-01",
+  "rent_amount": 1200000
+}</code></pre>
+        <pre><code>{
+  "success": true,
+  "message": "Tenant assigned",
+  "data": {
+    "tenant": { "id": 20, "email": "tenant@example.com" },
+    "lease": { "id": 5, "status": "active", "end_date": "2027-03-01" }
+  },
+  "errors": null
+}</code></pre>
+      </div>
+
+      <h3>Payments</h3>
+      <div class="card"><h4>POST /api/payments</h4>
+        <pre><code>{
+  "lease_id": 1,
+  "amount": 150000,
+  "payment_method": "online",
+  "transaction_reference": "TRX-12345",
+  "payment_date": "2026-03-01",
+  "status": "paid",
+  "metadata": { "channel": "card", "processor": "paystack" }
+}</code></pre>
+        <pre><code>{
+  "success": true,
+  "message": "Payment recorded",
+  "data": { "id": 10, "status": "paid" },
+  "errors": null
+}</code></pre>
+      </div>
+      <div class="card"><h4>GET /api/payments</h4><pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": [ { "id": 10, "amount": 150000, "status": "paid" } ],
+  "errors": null
+}</code></pre></div>
+      <div class="card"><h4>GET /api/tenant/payments</h4><pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": [ { "id": 10, "amount": 150000, "status": "paid" } ],
+  "errors": null
+}</code></pre></div>
+
+      <h3>Public Listings + Rental Requests</h3>
+      <div class="card"><h4>GET /api/public/apartments</h4><pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": [
+    {
+      "id": 2,
+      "unit_code": "A1",
+      "type": "one_bedroom",
+      "yearly_price": 1200000,
+      "building": { "id": 1, "name": "Sunrise Apartments", "city": "Lagos" }
+    }
+  ],
+  "errors": null
+}</code></pre></div>
+      <div class="card"><h4>POST /api/public/rental-requests</h4>
+        <pre><code>{
+  "apartment_id": 1,
+  "name": "Prospective Tenant",
+  "email": "lead@example.com",
+  "phone": "1234567890",
+  "message": "Interested in the unit"
+}</code></pre>
+        <pre><code>{
+  "success": true,
+  "message": "Request submitted",
+  "data": { "id": 3, "status": "new" },
+  "errors": null
+}</code></pre>
+      </div>
+      <div class="card"><h4>GET /api/rental-requests</h4><pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": [ { "id": 3, "status": "new" } ],
+  "errors": null
+}</code></pre></div>
+      <div class="card"><h4>PUT /api/rental-requests/{rentalRequest}</h4>
+        <pre><code>{ "status": "contacted" }</code></pre>
+        <pre><code>{
+  "success": true,
+  "message": "Updated",
+  "data": { "id": 3, "status": "contacted" },
+  "errors": null
+}</code></pre>
+      </div>
+
+      <h3>Chat</h3>
+      <div class="card"><h4>POST /api/conversations</h4>
+        <pre><code>{
+  "building_id": 1,
+  "apartment_id": 2,
+  "participant_ids": [10, 11]
+}</code></pre>
+        <pre><code>{
+  "success": true,
+  "message": "Conversation created",
+  "data": { "id": 7 },
+  "errors": null
+}</code></pre>
+      </div>
+      <div class="card"><h4>GET /api/conversations</h4><pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": [ { "id": 7 } ],
+  "errors": null
+}</code></pre></div>
+      <div class="card"><h4>GET /api/conversations/{conversation}/messages</h4><pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": [ { "id": 2, "body": "Hello" } ],
+  "errors": null
+}</code></pre></div>
+      <div class="card"><h4>POST /api/conversations/{conversation}/messages</h4>
+        <pre><code>{ "body": "Hello there" }</code></pre>
+        <pre><code>{
+  "success": true,
+  "message": "Message sent",
+  "data": { "id": 9, "body": "Hello there" },
+  "errors": null
+}</code></pre>
+      </div>
+      <div class="card"><h4>POST /api/conversations/{conversation}/read</h4><pre><code>{
+  "success": true,
+  "message": "Messages marked read",
+  "data": null,
+  "errors": null
+}</code></pre></div>
+
+      <h3>Maintenance Requests</h3>
+      <div class="card"><h4>POST /api/maintenance-requests</h4>
+        <pre><code>{
+  "apartment_id": 1,
+  "title": "Leaking pipe",
+  "description": "Pipe under sink is leaking."
+}</code></pre>
+        <pre><code>{
+  "success": true,
+  "message": "Request created",
+  "data": { "id": 5, "status": "open" },
+  "errors": null
+}</code></pre>
+      </div>
+      <div class="card"><h4>GET /api/maintenance-requests</h4><pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": [ { "id": 5, "status": "open" } ],
+  "errors": null
+}</code></pre></div>
+      <div class="card"><h4>PUT /api/maintenance-requests/{maintenanceRequest}</h4>
+        <pre><code>{ "status": "in_progress" }</code></pre>
+        <pre><code>{
+  "success": true,
+  "message": "Updated",
+  "data": { "id": 5, "status": "in_progress" },
+  "errors": null
+}</code></pre>
+      </div>
+
+      <h3>Media Uploads</h3>
+      <div class="card"><h4>GET /api/buildings/{building}/media</h4><pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": [ { "id": 1, "url": "https://..." } ],
+  "errors": null
+}</code></pre></div>
+      <div class="card"><h4>POST /api/buildings/{building}/media</h4><pre><code>multipart/form-data
+file: &lt;image or video&gt;
+collection: images|videos</code></pre></div>
+      <div class="card"><h4>GET /api/apartments/{apartment}/media</h4><pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": [ { "id": 2, "url": "https://..." } ],
+  "errors": null
+}</code></pre></div>
+      <div class="card"><h4>POST /api/apartments/{apartment}/media</h4><pre><code>multipart/form-data
+file: &lt;image or video&gt;
+collection: images|videos</code></pre></div>
+      <div class="card"><h4>GET /api/maintenance-requests/{maintenanceRequest}/media</h4><pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": [ { "id": 3, "url": "https://..." } ],
+  "errors": null
+}</code></pre></div>
+      <div class="card"><h4>POST /api/maintenance-requests/{maintenanceRequest}/media</h4><pre><code>multipart/form-data
+file: &lt;image or video&gt;
+collection: images|videos</code></pre></div>
+      <div class="card"><h4>GET /api/profile/media</h4><pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": { "url": "https://..." },
+  "errors": null
+}</code></pre></div>
+      <div class="card"><h4>POST /api/profile/media</h4><pre><code>multipart/form-data
+file: &lt;image&gt;
+collection: profile</code></pre></div>
+
+      <h3>Dashboards</h3>
+      <div class="card"><h4>GET /api/dashboard/admin</h4>
+        <pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": {
+    "counts": { "buildings": 1, "apartments": 10, "vacant": 3, "occupied": 7 },
+    "expiring_leases_next_90_days": 2,
+    "total_income_paid": 3500000,
+    "pending_payments": 4
+  },
+  "errors": null
+}</code></pre>
+      </div>
+      <div class="card"><h4>GET /api/dashboard/tenant</h4>
+        <pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": {
+    "active_lease": { "id": 1, "status": "active", "end_date": "2026-12-31" },
+    "days_to_expiry": 90,
+    "last_payment": { "id": 10, "status": "paid", "payment_date": "2026-03-01" },
+    "payment_summary": { "paid": 3, "pending": 1, "failed": 0 }
+  },
+  "errors": null
+}</code></pre>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

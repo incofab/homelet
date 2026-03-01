@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tenanta Frontend Spec — Technical</title>
+  <link rel="stylesheet" href="_styles.css" />
+</head>
+<body>
+<div class="layout">
+  <nav>
+    <h1>Tenanta FE Spec</h1>
+    <p>Flutter + GetX | v1.0</p>
+    <a href="index.html">Overview</a>
+    <a href="prd.html">PRD</a>
+    <a href="tech.html">Technical</a>
+    <a href="pages.html">Pages</a>
+    <a href="routing.html">Routing Map</a>
+    <a href="data-flow.html">Data Flow</a>
+    <a href="sequence.html">Sequence Flows</a>
+    <a href="api.html">API</a>
+  </nav>
+  <main>
+    <section>
+      <h2>Technical Requirements</h2>
+      <div class="grid-2">
+        <div class="card">
+          <strong>Flutter</strong>
+          <ul>
+            <li>Flutter 3.x stable channel</li>
+            <li>Dart 3.x</li>
+            <li>Material 3 UI system</li>
+            <li>Adaptive layout for web and mobile</li>
+          </ul>
+        </div>
+        <div class="card">
+          <strong>Core Packages</strong>
+          <ul>
+            <li><code>get</code> for routing and state</li>
+            <li><code>dio</code> for HTTP</li>
+            <li><code>flutter_secure_storage</code> for token</li>
+            <li><code>image_picker</code> or <code>file_picker</code> for uploads</li>
+            <li><code>intl</code> for dates and currency</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card">
+        <strong>Environment</strong>
+        <ul>
+          <li>Dev, Staging, Prod base URLs in config.</li>
+          <li>Use flavors or compile-time defines.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>Flutter Architecture</h2>
+      <h3>Folder Structure (Recommended)</h3>
+      <pre><code>lib/
+  core/
+    config/
+    constants/
+    network/
+    services/
+    theme/
+    utils/
+  data/
+    models/
+    repositories/
+    sources/
+  modules/
+    auth/
+    dashboard/
+    buildings/
+    apartments/
+    leases/
+    payments/
+    maintenance/
+    chat/
+    rental_requests/
+    public_listings/
+  routes/
+  shared/
+    widgets/
+</code></pre>
+
+      <h3>State Management (GetX)</h3>
+      <ul>
+        <li>One <code>GetxController</code> per module.</li>
+        <li>Repositories encapsulate API calls and map to models.</li>
+        <li>Controller state with <code>Rx</code> types and immutable models.</li>
+        <li>Global session in <code>AuthController</code> with token + role.</li>
+      </ul>
+
+      <h3>Network Layer</h3>
+      <ul>
+        <li><code>Dio</code> with interceptor for Bearer token.</li>
+        <li>Standard response decoding into <code>ApiResponse&lt;T&gt;</code>.</li>
+        <li>Centralized error handling for 401, 403, 422, and network failures.</li>
+      </ul>
+    </section>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tenanta Frontend Spec — Overview</title>
+  <link rel="stylesheet" href="_styles.css" />
+</head>
+<body>
+<div class="layout">
+  <!--#include virtual="_nav.html" -->
+  <nav>
+    <h1>Tenanta FE Spec</h1>
+    <p>Flutter + GetX | v1.0</p>
+    <a href="index.html">Overview</a>
+    <a href="prd.html">PRD</a>
+    <a href="tech.html">Technical</a>
+    <a href="pages.html">Pages</a>
+    <a href="routing.html">Routing Map</a>
+    <a href="data-flow.html">Data Flow</a>
+    <a href="sequence.html">Sequence Flows</a>
+    <a href="api.html">API</a>
+  </nav>
+  <main>
+    <section>
+      <h2>Overview</h2>
+      <p>This documentation set defines the complete frontend specification for Tenanta (property management system) using Flutter + GetX. It covers the PRD, technical requirements, page inventory with interconnections, and the full API reference with request/response samples based on <code>docs/api.md</code>.</p>
+      <div class="card">
+        <strong>Platforms:</strong> Web (responsive) + iOS + Android<br />
+        <strong>State Management:</strong> GetX (GetRouter + GetxController + reactive state)<br />
+        <strong>API:</strong> REST (Laravel Sanctum Bearer tokens)
+      </div>
+      <div class="card">
+        <strong>What’s Included</strong>
+        <ul>
+          <li>PRD and user roles</li>
+          <li>Flutter architecture and technical requirements</li>
+          <li>Page list with role-based access and navigation map</li>
+          <li>Routing, data flow, and sequence diagrams</li>
+          <li>Full API reference with sample requests and responses</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>Assumptions</h2>
+      <div class="notice">
+        <ul>
+          <li>API responses follow the envelope defined in <code>docs/api.md</code>.</li>
+          <li>Pagination is not currently defined; lists return full arrays.</li>
+          <li>Currency values are integer kobo and formatted as NGN in UI.</li>
+          <li>File uploads are multipart form-data with progress indicators.</li>
+          <li>Role-based UI is enforced server-side; client still handles 403.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

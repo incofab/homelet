@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tenanta Frontend Spec — Pages</title>
+  <link rel="stylesheet" href="_styles.css" />
+</head>
+<body>
+<div class="layout">
+  <nav>
+    <h1>Tenanta FE Spec</h1>
+    <p>Flutter + GetX | v1.0</p>
+    <a href="index.html">Overview</a>
+    <a href="prd.html">PRD</a>
+    <a href="tech.html">Technical</a>
+    <a href="pages.html">Pages</a>
+    <a href="routing.html">Routing Map</a>
+    <a href="data-flow.html">Data Flow</a>
+    <a href="sequence.html">Sequence Flows</a>
+    <a href="api.html">API</a>
+  </nav>
+  <main>
+    <section>
+      <h2>Pages & Features</h2>
+      <h3>Public (Unauthenticated)</h3>
+      <ul>
+        <li>Landing / Public Listings</li>
+        <li>Apartment Detail (public)</li>
+        <li>Rental Request Form</li>
+        <li>Auth: Register, Login</li>
+      </ul>
+
+      <h3>Admin / Manager</h3>
+      <div class="grid-2">
+        <div class="card">
+          <strong>Dashboard</strong>
+          <ul>
+            <li>Metrics widgets (buildings, apartments, occupancy, income)</li>
+            <li>Expiring leases summary</li>
+            <li>Pending payments count</li>
+          </ul>
+        </div>
+        <div class="card">
+          <strong>Buildings</strong>
+          <ul>
+            <li>Buildings list, create, update, delete</li>
+            <li>Managers list and add/remove</li>
+            <li>Building media uploads</li>
+          </ul>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <strong>Apartments</strong>
+          <ul>
+            <li>List by building</li>
+            <li>Apartment detail with media</li>
+            <li>Create and update apartment</li>
+            <li>Assign tenant (creates lease)</li>
+          </ul>
+        </div>
+        <div class="card">
+          <strong>Tenants & Leases</strong>
+          <ul>
+            <li>Assign tenant to apartment</li>
+            <li>Lease summary in apartment detail</li>
+            <li>Lease expiry status</li>
+          </ul>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <strong>Payments</strong>
+          <ul>
+            <li>List all payments (scoped)</li>
+            <li>Record manual payment</li>
+          </ul>
+        </div>
+        <div class="card">
+          <strong>Maintenance Requests</strong>
+          <ul>
+            <li>List requests by building</li>
+            <li>Update status</li>
+          </ul>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <strong>Rental Requests</strong>
+          <ul>
+            <li>List requests</li>
+            <li>Update status</li>
+          </ul>
+        </div>
+        <div class="card">
+          <strong>Chat</strong>
+          <ul>
+            <li>Conversation list</li>
+            <li>Message thread</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Tenant</h3>
+      <div class="grid-2">
+        <div class="card">
+          <strong>Dashboard</strong>
+          <ul>
+            <li>Active lease info</li>
+            <li>Days to expiry</li>
+            <li>Payment summary</li>
+          </ul>
+        </div>
+        <div class="card">
+          <strong>Payments</strong>
+          <ul>
+            <li>List payment history</li>
+            <li>Make online payment</li>
+          </ul>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <strong>Maintenance</strong>
+          <ul>
+            <li>Create request</li>
+            <li>Upload media</li>
+          </ul>
+        </div>
+        <div class="card">
+          <strong>Chat</strong>
+          <ul>
+            <li>Conversation list</li>
+            <li>Message thread</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card">
+        <strong>Profile</strong>
+        <ul>
+          <li>View profile and upload avatar</li>
+          <li>Logout</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

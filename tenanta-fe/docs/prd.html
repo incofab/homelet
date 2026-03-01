@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tenanta Frontend Spec — PRD</title>
+  <link rel="stylesheet" href="_styles.css" />
+</head>
+<body>
+<div class="layout">
+  <nav>
+    <h1>Tenanta FE Spec</h1>
+    <p>Flutter + GetX | v1.0</p>
+    <a href="index.html">Overview</a>
+    <a href="prd.html">PRD</a>
+    <a href="tech.html">Technical</a>
+    <a href="pages.html">Pages</a>
+    <a href="routing.html">Routing Map</a>
+    <a href="data-flow.html">Data Flow</a>
+    <a href="sequence.html">Sequence Flows</a>
+    <a href="api.html">API</a>
+  </nav>
+  <main>
+    <section>
+      <h2>Product Requirements (PRD)</h2>
+      <h3>Problem Statement</h3>
+      <p>Landlords, managers, and tenants need a single platform to manage buildings, apartments, leases, payments, maintenance, and communication. Prospective tenants need a public listing and rental request flow.</p>
+
+      <h3>Goals</h3>
+      <div class="grid-2">
+        <div class="card">
+          <strong>Primary Goals</strong>
+          <ul>
+            <li>Enable admins to manage buildings and apartments.</li>
+            <li>Enable managers to operate within assigned buildings.</li>
+            <li>Enable tenants to view leases, payments, maintenance, chat.</li>
+            <li>Provide public listings and rental requests.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <strong>Success Metrics</strong>
+          <ul>
+            <li>90%+ completion for building + apartment creation.</li>
+            <li>Key admin actions under 3 taps from dashboard.</li>
+            <li>Tenant onboarding under 2 minutes.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>User Roles</h3>
+      <div class="grid-3">
+        <div class="card"><span class="tag">Admin</span><p>Owner of buildings. Full management control.</p></div>
+        <div class="card"><span class="tag">Manager</span><p>Assigned to buildings by admin. Manages operations.</p></div>
+        <div class="card"><span class="tag">Tenant</span><p>Lives in apartment, views lease, payments, maintenance, chat.</p></div>
+      </div>
+      <div class="card"><span class="tag">Public</span><p>Unauthenticated visitors can view public apartments and submit rental requests.</p></div>
+
+      <h3>Core Modules</h3>
+      <ul>
+        <li>Authentication and user profile</li>
+        <li>Building management</li>
+        <li>Apartment management</li>
+        <li>Tenant assignment and leases</li>
+        <li>Payments</li>
+        <li>Rental requests</li>
+        <li>Chat (conversations + messages)</li>
+        <li>Maintenance requests</li>
+        <li>Media uploads (buildings, apartments, maintenance, profile)</li>
+        <li>Dashboards (admin and tenant)</li>
+      </ul>
+
+      <h3>Business Rules</h3>
+      <ul>
+        <li>Only one active lease per apartment.</li>
+        <li>Apartment cannot be deleted if occupied.</li>
+        <li>Only owner can delete building.</li>
+        <li>Tenant can only view data for their lease/apartment.</li>
+      </ul>
+    </section>
+  </main>
+</div>
+</body>
+</html>
