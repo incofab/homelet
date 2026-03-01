@@ -36,4 +36,9 @@ class Apartment extends Model
         return $this->belongsToMany(User::class, 'apartment_users')
             ->withTimestamps();
     }
+
+    public function leases()
+    {
+        return $this->hasMany(Lease::class);
+    }
 }

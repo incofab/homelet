@@ -76,4 +76,9 @@ class User extends Authenticatable
             ->withPivot('role_in_building')
             ->withTimestamps();
     }
+
+    public function leases()
+    {
+        return $this->hasMany(Lease::class, 'tenant_id');
+    }
 }
