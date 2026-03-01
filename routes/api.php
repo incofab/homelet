@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\PublicApartmentController;
 use App\Http\Controllers\Api\PublicRentalRequestController;
 use App\Http\Controllers\Api\RentalRequestController;
 use App\Http\Controllers\Api\ConversationController;
+use App\Http\Controllers\Api\Dashboard\AdminDashboardController;
+use App\Http\Controllers\Api\Dashboard\TenantDashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('api')->get('/health', function () {
@@ -47,6 +49,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('conversations/{conversation}/messages', [ConversationController::class, 'messages']);
     Route::post('conversations/{conversation}/messages', [ConversationController::class, 'storeMessage']);
     Route::post('conversations/{conversation}/read', [ConversationController::class, 'markRead']);
+    Route::get('dashboard/admin', AdminDashboardController::class);
+    Route::get('dashboard/tenant', TenantDashboardController::class);
 });
 
 Route::middleware('throttle:60,1')->group(function () {
