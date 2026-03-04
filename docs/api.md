@@ -212,6 +212,37 @@ Request body:
 Notes:
 - `rent_amount` defaults to apartment `yearly_price` when omitted.
 
+## Tenants
+
+### GET `/api/tenants`
+List tenants for buildings the authenticated user can manage.
+
+Authorization:
+- Owner/admin/manager only.
+
+Response: paginated tenants, each including `active_lease` with apartment + building details.
+
+### GET `/api/tenants/{tenant}`
+Get a tenant profile with lease and payment history.
+
+Authorization:
+- Owner/admin/manager only.
+- Tenant must have a lease in a building the user can manage.
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Tenant loaded.",
+  "data": {
+    "tenant": { "id": 20, "name": "Tenant Name", "email": "tenant@example.com" },
+    "leases": [ { "id": 5, "status": "active" } ],
+    "payments": [ { "id": 10, "status": "paid" } ]
+  },
+  "errors": null
+}
+```
+
 ## Payments
 
 ### POST `/api/payments`
@@ -272,6 +303,9 @@ Request body:
   "message": "Interested in the unit"
 }
 ```
+
+Alias:
+- POST `/api/public/request-interest`
 
 ### GET `/api/rental-requests`
 List rental requests scoped to buildings the admin/manager owns/manages.
@@ -573,6 +607,9 @@ Response data:
 }
 ```
 
+Alias:
+- GET `/api/tenant/dashboard`
+
 ## Background Commands (Operational)
 
 These are Artisan commands executed by the scheduler; not HTTP endpoints.
@@ -587,6 +624,22 @@ These are Artisan commands executed by the scheduler; not HTTP endpoints.
 - Runs daily.
 - Sends reminder email to tenants exactly 90 days before `end_date`.
 - Uses queued job `SendRenewalReminderEmail`.
+
+### `demo:seed`
+- Seeds connected demo data for manual testing.
+- Creates buildings, apartments, managers, tenants, leases, payments, maintenance requests, rental requests, reviews, and conversations.
+- Options:
+  - `--buildings` (default `2`)
+  - `--apartments` (default `6`)
+  - `--managers` (default `1`)
+  - `--tenants` (default `3`)
+  - `--payments` (default `2`)
+  - `--maintenance` (default `1`)
+  - `--conversations` (default `1`)
+  - `--messages` (default `3`)
+  - `--rental-requests` (default `2`)
+  - `--building-reviews` (default `2`)
+  - `--apartment-reviews` (default `2`)
 
 ## Tenancy Agreement + Quit Notice (Behavioral)
 

@@ -129,6 +129,29 @@ test('tenant dashboard returns lease details and payment summary', function () {
         ->assertJsonPath('data.payment_summary.failed', 0);
 });
 
+test('tenant dashboard alias route returns metrics', function () {
+    $tenant = User::factory()->create();
+    $tenantRole = Role::firstOrCreate(['name' => 'tenant']);
+    $tenant->roles()->syncWithoutDetaching([$tenantRole->id]);
+
+    $apartment = Apartment::factory()->create([
+        'status' => 'occupied',
+    ]);
+
+    $lease = Lease::factory()->create([
+        'apartment_id' => $apartment->id,
+        'tenant_id' => $tenant->id,
+        'status' => 'active',
+        'end_date' => Carbon::today()->addDays(10)->toDateString(),
+    ]);
+
+    Sanctum::actingAs($tenant);
+    $response = $this->getJson('/api/tenant/dashboard');
+
+    $response->assertStatus(200)
+        ->assertJsonPath('data.active_lease.id', $lease->id);
+});
+
 test('non tenant cannot access tenant dashboard', function () {
     $user = User::factory()->create();
 
@@ -137,4 +160,3 @@ test('non tenant cannot access tenant dashboard', function () {
 
     $response->assertStatus(403);
 });
-

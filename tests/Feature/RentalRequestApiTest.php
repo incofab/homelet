@@ -27,6 +27,24 @@ test('public can create rental request', function () {
     expect($request->status)->toBe('new');
 });
 
+test('public can create rental request via request-interest alias', function () {
+    $apartment = Apartment::factory()->create();
+
+    $response = $this->postJson('/api/public/request-interest', [
+        'apartment_id' => $apartment->id,
+        'name' => 'Prospective Tenant',
+        'email' => 'alias@example.com',
+        'phone' => '1234567890',
+        'message' => 'Interested in the unit.',
+    ]);
+
+    $response->assertStatus(201);
+
+    $request = RentalRequest::where('email', 'alias@example.com')->first();
+    expect($request)->not->toBeNull();
+    expect($request->status)->toBe('new');
+});
+
 test('admin can list rental requests scoped to building', function () {
     $owner = User::factory()->create();
     $admin = User::factory()->create();

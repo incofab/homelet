@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\ApartmentMediaController;
 use App\Http\Controllers\Api\MaintenanceRequestMediaController;
 use App\Http\Controllers\Api\ProfileMediaController;
 use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\TenantController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('api')->get('/health', function () {
@@ -49,6 +50,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('payments', [PaymentController::class, 'store']);
     Route::get('payments', [PaymentController::class, 'index']);
     Route::get('tenant/payments', [PaymentController::class, 'tenantIndex']);
+    Route::get('tenants', [TenantController::class, 'index']);
+    Route::get('tenants/{tenant}', [TenantController::class, 'show']);
     Route::get('rental-requests', [RentalRequestController::class, 'index']);
     Route::put('rental-requests/{rentalRequest}', [RentalRequestController::class, 'update']);
     Route::post('conversations', [ConversationController::class, 'store']);
@@ -58,6 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('conversations/{conversation}/read', [ConversationController::class, 'markRead']);
     Route::get('dashboard/admin', AdminDashboardController::class);
     Route::get('dashboard/tenant', TenantDashboardController::class);
+    Route::get('tenant/dashboard', TenantDashboardController::class);
     Route::post('maintenance-requests', [MaintenanceRequestController::class, 'store']);
     Route::get('maintenance-requests', [MaintenanceRequestController::class, 'index']);
     Route::put('maintenance-requests/{maintenanceRequest}', [MaintenanceRequestController::class, 'update']);
@@ -79,4 +83,5 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('public/apartments', [PublicApartmentController::class, 'index']);
     Route::get('public/buildings-for-sale', [PublicBuildingForSaleController::class, 'index']);
     Route::post('public/rental-requests', [PublicRentalRequestController::class, 'store']);
+    Route::post('public/request-interest', [PublicRentalRequestController::class, 'store']);
 });

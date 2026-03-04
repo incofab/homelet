@@ -44,7 +44,9 @@ class RbacSeeder extends Seeder
             return [$name => Permission::firstOrCreate(['name' => $name])];
         });
 
-        $roleModels['admin']->permissions()->sync($permissionModels->values()->modelKeys());
+        $roleModels['admin']->permissions()->sync(
+            $permissionModels->values()->pluck('id')->all()
+        );
 
         $managerPermissions = [
             'building.view',
@@ -73,11 +75,11 @@ class RbacSeeder extends Seeder
         ];
 
         $roleModels['manager']->permissions()->sync(
-            $permissionModels->only($managerPermissions)->values()->modelKeys()
+            $permissionModels->only($managerPermissions)->values()->pluck('id')->all()
         );
 
         $roleModels['tenant']->permissions()->sync(
-            $permissionModels->only($tenantPermissions)->values()->modelKeys()
+            $permissionModels->only($tenantPermissions)->values()->pluck('id')->all()
         );
     }
 }

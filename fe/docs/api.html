@@ -226,6 +226,33 @@ Money: integer kobo
 }</code></pre>
       </div>
 
+      <h3>Tenants</h3>
+      <div class="card"><h4>GET /api/tenants</h4><pre><code>{
+  "success": true,
+  "message": "Tenants loaded",
+  "data": {
+    "tenants": [
+      {
+        "id": 20,
+        "name": "Tenant Name",
+        "email": "tenant@example.com",
+        "active_lease": { "id": 5, "status": "active" }
+      }
+    ]
+  },
+  "errors": null
+}</code></pre></div>
+      <div class="card"><h4>GET /api/tenants/{tenant}</h4><pre><code>{
+  "success": true,
+  "message": "Tenant loaded",
+  "data": {
+    "tenant": { "id": 20, "name": "Tenant Name", "email": "tenant@example.com" },
+    "leases": [ { "id": 5, "status": "active" } ],
+    "payments": [ { "id": 10, "status": "paid" } ]
+  },
+  "errors": null
+}</code></pre></div>
+
       <h3>Payments</h3>
       <div class="card"><h4>POST /api/payments</h4>
         <pre><code>{
@@ -293,6 +320,7 @@ Money: integer kobo
   "phone": "1234567890",
   "message": "Interested in the unit"
 }</code></pre>
+        <p><strong>Alias:</strong> POST /api/public/request-interest</p>
         <pre><code>{
   "success": true,
   "message": "Request submitted",
@@ -491,6 +519,33 @@ collection: profile</code></pre></div>
   },
   "errors": null
 }</code></pre>
+      </div>
+      <p><strong>Alias:</strong> GET /api/tenant/dashboard</p>
+
+      <h3>Background Commands (Operational)</h3>
+      <div class="card">
+        <h4>leases:expire</h4>
+        <p>Runs daily. Expires active leases with <code>end_date &lt; today</code>, vacates apartments, and sends quit notices.</p>
+      </div>
+      <div class="card">
+        <h4>leases:send-renewal-reminders</h4>
+        <p>Runs daily. Sends renewal reminders exactly 90 days before <code>end_date</code>.</p>
+      </div>
+      <div class="card">
+        <h4>demo:seed</h4>
+        <p>Seeds connected demo data for manual testing (buildings, apartments, managers, tenants, leases, payments, maintenance requests, rental requests, reviews, conversations).</p>
+        <pre><code>Options:
+--buildings (default 2)
+--apartments (default 6)
+--managers (default 1)
+--tenants (default 3)
+--payments (default 2)
+--maintenance (default 1)
+--conversations (default 1)
+--messages (default 3)
+--rental-requests (default 2)
+--building-reviews (default 2)
+--apartment-reviews (default 2)</code></pre>
       </div>
 
       <h3>Legal Automation</h3>

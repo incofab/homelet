@@ -82,6 +82,13 @@ class User extends Authenticatable
         return $this->hasMany(Lease::class, 'tenant_id');
     }
 
+    public function activeLease()
+    {
+        return $this->hasOne(Lease::class, 'tenant_id')
+            ->where('status', 'active')
+            ->latestOfMany();
+    }
+
     public function payments()
     {
         return $this->hasMany(Payment::class, 'tenant_id');

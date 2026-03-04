@@ -1,6 +1,6 @@
 # 📄 PRODUCT REQUIREMENTS DOCUMENT (PRD)
 
-## Product Name: RentPilot (Working Title)
+## Product Name: Tenanta (Working Title)
 
 Backend: Laravel (API-Only)
 Architecture: RESTful API + Role-Based Access Control

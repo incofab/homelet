@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Models\RentalRequest;
 use App\Models\Conversation;
 use App\Models\MaintenanceRequest;
+use App\Models\User;
 use App\Policies\ApartmentPolicy;
 use App\Policies\BuildingPolicy;
 use App\Policies\LeasePolicy;
@@ -16,6 +17,7 @@ use App\Policies\PaymentPolicy;
 use App\Policies\RentalRequestPolicy;
 use App\Policies\ConversationPolicy;
 use App\Policies\MaintenanceRequestPolicy;
+use App\Policies\TenantPolicy;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 
@@ -41,6 +43,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(RentalRequest::class, RentalRequestPolicy::class);
         Gate::policy(Conversation::class, ConversationPolicy::class);
         Gate::policy(MaintenanceRequest::class, MaintenanceRequestPolicy::class);
+        Gate::policy(User::class, TenantPolicy::class);
         Gate::define('manageManagers', [BuildingPolicy::class, 'manageManagers']);
     }
 }

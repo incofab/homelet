@@ -52,3 +52,7 @@ we are building a property management system for tenants and landlords
 - If you have questions or need any clarifications on the feature I want you to build, ask those questions at once and get properly clarification from me before you start.
 - You are allowed to make changes to the PRD, API Documentation and the task list if you think it is necessary.
 - Always follow standard practices and conventions, make reasonable assumptions where necessary if the issue is not confusing enough to ask me.
+- You can safely assume that this project is still in development phase, So you can make changes to the project structure and code as you see fit. You can easily update an existing migration file if you need to add more columns or fields to the database.
+- After every feature implementation, write a prompt for the frontend AI, letting it know what changes you made and what it needs to do to update the frontend accordingly.
+
+# Task
