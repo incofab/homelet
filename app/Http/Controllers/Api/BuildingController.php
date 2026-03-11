@@ -30,14 +30,7 @@ class BuildingController extends Controller
 
     public function store(StoreBuildingRequest $request): JsonResponse
     {
-        $building = Building::create(array_merge(
-            $request->validated(),
-            ['owner_id' => $request->user()->id]
-        ));
-
-        return $this->success('Building created.', [
-            'building' => $building,
-        ], 201);
+        abort(403);
     }
 
     public function show(Request $request, Building $building): JsonResponse

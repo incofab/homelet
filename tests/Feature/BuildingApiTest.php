@@ -12,7 +12,7 @@ function tokenFor(User $user): string
     return $user->createToken('test')->plainTextToken;
 }
 
-test('owner can create and manage buildings', function () {
+test('owner cannot create buildings directly', function () {
     $owner = User::factory()->create();
 
     $payload = [
@@ -28,16 +28,19 @@ test('owner can create and manage buildings', function () {
     $createResponse = $this->withToken(tokenFor($owner))
         ->postJson('/api/buildings', $payload);
 
-    $createResponse
-        ->assertStatus(201)
-        ->assertJsonPath('success', true)
-        ->assertJsonPath('data.building.name', 'Main Plaza');
+    $createResponse->assertStatus(403);
+});
 
-    $buildingId = $createResponse->json('data.building.id');
+test('owner can update and delete owned building', function () {
+    $owner = User::factory()->create();
+
+    $building = Building::factory()->create([
+        'owner_id' => $owner->id,
+    ]);
 
     $updateResponse = $this->withToken(tokenFor($owner))
         ->putJson(
-            "/api/buildings/{$buildingId}",
+            "/api/buildings/{$building->id}",
             ['name' => 'Updated Plaza']
         );
 
@@ -46,7 +49,7 @@ test('owner can create and manage buildings', function () {
         ->assertJsonPath('data.building.name', 'Updated Plaza');
 
     $deleteResponse = $this->withToken(tokenFor($owner))
-        ->deleteJson("/api/buildings/{$buildingId}");
+        ->deleteJson("/api/buildings/{$building->id}");
 
     $deleteResponse->assertStatus(200);
 });

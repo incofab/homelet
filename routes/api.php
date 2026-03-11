@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ApartmentController;
 use App\Http\Controllers\Api\BuildingController;
 use App\Http\Controllers\Api\BuildingManagerController;
+use App\Http\Controllers\Api\BuildingRegistrationRequestController;
+use App\Http\Controllers\Api\Admin\BuildingRegistrationRequestController as AdminBuildingRegistrationRequestController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PublicApartmentController;
 use App\Http\Controllers\Api\PublicBuildingForSaleController;
@@ -39,6 +41,7 @@ Route::prefix('auth')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('buildings', BuildingController::class);
+    Route::post('building-registration-requests', [BuildingRegistrationRequestController::class, 'store']);
     Route::post('buildings/{building}/managers', [BuildingManagerController::class, 'store']);
     Route::delete('buildings/{building}/managers/{user}', [BuildingManagerController::class, 'destroy']);
     Route::post('buildings/{building}/apartments', [ApartmentController::class, 'store']);
@@ -77,6 +80,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('buildings/{building}/reviews', [ReviewController::class, 'storeBuilding']);
     Route::get('apartments/{apartment}/reviews', [ReviewController::class, 'indexApartment']);
     Route::post('apartments/{apartment}/reviews', [ReviewController::class, 'storeApartment']);
+    Route::get('admin/building-registration-requests', [AdminBuildingRegistrationRequestController::class, 'index']);
+    Route::get('admin/building-registration-requests/{buildingRegistrationRequest}', [AdminBuildingRegistrationRequestController::class, 'show']);
+    Route::post('admin/building-registration-requests/{buildingRegistrationRequest}/approve', [AdminBuildingRegistrationRequestController::class, 'approve']);
+    Route::post('admin/building-registration-requests/{buildingRegistrationRequest}/reject', [AdminBuildingRegistrationRequestController::class, 'reject']);
 });
 
 Route::middleware('throttle:60,1')->group(function () {
@@ -84,4 +91,5 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('public/buildings-for-sale', [PublicBuildingForSaleController::class, 'index']);
     Route::post('public/rental-requests', [PublicRentalRequestController::class, 'store']);
     Route::post('public/request-interest', [PublicRentalRequestController::class, 'store']);
+    Route::post('public/building-registration-requests', [BuildingRegistrationRequestController::class, 'store']);
 });

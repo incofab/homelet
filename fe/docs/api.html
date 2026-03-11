@@ -57,6 +57,7 @@ Money: integer kobo
         <pre><code>{
   "name": "Jane Doe",
   "email": "jane@example.com",
+  "phone": "1234567890",
   "password": "secret",
   "password_confirmation": "secret"
 }</code></pre>
@@ -120,9 +121,9 @@ Money: integer kobo
   "sale_price": null
 }</code></pre>
         <pre><code>{
-  "success": true,
-  "message": "Building created",
-  "data": { "id": 1, "name": "Sunrise Apartments", "city": "Lagos" },
+  "success": false,
+  "message": "Forbidden",
+  "data": null,
   "errors": null
 }</code></pre>
       </div>
@@ -148,6 +149,73 @@ Money: integer kobo
   "success": true,
   "message": "Building deleted",
   "data": null,
+  "errors": null
+}</code></pre></div>
+
+      <h3>Building Registration Requests</h3>
+      <div class="card">
+        <h4>POST /api/building-registration-requests</h4>
+        <pre><code>{
+  "name": "Sunrise Apartments",
+  "address_line1": "12 Main St",
+  "address_line2": "Suite 4",
+  "city": "Lagos",
+  "state": "Lagos",
+  "country": "NG",
+  "description": "Modern apartments",
+  "for_sale": false,
+  "sale_price": null
+}</code></pre>
+        <pre><code>{
+  "success": true,
+  "message": "Building registration request submitted.",
+  "data": { "request": { "id": 1, "status": "pending" } },
+  "errors": null
+}</code></pre>
+      </div>
+      <div class="card">
+        <h4>POST /api/public/building-registration-requests</h4>
+        <pre><code>{
+  "name": "Sunrise Apartments",
+  "address_line1": "12 Main St",
+  "address_line2": "Suite 4",
+  "city": "Lagos",
+  "state": "Lagos",
+  "country": "NG",
+  "description": "Modern apartments",
+  "for_sale": false,
+  "sale_price": null,
+  "owner_name": "Jane Doe",
+  "owner_email": "jane@example.com",
+  "owner_phone": "1234567890",
+  "owner_password": "secret",
+  "owner_password_confirmation": "secret"
+}</code></pre>
+        <pre><code>{
+  "success": true,
+  "message": "Building registration request submitted.",
+  "data": { "request": { "id": 1, "status": "pending" } },
+  "errors": null
+}</code></pre>
+      </div>
+      <div class="card"><h4>GET /api/admin/building-registration-requests</h4><pre><code>{
+  "success": true,
+  "message": "Building registration requests loaded.",
+  "data": { "requests": [ { "id": 1, "status": "pending" } ] },
+  "errors": null
+}</code></pre></div>
+      <div class="card"><h4>POST /api/admin/building-registration-requests/{id}/approve</h4><pre><code>{
+  "success": true,
+  "message": "Building registration request approved.",
+  "data": { "request": { "id": 1, "status": "approved" }, "building": { "id": 10 }, "owner": { "id": 5 } },
+  "errors": null
+}</code></pre></div>
+      <div class="card"><h4>POST /api/admin/building-registration-requests/{id}/reject</h4><pre><code>{
+  "rejection_reason": "Missing documents"
+}</code></pre><pre><code>{
+  "success": true,
+  "message": "Building registration request rejected.",
+  "data": { "request": { "id": 1, "status": "rejected" } },
   "errors": null
 }</code></pre></div>
 
