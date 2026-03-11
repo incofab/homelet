@@ -39,6 +39,7 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+Route::get('apartments/{apartment}', [ApartmentController::class, 'show']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('buildings', BuildingController::class);
     Route::post('building-registration-requests', [BuildingRegistrationRequestController::class, 'store']);
@@ -46,7 +47,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('buildings/{building}/managers/{user}', [BuildingManagerController::class, 'destroy']);
     Route::post('buildings/{building}/apartments', [ApartmentController::class, 'store']);
     Route::get('buildings/{building}/apartments', [ApartmentController::class, 'index']);
-    Route::get('apartments/{apartment}', [ApartmentController::class, 'show']);
     Route::put('apartments/{apartment}', [ApartmentController::class, 'update']);
     Route::delete('apartments/{apartment}', [ApartmentController::class, 'destroy']);
     Route::post('apartments/{apartment}/assign-tenant', [ApartmentController::class, 'assignTenant']);

@@ -47,8 +47,6 @@ class ApartmentController extends Controller
 
     public function show(Request $request, Apartment $apartment): JsonResponse
     {
-        $this->authorize('view', $apartment);
-
         return $this->success('Apartment loaded.', [
             'apartment' => $apartment->load('media'),
         ]);
