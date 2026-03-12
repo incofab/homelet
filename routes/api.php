@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\MaintenanceRequestMediaController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProfileMediaController;
 use App\Http\Controllers\Api\PublicApartmentController;
+use App\Http\Controllers\Api\PublicBuildingController;
 use App\Http\Controllers\Api\PublicBuildingForSaleController;
 use App\Http\Controllers\Api\PublicRentalRequestController;
 use App\Http\Controllers\Api\RentalRequestController;
@@ -40,9 +41,9 @@ Route::prefix('auth')->group(function () {
     });
 });
 
-Route::get('apartments/{apartment}', [ApartmentController::class, 'show']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('buildings', BuildingController::class);
+    Route::get('apartments/{apartment}', [ApartmentController::class, 'show']);
     Route::post('building-registration-requests', [BuildingRegistrationRequestController::class, 'store']);
     Route::post('buildings/{building}/managers', [BuildingManagerController::class, 'store']);
     Route::delete('buildings/{building}/managers/{user}', [BuildingManagerController::class, 'destroy']);
@@ -90,6 +91,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::middleware('throttle:60,1')->group(function () {
     Route::get('public/apartments', [PublicApartmentController::class, 'index']);
+    Route::get('public/apartments/{apartment}', [PublicApartmentController::class, 'show']);
+    Route::get('public/buildings', [PublicBuildingController::class, 'index']);
+    Route::get('public/buildings/{building}', [PublicBuildingController::class, 'show']);
     Route::get('public/buildings-for-sale', [PublicBuildingForSaleController::class, 'index']);
     Route::post('public/rental-requests', [PublicRentalRequestController::class, 'store']);
     Route::post('public/request-interest', [PublicRentalRequestController::class, 'store']);

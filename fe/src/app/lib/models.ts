@@ -12,6 +12,8 @@ export interface Building {
   address_line1?: string;
   address_line2?: string;
   description?: string;
+  contact_email?: string | null;
+  contact_phone?: string | null;
   for_sale?: boolean;
   sale_price?: number;
   year_built?: number;
@@ -29,6 +31,8 @@ export interface BuildingSummary {
   city?: string;
   state?: string;
   country?: string;
+  contact_email?: string | null;
+  contact_phone?: string | null;
   for_sale?: boolean;
   sale_price?: number;
 }
@@ -86,17 +90,26 @@ export interface Apartment {
   square_feet?: number;
   yearly_price?: number;
   status?: string;
+  is_public?: boolean;
   tenant?: { name?: string };
 }
 
 export interface ApartmentDetail {
   id: number;
   unit_code?: string;
-  building?: { id?: number; name?: string; city?: string; state?: string; address_line1?: string; address_line2?: string };
+  building?: {
+    id?: number;
+    name?: string;
+    city?: string;
+    state?: string;
+    address_line1?: string;
+    address_line2?: string;
+  };
   building_id?: number;
   type?: string;
   yearly_price?: number;
   status?: string;
+  is_public?: boolean;
   description?: string;
   amenities?: string[];
   beds?: number;
@@ -207,6 +220,8 @@ export interface PublicApartment {
   type?: string;
   yearly_price?: number;
   status?: string;
+  description?: string;
+  amenities?: string[];
   beds?: number;
   bedrooms?: number;
   baths?: number;
@@ -217,10 +232,31 @@ export interface PublicApartment {
   building?: {
     id?: number;
     name?: string;
+    address_line1?: string;
+    address_line2?: string;
     city?: string;
     state?: string;
     country?: string;
+    contact_email?: string | null;
+    contact_phone?: string | null;
   };
+  reviews?: Array<Review & { user?: { name?: string } }>;
+}
+
+export interface PublicBuilding {
+  id: number;
+  name: string;
+  address_line1?: string;
+  address_line2?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  description?: string;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  public_apartments_count?: number;
+  apartments?: PublicApartment[];
+  media?: Media[];
 }
 
 export interface PublicBuildingForSale {

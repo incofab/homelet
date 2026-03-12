@@ -25,6 +25,8 @@ test('platform admin can create buildings directly', function () {
         'state' => 'TX',
         'country' => 'USA',
         'description' => 'Primary building',
+        'contact_email' => 'leasing@mainplaza.test',
+        'contact_phone' => '555-1234',
     ];
 
     $createResponse = $this->withToken(tokenFor($admin))
@@ -32,7 +34,9 @@ test('platform admin can create buildings directly', function () {
 
     $createResponse->assertStatus(201)
         ->assertJsonPath('data.building.name', 'Main Plaza')
-        ->assertJsonPath('data.building.owner_id', $owner->id);
+        ->assertJsonPath('data.building.owner_id', $owner->id)
+        ->assertJsonPath('data.building.contact_email', 'leasing@mainplaza.test')
+        ->assertJsonPath('data.building.contact_phone', '555-1234');
 });
 
 test('owner cannot create buildings directly', function () {
@@ -64,12 +68,18 @@ test('owner can update and delete owned building', function () {
     $updateResponse = $this->withToken(tokenFor($owner))
         ->putJson(
             "/api/buildings/{$building->id}",
-            ['name' => 'Updated Plaza']
+            [
+                'name' => 'Updated Plaza',
+                'contact_email' => 'hello@updatedplaza.test',
+                'contact_phone' => '555-8888',
+            ]
         );
 
     $updateResponse
         ->assertStatus(200)
-        ->assertJsonPath('data.building.name', 'Updated Plaza');
+        ->assertJsonPath('data.building.name', 'Updated Plaza')
+        ->assertJsonPath('data.building.contact_email', 'hello@updatedplaza.test')
+        ->assertJsonPath('data.building.contact_phone', '555-8888');
 
     $deleteResponse = $this->withToken(tokenFor($owner))
         ->deleteJson("/api/buildings/{$building->id}");

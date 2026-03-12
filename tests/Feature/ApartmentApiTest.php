@@ -26,7 +26,16 @@ test('owner can create and list apartments for a building', function () {
 
     $createResponse
         ->assertStatus(201)
-        ->assertJsonPath('data.apartment.unit_code', 'A1');
+        ->assertJsonPath('data.apartment.unit_code', 'A1')
+        ->assertJsonPath('data.apartment.status', 'vacant')
+        ->assertJsonPath('data.apartment.is_public', true);
+
+    $this->assertDatabaseHas('apartments', [
+        'building_id' => $building->id,
+        'unit_code' => 'A1',
+        'status' => 'vacant',
+        'is_public' => true,
+    ]);
 
     Sanctum::actingAs($owner);
     $listResponse = $this->getJson("/api/buildings/{$building->id}/apartments");
@@ -50,8 +59,23 @@ test('manager can update apartment but tenant cannot', function () {
     ]);
 
     Sanctum::actingAs($manager);
-    $managerResponse = $this->putJson("/api/apartments/{$apartment->id}", ['unit_code' => 'B2']);
-    $managerResponse->assertStatus(200);
+    $managerResponse = $this->putJson("/api/apartments/{$apartment->id}", [
+        'unit_code' => 'B2',
+        'status' => 'maintenance',
+        'is_public' => false,
+    ]);
+    $managerResponse
+        ->assertStatus(200)
+        ->assertJsonPath('data.apartment.unit_code', 'B2')
+        ->assertJsonPath('data.apartment.status', 'maintenance')
+        ->assertJsonPath('data.apartment.is_public', false);
+
+    $this->assertDatabaseHas('apartments', [
+        'id' => $apartment->id,
+        'unit_code' => 'B2',
+        'status' => 'maintenance',
+        'is_public' => false,
+    ]);
 
     Sanctum::actingAs($tenant);
     $tenantResponse = $this->putJson("/api/apartments/{$apartment->id}", ['unit_code' => 'B3']);

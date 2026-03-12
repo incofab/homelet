@@ -173,6 +173,8 @@ Request body:
   "state": "Lagos",
   "country": "NG",
   "description": "Modern apartments",
+  "contact_email": "leasing@sunrise.com",
+  "contact_phone": "+2348012345678",
   "for_sale": false,
   "sale_price": null
 }
@@ -249,6 +251,8 @@ Request body:
 {
   "name": "Sunrise Apartments",
   "description": "Renovated units",
+  "contact_email": "leasing@sunrise.com",
+  "contact_phone": "+2348012345678",
   "for_sale": true,
   "sale_price": 120000000
 }
@@ -494,6 +498,8 @@ Response:
 ### POST `/api/buildings/{building}/apartments`
 Create an apartment in a building.
 
+Use `status` and `is_public` to control availability and whether the unit appears in public listings at creation time.
+
 Authorization:
 - Platform admin, landlord, or manager.
 
@@ -568,8 +574,31 @@ Response:
 ```
 Model references: `Apartment`.
 
+### GET `/api/public/apartments/{apartment}`
+Get a public apartment with embedded building contact details, media, and reviews.
+
+Authorization:
+- Public.
+
+Request: none
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Public apartment loaded.",
+  "data": {
+    "apartment": "Apartment"
+  },
+  "errors": null
+}
+```
+Model references: `Apartment`.
+
 ### PUT `/api/apartments/{apartment}`
 Update apartment details.
+
+This endpoint supports admin edit screens for updating availability and public visibility without recreating the apartment.
 
 Authorization:
 - Platform admin, landlord, or manager.
@@ -799,7 +828,7 @@ Model references: `PaymentSummary[]`.
 Public routes are throttled via `throttle:60,1`.
 
 ### GET `/api/public/apartments`
-List vacant public apartments with building summary.
+List vacant public apartments with building summary and building contact details.
 
 Request: none
 
@@ -816,6 +845,42 @@ Response:
 }
 ```
 Model references: `ApartmentSummary[]`, `BuildingSummary`.
+
+### GET `/api/public/buildings`
+List buildings that have at least one public apartment.
+
+Request: none
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Public buildings loaded.",
+  "data": {
+    "buildings": "BuildingSummary[]"
+  },
+  "errors": null
+}
+```
+Model references: `BuildingSummary[]`.
+
+### GET `/api/public/buildings/{building}`
+Get a public building with contact details and its public apartments.
+
+Request: none
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Public building loaded.",
+  "data": {
+    "building": "Building"
+  },
+  "errors": null
+}
+```
+Model references: `Building`, `ApartmentSummary[]`.
 
 ### GET `/api/public/buildings-for-sale`
 List buildings marked for sale with their prices.

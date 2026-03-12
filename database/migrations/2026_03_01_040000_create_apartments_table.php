@@ -17,7 +17,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('floor')->nullable();
             $table->string('status')->default('vacant'); // , ['vacant', 'occupied', 'maintenance'])->default('vacant');
-            $table->boolean('is_public')->default(false);
+            $table->boolean('is_public')->default(true);
             $table->json('amenities')->nullable();
             $table->timestamps();
         });

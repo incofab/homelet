@@ -22,6 +22,8 @@ class StoreBuildingRequest extends ApiRequest
             'state' => ['required', 'string', 'max:255'],
             'country' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'contact_email' => ['nullable', 'email', 'max:255'],
+            'contact_phone' => ['nullable', 'string', 'max:50'],
             'for_sale' => ['nullable', 'boolean'],
             'sale_price' => ['nullable', 'integer', 'min:0', 'required_if:for_sale,1,true'],
         ];

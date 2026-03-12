@@ -25,6 +25,8 @@ class Building extends Model
         'state',
         'country',
         'description',
+        'contact_email',
+        'contact_phone',
         'for_sale',
         'sale_price',
     ];

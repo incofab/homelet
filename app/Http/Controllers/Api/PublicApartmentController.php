@@ -10,19 +10,29 @@ class PublicApartmentController extends Controller
 {
     public function index(): JsonResponse
     {
-        $apartments = paginateFromRequest(Apartment::query()
-            ->where('status', 'vacant')
-            ->where('is_public', true)
-            ->with(['building:id,name,address_line1,address_line2,city,state,country', 'media'])
-            ->latest('id'));
+        $apartments = paginateFromRequest(
+            Apartment::query()
+                ->where('status', 'vacant')
+                ->where('is_public', true)
+                ->with(['building:id,name,address_line1,address_line2,city,state,country,contact_email,contact_phone', 'media'])
+                ->latest('id')
+        );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Public apartments loaded.',
-            'data' => [
-                'apartments' => $apartments,
-            ],
-            'errors' => null,
+        return $this->success('Public apartments loaded.', [
+            'apartments' => $apartments,
+        ]);
+    }
+
+    public function show(Apartment $apartment): JsonResponse
+    {
+        abort_unless($apartment->is_public, 404);
+
+        return $this->success('Public apartment loaded.', [
+            'apartment' => $apartment->load([
+                'building:id,name,address_line1,address_line2,city,state,country,contact_email,contact_phone',
+                'media',
+                'reviews.user:id,name',
+            ]),
         ]);
     }
 }
