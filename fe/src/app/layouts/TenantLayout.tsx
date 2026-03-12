@@ -4,8 +4,11 @@ import {
   DollarSign,
   Wrench,
   MessageSquare,
+  LogOut,
 } from 'lucide-react';
 import { routes } from '../lib/urls';
+import { Button } from '../components/Button';
+import { useAuthSession } from '../hooks/useAuthSession';
 
 const navigation = [
   { name: 'Dashboard', href: routes.tenantRoot, icon: LayoutDashboard },
@@ -16,13 +19,18 @@ const navigation = [
 
 export function TenantLayout() {
   const location = useLocation();
+  const { logout, loggingOut } = useAuthSession();
 
   return (
     <div className="min-h-screen bg-background pb-20 lg:pb-0">
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-10">
-        <div className="px-4 lg:px-8 py-4">
+        <div className="px-4 lg:px-8 py-4 flex items-center justify-between gap-4">
           <h1 className="text-xl text-primary">Tenanta</h1>
+          <Button variant="ghost" size="sm" onClick={logout}>
+            <LogOut size={16} className="mr-2" />
+            {loggingOut ? 'Logging out...' : 'Logout'}
+          </Button>
         </div>
       </header>
 

@@ -45,9 +45,7 @@ export function EditApartment() {
       errorMessage={status.type === 'error' ? status.message : undefined}
       initialValues={{
         unit: apartment?.unit_code ?? '',
-        monthlyRent: apartment?.yearly_price
-          ? String(Math.round(apartment.yearly_price / 12))
-          : '',
+        yearlyRent: apartment?.yearly_price ? String(apartment.yearly_price) : '',
         description: apartment?.description ?? '',
         amenities: (apartment?.amenities ?? []).join('\n'),
         status:

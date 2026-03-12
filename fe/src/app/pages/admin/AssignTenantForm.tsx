@@ -1,8 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import { UserPlus } from 'lucide-react';
+import { CheckCircle2, LoaderCircle, UserPlus } from 'lucide-react';
 import { Button } from '../../components/Button';
-import { apiPost } from '../../lib/api';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../../components/ui/dialog';
+import { ApiError, apiPost } from '../../lib/api';
 import { api } from '../../lib/urls';
 
 type AssignableApartment = {
@@ -12,11 +19,69 @@ type AssignableApartment = {
   status?: string;
 };
 
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive';
+
 type AssignTenantFormProps = {
   apartments: AssignableApartment[];
   defaultApartmentId?: number;
   onSuccess?: (apartmentId: number) => Promise<void> | void;
   submitLabel?: string;
+  triggerLabel?: string;
+  triggerVariant?: ButtonVariant;
+  triggerClassName?: string;
+};
+
+type TenantLookupResponse = {
+  exists: boolean;
+  requires_name: boolean;
+  tenant: {
+    id: number;
+    name: string;
+    email: string | null;
+    phone: string | null;
+  } | null;
+};
+
+type LookupState =
+  | { type: 'idle' }
+  | { type: 'loading' }
+  | {
+      type: 'success';
+      result: TenantLookupResponse;
+      checkedEmail: string;
+      checkedPhone: string;
+    }
+  | { type: 'error'; message: string };
+
+type ConfirmedLookup = {
+  kind: 'email' | 'phone';
+  result: TenantLookupResponse;
+  email: string;
+  phone: string;
+};
+
+const normalizeLookupEmail = (value: string) => value.trim().toLowerCase();
+const normalizeLookupPhone = (value: string) => value.replace(/\D/g, '');
+
+const parseLookupIdentifier = (value: string) => {
+  const trimmed = value.trim();
+  const isEmail = trimmed.includes('@');
+
+  return {
+    kind: isEmail ? ('email' as const) : ('phone' as const),
+    email: isEmail ? normalizeLookupEmail(trimmed) : '',
+    phone: isEmail ? '' : normalizeLookupPhone(trimmed),
+  };
+};
+
+const isLookupReady = (value: string) => {
+  const parsed = parseLookupIdentifier(value);
+
+  if (parsed.kind === 'email') {
+    return parsed.email.includes('@');
+  }
+
+  return parsed.phone.length >= 7;
 };
 
 export function AssignTenantForm({
@@ -24,10 +89,21 @@ export function AssignTenantForm({
   defaultApartmentId,
   onSuccess,
   submitLabel = 'Add Tenant',
+  triggerLabel = 'Assign Tenant',
+  triggerVariant = 'primary',
+  triggerClassName = 'w-full',
 }: AssignTenantFormProps) {
   const [selectedApartmentId, setSelectedApartmentId] = useState('');
+  const [lookupDialogOpen, setLookupDialogOpen] = useState(false);
+  const [lookupIdentifier, setLookupIdentifier] = useState('');
+  const [lookupState, setLookupState] = useState<LookupState>({ type: 'idle' });
+  const [confirmedLookup, setConfirmedLookup] = useState<ConfirmedLookup | null>(
+    null,
+  );
   const [tenantName, setTenantName] = useState('');
   const [tenantEmail, setTenantEmail] = useState('');
+  const [tenantPhone, setTenantPhone] = useState('');
+  const [confirmExistingTenant, setConfirmExistingTenant] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [rentAmount, setRentAmount] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -73,25 +149,126 @@ export function AssignTenantForm({
     );
   }, [selectedApartmentId, availableApartments]);
 
+  useEffect(() => {
+    if (!lookupDialogOpen || !selectedApartmentId) {
+      return;
+    }
+
+    if (!isLookupReady(lookupIdentifier)) {
+      setLookupState({ type: 'idle' });
+      return;
+    }
+
+    const parsed = parseLookupIdentifier(lookupIdentifier);
+    const timeoutId = window.setTimeout(async () => {
+      setLookupState({ type: 'loading' });
+
+      try {
+        const result = await apiPost<TenantLookupResponse>(
+          api.apartmentAssignTenantLookup(selectedApartmentId),
+          {
+            tenant_email: parsed.email || null,
+            tenant_phone: parsed.phone || null,
+          },
+        );
+
+        setLookupState({
+          type: 'success',
+          result,
+          checkedEmail: parsed.email,
+          checkedPhone: parsed.phone,
+        });
+      } catch (error) {
+        setLookupState({
+          type: 'error',
+          message:
+            error instanceof ApiError
+              ? error.message
+              : 'Unable to confirm the tenant details.',
+        });
+      }
+    }, 400);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [lookupDialogOpen, lookupIdentifier, selectedApartmentId]);
+
+  const parsedLookupIdentifier = parseLookupIdentifier(lookupIdentifier);
+  const lookupMatchesCurrentIdentifier =
+    lookupState.type === 'success' &&
+    lookupState.checkedEmail === parsedLookupIdentifier.email &&
+    lookupState.checkedPhone === parsedLookupIdentifier.phone;
+  const readyLookupResult =
+    lookupState.type === 'success' && lookupMatchesCurrentIdentifier
+      ? lookupState.result
+      : null;
+  const isExistingTenant = confirmedLookup?.result.exists ?? false;
+  const requiresPhoneInput = tenantPhone.trim() === '';
+  const canSubmit =
+    selectedApartmentId !== '' &&
+    startDate !== '' &&
+    !submitting &&
+    (
+      confirmedLookup
+        ? isExistingTenant
+          ? true
+          : tenantName.trim() !== '' && tenantPhone.trim() !== ''
+        : false
+    );
+
+  const resetConfirmedLookup = () => {
+    setConfirmedLookup(null);
+    setTenantName('');
+    setTenantEmail('');
+    setTenantPhone('');
+    setConfirmExistingTenant(false);
+    setStartDate('');
+    setStatus({ type: 'idle' });
+  };
+
+  const handleLookupConfirm = () => {
+    if (!readyLookupResult) return;
+
+    const nextEmail =
+      readyLookupResult.tenant?.email ?? parsedLookupIdentifier.email ?? '';
+    const nextPhone =
+      readyLookupResult.tenant?.phone ?? parsedLookupIdentifier.phone ?? '';
+
+    setConfirmedLookup({
+      kind: parsedLookupIdentifier.kind,
+      result: readyLookupResult,
+      email: nextEmail,
+      phone: nextPhone,
+    });
+    setTenantEmail(nextEmail);
+    setTenantPhone(nextPhone);
+    setTenantName(readyLookupResult.tenant?.name ?? '');
+    setConfirmExistingTenant(readyLookupResult.exists);
+    setLookupDialogOpen(false);
+    setStatus({ type: 'idle' });
+  };
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!selectedApartmentId) return;
+
+    if (!confirmedLookup || !canSubmit) return;
 
     setSubmitting(true);
     setStatus({ type: 'idle' });
 
     try {
       await apiPost(api.apartmentAssignTenant(selectedApartmentId), {
-        tenant_email: tenantEmail.trim(),
-        tenant_name: tenantName.trim() || null,
+        tenant_email:
+          tenantEmail.trim() || confirmedLookup.email.trim() || null,
+        tenant_phone: tenantPhone.trim() || confirmedLookup.phone.trim(),
+        tenant_name: isExistingTenant ? null : tenantName.trim(),
         start_date: startDate,
         rent_amount: rentAmount ? Number(rentAmount) : null,
       });
 
-      setStatus({ type: 'success', message: 'Tenant added successfully.' });
-      setTenantName('');
-      setTenantEmail('');
-      setStartDate('');
+      setStatus({ type: 'success', message: 'Tenant assigned successfully.' });
+      setLookupIdentifier('');
+      setLookupState({ type: 'idle' });
+      resetConfirmedLookup();
 
       if (onSuccess) {
         await onSuccess(Number(selectedApartmentId));
@@ -99,7 +276,7 @@ export function AssignTenantForm({
     } catch (error) {
       setStatus({
         type: 'error',
-        message: (error as Error).message || 'Unable to add tenant.',
+        message: (error as Error).message || 'Unable to assign tenant.',
       });
     } finally {
       setSubmitting(false);
@@ -117,109 +294,275 @@ export function AssignTenantForm({
   }
 
   return (
-    <form
-      className="space-y-4 rounded-lg border border-border p-4"
-      onSubmit={handleSubmit}
-    >
-      <div className="flex items-center gap-2">
-        <UserPlus size={18} className="text-primary" />
-        <h3 className="text-lg">Add Tenant</h3>
-      </div>
-
-      {availableApartments.length > 1 ? (
-        <div>
-          <label
-            className="block text-sm mb-2"
-            htmlFor="assign-tenant-apartment"
-          >
-            Apartment
-          </label>
-          <select
-            id="assign-tenant-apartment"
-            className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            value={selectedApartmentId}
-            onChange={(event) => setSelectedApartmentId(event.target.value)}
-          >
-            {availableApartments.map((apartment) => (
-              <option key={apartment.id} value={apartment.id}>
-                {apartment.unit_code ?? `Apartment ${apartment.id}`}
-              </option>
-            ))}
-          </select>
-        </div>
-      ) : null}
-
-      <div>
-        <label className="block text-sm mb-2" htmlFor="assign-tenant-name">
-          Tenant Name
-        </label>
-        <input
-          id="assign-tenant-name"
-          className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          placeholder="Jane Doe"
-          value={tenantName}
-          onChange={(event) => setTenantName(event.target.value)}
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm mb-2" htmlFor="assign-tenant-email">
-          Tenant Email
-        </label>
-        <input
-          id="assign-tenant-email"
-          type="email"
-          required
-          className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          placeholder="jane@example.com"
-          value={tenantEmail}
-          onChange={(event) => setTenantEmail(event.target.value)}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label
-            className="block text-sm mb-2"
-            htmlFor="assign-tenant-start-date"
-          >
-            Lease Start Date
-          </label>
-          <input
-            id="assign-tenant-start-date"
-            type="date"
-            required
-            className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            value={startDate}
-            onChange={(event) => setStartDate(event.target.value)}
-          />
-        </div>
-        <div>
-          <label className="block text-sm mb-2" htmlFor="assign-tenant-rent">
-            Annual Rent
-          </label>
-          <input
-            id="assign-tenant-rent"
-            type="number"
-            min="0"
-            className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="1200000"
-            value={rentAmount}
-            onChange={(event) => setRentAmount(event.target.value)}
-          />
-        </div>
-      </div>
-
-      {status.type === 'error' ? (
-        <p className="text-sm text-destructive">{status.message}</p>
-      ) : null}
-      {status.type === 'success' ? (
-        <p className="text-sm text-success">{status.message}</p>
-      ) : null}
-
-      <Button type="submit" disabled={submitting}>
-        {submitting ? 'Adding...' : submitLabel}
+    <div className="space-y-4">
+      <Button
+        variant={triggerVariant}
+        className={triggerClassName}
+        onClick={() => setLookupDialogOpen(true)}
+      >
+        <UserPlus size={18} className="mr-2" />
+        {confirmedLookup ? 'Change Tenant' : triggerLabel}
       </Button>
-    </form>
+
+      <Dialog open={lookupDialogOpen} onOpenChange={setLookupDialogOpen}>
+        {lookupDialogOpen ? (
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Find tenant</DialogTitle>
+              <DialogDescription>
+                Enter a phone number or email address to check whether this
+                tenant already exists.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm mb-2" htmlFor="tenant-lookup">
+                  Phone or email
+                </label>
+                <div className="relative">
+                  <input
+                    id="tenant-lookup"
+                    className="w-full rounded-lg border border-border bg-input-background px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="08012345678 or jane@example.com"
+                    value={lookupIdentifier}
+                    onChange={(event) => setLookupIdentifier(event.target.value)}
+                  />
+                  <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                    {lookupState.type === 'loading' ? (
+                      <LoaderCircle
+                        size={16}
+                        className="animate-spin text-muted-foreground"
+                      />
+                    ) : null}
+                    {readyLookupResult?.exists ? (
+                      <CheckCircle2 size={16} className="text-success" />
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              {lookupState.type === 'error' ? (
+                <p className="text-sm text-destructive">{lookupState.message}</p>
+              ) : null}
+
+              {readyLookupResult ? (
+                readyLookupResult.exists ? (
+                  <div className="rounded-lg border border-success/30 bg-success/10 px-3 py-3 text-sm">
+                    <p className="font-medium text-success">Tenant exists</p>
+                    <p className="mt-1">
+                      {readyLookupResult.tenant?.name ?? 'Existing user'}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {(readyLookupResult.tenant?.email ??
+                        parsedLookupIdentifier.email) || 'No email on record'}
+                      {' · '}
+                      {(readyLookupResult.tenant?.phone ??
+                        parsedLookupIdentifier.phone) || 'No phone on record'}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No existing user was found. Click OK to continue and enter
+                    the remaining tenant details.
+                  </p>
+                )
+              ) : null}
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => setLookupDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleLookupConfirm}
+                  disabled={readyLookupResult === null}
+                >
+                  OK
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        ) : null}
+      </Dialog>
+
+      {confirmedLookup ? (
+        <form
+          className="space-y-4 rounded-lg border border-border p-4"
+          onSubmit={handleSubmit}
+        >
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h3 className="text-lg">Assign Tenant</h3>
+              <p className="text-sm text-muted-foreground">
+                {confirmedLookup.email || confirmedLookup.phone}
+              </p>
+            </div>
+            <Button variant="ghost" onClick={resetConfirmedLookup}>
+              Clear
+            </Button>
+          </div>
+
+          {availableApartments.length > 1 ? (
+            <div>
+              <label
+                className="block text-sm mb-2"
+                htmlFor="assign-tenant-apartment"
+              >
+                Apartment
+              </label>
+              <select
+                id="assign-tenant-apartment"
+                className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                value={selectedApartmentId}
+                onChange={(event) => setSelectedApartmentId(event.target.value)}
+              >
+                {availableApartments.map((apartment) => (
+                  <option key={apartment.id} value={apartment.id}>
+                    {apartment.unit_code ?? `Apartment ${apartment.id}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+
+          {isExistingTenant ? (
+            <label className="flex items-start gap-3 rounded-lg border border-success/30 bg-success/10 px-3 py-3 text-sm">
+              <input
+                type="checkbox"
+                checked={confirmExistingTenant}
+                onChange={(event) =>
+                  setConfirmExistingTenant(event.target.checked)
+                }
+                className="mt-1"
+              />
+              <span>
+                Use existing tenant{' '}
+                {confirmedLookup.result.tenant?.name ?? 'record'} with{' '}
+                {tenantEmail || 'no email'} and {tenantPhone || 'no phone'}.
+              </span>
+            </label>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label
+                  className="block text-sm mb-2"
+                  htmlFor="assign-tenant-name"
+                >
+                  Tenant Name
+                </label>
+                <input
+                  id="assign-tenant-name"
+                  required
+                  className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Jane Doe"
+                  value={tenantName}
+                  onChange={(event) => setTenantName(event.target.value)}
+                />
+              </div>
+              <div>
+                <label
+                  className="block text-sm mb-2"
+                  htmlFor="assign-tenant-email"
+                >
+                  Tenant Email (Optional)
+                </label>
+                <input
+                  id="assign-tenant-email"
+                  type="email"
+                  className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="jane@example.com"
+                  value={tenantEmail}
+                  onChange={(event) => setTenantEmail(event.target.value)}
+                />
+              </div>
+              <div>
+                <label
+                  className="block text-sm mb-2"
+                  htmlFor="assign-tenant-phone"
+                >
+                  Tenant Phone
+                </label>
+                <input
+                  id="assign-tenant-phone"
+                  type="tel"
+                  required
+                  className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="08012345678"
+                  value={tenantPhone}
+                  onChange={(event) => setTenantPhone(event.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          {isExistingTenant && requiresPhoneInput ? (
+            <div>
+              <label
+                className="block text-sm mb-2"
+                htmlFor="assign-existing-tenant-phone"
+              >
+                Tenant Phone
+              </label>
+              <input
+                id="assign-existing-tenant-phone"
+                type="tel"
+                required
+                className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="08012345678"
+                value={tenantPhone}
+                onChange={(event) => setTenantPhone(event.target.value)}
+              />
+            </div>
+          ) : null}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                className="block text-sm mb-2"
+                htmlFor="assign-tenant-start-date"
+              >
+                Lease Start Date
+              </label>
+              <input
+                id="assign-tenant-start-date"
+                type="date"
+                required
+                className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                value={startDate}
+                onChange={(event) => setStartDate(event.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-2" htmlFor="assign-tenant-rent">
+                Annual Rent
+              </label>
+              <input
+                id="assign-tenant-rent"
+                type="number"
+                min="0"
+                className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="1200000"
+                value={rentAmount}
+                onChange={(event) => setRentAmount(event.target.value)}
+              />
+            </div>
+          </div>
+
+          {status.type === 'error' ? (
+            <p className="text-sm text-destructive">{status.message}</p>
+          ) : null}
+          {status.type === 'success' ? (
+            <p className="text-sm text-success">{status.message}</p>
+          ) : null}
+
+          <Button type="submit" disabled={!canSubmit}>
+            {submitting ? 'Assigning...' : submitLabel}
+          </Button>
+        </form>
+      ) : null}
+    </div>
   );
 }

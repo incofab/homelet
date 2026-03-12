@@ -29,7 +29,6 @@ import { AssignTenantForm } from './AssignTenantForm';
 
 export function BuildingDetail() {
   const { id } = useParams();
-  const [showAddTenantForm, setShowAddTenantForm] = useState(false);
   const selectBuilding = useCallback(
     (data: unknown) => extractRecord<Building>(data, 'building'),
     [],
@@ -189,7 +188,7 @@ export function BuildingDetail() {
                         <div className="text-right">
                           <p className="mb-2">
                             {apt.yearly_price
-                              ? `${formatMoney(apt.yearly_price / 12)}/mo`
+                              ? `${formatMoney(apt.yearly_price)}/year`
                               : '—'}
                           </p>
                           <StatusBadge
@@ -257,34 +256,24 @@ export function BuildingDetail() {
                   Add Apartment
                 </Button>
               </Link>
-              <Button
-                variant="secondary"
-                className="w-full"
-                disabled={vacantApartments.length === 0}
-                onClick={() => setShowAddTenantForm((prev) => !prev)}
-              >
-                <Plus size={18} className="mr-2" />
-                {showAddTenantForm ? 'Hide Tenant Form' : 'Add Tenant'}
-              </Button>
               <Button variant="secondary" className="w-full">
                 <DollarSign size={18} className="mr-2" />
                 {building?.for_sale
                   ? `For Sale (${formatMoney(building.sale_price ?? 0)})`
                   : 'Mark For Sale'}
               </Button>
-              {showAddTenantForm ? (
-                <AssignTenantForm
-                  apartments={vacantApartments}
-                  submitLabel="Add Tenant to Building"
-                  onSuccess={async () => {
-                    setShowAddTenantForm(false);
-                    await Promise.all([
-                      buildingQuery.refetch(),
-                      apartmentsQuery.refetch(),
-                    ]);
-                  }}
-                />
-              ) : null}
+              <AssignTenantForm
+                apartments={vacantApartments}
+                triggerLabel="Add Tenant"
+                triggerVariant="secondary"
+                submitLabel="Add Tenant to Building"
+                onSuccess={async () => {
+                  await Promise.all([
+                    buildingQuery.refetch(),
+                    apartmentsQuery.refetch(),
+                  ]);
+                }}
+              />
             </CardContent>
           </Card>
         </div>

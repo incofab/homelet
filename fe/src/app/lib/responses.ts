@@ -1,8 +1,27 @@
 import type { Building, BuildingRegistrationRequest, Tenant, UserProfile } from "./models";
 
+export interface DashboardContext {
+  primary_dashboard: "admin" | "tenant" | "home";
+  is_platform_admin: boolean;
+  is_building_user: boolean;
+  has_active_lease: boolean;
+  available_dashboards: Array<"admin" | "tenant" | "home">;
+}
+
 export interface AuthResponse {
   token: string;
-  dashboard?: "admin" | "tenant";
+  dashboard?: "admin" | "tenant" | "home";
+  dashboard_context?: DashboardContext;
+  impersonation?: {
+    impersonator?: {
+      id: number;
+      name: string;
+    };
+    impersonated_user?: {
+      id: number;
+      name: string;
+    };
+  };
   user: UserProfile & { email?: string; role?: string };
 }
 
@@ -46,6 +65,7 @@ export interface TenantDashboardResponse {
   active_lease?: {
     id: number;
     status: string;
+    rent_amount?: number;
     apartment_id?: number;
     start_date?: string;
     end_date?: string;

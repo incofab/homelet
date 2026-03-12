@@ -36,7 +36,7 @@ describe('CreateApartment', () => {
       screen.getByPlaceholderText('e.g., Unit 302'),
       'Unit 302',
     );
-    await userEvent.type(screen.getByPlaceholderText('2500'), '2500');
+    await userEvent.type(screen.getByPlaceholderText('1200000'), '1200000');
     await userEvent.selectOptions(
       screen.getByLabelText('Status'),
       'maintenance',
@@ -62,7 +62,7 @@ describe('CreateApartment', () => {
       : null;
     expect(requestBody).toMatchObject({
       unit_code: 'Unit 302',
-      yearly_price: 30000,
+      yearly_price: 1200000,
       status: 'maintenance',
       is_public: true,
     });

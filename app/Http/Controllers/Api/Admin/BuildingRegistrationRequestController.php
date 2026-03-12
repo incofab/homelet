@@ -62,7 +62,13 @@ class BuildingRegistrationRequestController extends Controller
             $owner = $buildingRegistrationRequest->user;
 
             if (! $owner) {
-                $owner = User::where('email', $buildingRegistrationRequest->owner_email)->first();
+                $owner = User::query()
+                    ->where('phone', $buildingRegistrationRequest->owner_phone)
+                    ->when(
+                        $buildingRegistrationRequest->owner_email,
+                        fn ($query) => $query->orWhere('email', $buildingRegistrationRequest->owner_email)
+                    )
+                    ->first();
 
                 if (! $owner) {
                     $owner = User::create([
@@ -97,9 +103,11 @@ class BuildingRegistrationRequestController extends Controller
             $buildingRegistrationRequest->save();
         });
 
-        Mail::to($owner->email)->send(new BuildingRegistrationApprovedMail(
-            $buildingRegistrationRequest->fresh(['building', 'user'])
-        ));
+        if ($owner->email) {
+            Mail::to($owner->email)->send(new BuildingRegistrationApprovedMail(
+                $buildingRegistrationRequest->fresh(['building', 'user'])
+            ));
+        }
 
         return $this->success('Building registration request approved.', [
             'request' => $buildingRegistrationRequest->refresh(),

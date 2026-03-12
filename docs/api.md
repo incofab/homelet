@@ -57,7 +57,14 @@ Response:
   "message": "Registration successful.",
   "data": {
     "token": "string",
-    "dashboard": "admin",
+    "dashboard": "home",
+    "dashboard_context": {
+      "primary_dashboard": "home",
+      "is_platform_admin": false,
+      "is_building_user": false,
+      "has_active_lease": false,
+      "available_dashboards": ["home"]
+    },
     "user": "User"
   },
   "errors": null
@@ -65,7 +72,15 @@ Response:
 ```
 Notes:
 - Every newly registered account is automatically assigned the platform `user` role.
-- `dashboard` is the recommended frontend landing area (`admin` or `tenant`).
+- `dashboard` is the recommended frontend landing area (`admin`, `tenant`, or `home`).
+- Dashboard selection priority is:
+  1. Platform admin -> `admin`
+  2. Building user (`landlord`, `manager`, `caretaker`, or building owner) -> `admin`
+  3. User with an active lease -> `tenant`
+  4. Everyone else -> `home`
+- If a building user also has an active lease, `dashboard` remains `admin` and `dashboard_context.available_dashboards` includes both `admin` and `tenant`.
+- `phone` is required and normalized to digits only.
+- `email` is optional, but unique when supplied.
 Model references: `User`.
 
 ### POST `/api/auth/login`
@@ -74,7 +89,7 @@ Login and receive an auth token.
 Request body:
 ```json
 {
-  "email": "jane@example.com",
+  "identifier": "jane@example.com",
   "password": "secret"
 }
 ```
@@ -88,6 +103,13 @@ Response:
   "data": {
     "token": "string",
     "dashboard": "admin",
+    "dashboard_context": {
+      "primary_dashboard": "admin",
+      "is_platform_admin": false,
+      "is_building_user": true,
+      "has_active_lease": true,
+      "available_dashboards": ["admin", "tenant"]
+    },
     "user": "User"
   },
   "errors": null
@@ -107,6 +129,13 @@ Response:
   "message": "Profile loaded.",
   "data": {
     "dashboard": "admin",
+    "dashboard_context": {
+      "primary_dashboard": "admin",
+      "is_platform_admin": false,
+      "is_building_user": true,
+      "has_active_lease": true,
+      "available_dashboards": ["admin", "tenant"]
+    },
     "user": "User"
   },
   "errors": null
@@ -128,6 +157,8 @@ Response:
   "errors": null
 }
 ```
+Notes:
+- `identifier` accepts either an email address or a phone number.
 
 ## Users
 
@@ -152,6 +183,53 @@ Response:
 }
 ```
 Model references: `User[]`.
+
+### POST `/api/users/{user}/impersonate`
+Create an impersonation token for a non-admin user.
+
+Authorization:
+- Platform admin only.
+
+Path params:
+- `user` target user id.
+
+Rules:
+- The target user must not be a platform admin.
+- Admins can only impersonate other users, not themselves.
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Impersonation started.",
+  "data": {
+    "token": "string",
+    "dashboard": "tenant",
+    "dashboard_context": {
+      "primary_dashboard": "tenant",
+      "is_platform_admin": false,
+      "is_building_user": false,
+      "has_active_lease": true,
+      "available_dashboards": ["tenant"]
+    },
+    "user": "User",
+    "impersonation": {
+      "impersonator": {
+        "id": 1,
+        "name": "Platform Admin"
+      },
+      "impersonated_user": {
+        "id": 24,
+        "name": "Jane Doe"
+      }
+    }
+  },
+  "errors": null
+}
+```
+Notes:
+- The frontend should preserve the original admin token locally so `Stop Impersonate` can restore the admin session.
+- The returned `dashboard` should be used for the first redirect after impersonation.
 
 ## Buildings
 
@@ -647,6 +725,46 @@ Response:
 
 ## Assign Tenant + Lease
 
+### POST `/api/apartments/{apartment}/assign-tenant/lookup`
+Confirm whether the entered tenant phone/email already belongs to an existing user before assignment.
+
+Authorization:
+- Owner/admin/manager only.
+
+Behavior:
+- Uses the same phone/email matching rules as final tenant assignment.
+- Returns the matched user when one exists.
+- Returns validation errors if the provided phone and email belong to different users.
+
+Request body:
+```json
+{
+  "tenant_email": "tenant@example.com",
+  "tenant_phone": "08012345678"
+}
+```
+Model references: `LookupTenantRequest`.
+
+Notes:
+- At least one of `tenant_phone` or `tenant_email` is required.
+- `tenant_phone` is normalized to digits only when provided.
+- `tenant_email` is normalized to lowercase when provided.
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Tenant lookup completed.",
+  "data": {
+    "exists": true,
+    "requires_name": false,
+    "tenant": "User"
+  },
+  "errors": null
+}
+```
+Model references: `User`.
+
 ### POST `/api/apartments/{apartment}/assign-tenant`
 Assign a tenant to an apartment and create an active lease.
 
@@ -658,11 +776,13 @@ Behavior:
 - Creates active lease with `end_date = start_date + 1 year`.
 - Sets apartment status to `occupied`.
 - Entire operation is transactional.
+- Rejects mismatched phone/email combinations that point to different users.
 
 Request body:
 ```json
 {
   "tenant_email": "tenant@example.com",
+  "tenant_phone": "08012345678",
   "tenant_name": "Tenant Name",
   "start_date": "2026-03-01",
   "rent_amount": 1200000
@@ -671,7 +791,10 @@ Request body:
 Model references: `AssignTenantRequest`.
 
 Notes:
-- `rent_amount` defaults to apartment `yearly_price` when omitted.
+- `tenant_phone` is required and normalized to digits only.
+- `tenant_email` is optional.
+- `tenant_name` is required when the phone/email do not match an existing user.
+- `rent_amount` is the annual rent amount and defaults to apartment `yearly_price` when omitted.
 
 Response:
 ```json
@@ -795,7 +918,25 @@ Response:
   "success": true,
   "message": "Payments loaded.",
   "data": {
-    "payments": "PaymentSummary[]"
+    "payments": [
+      {
+        "id": 10,
+        "lease_id": 1,
+        "amount": 150000,
+        "payment_method": "online",
+        "method": "online",
+        "payment_date": "2026-03-01",
+        "due_date": "2026-03-01",
+        "status": "paid",
+        "tenant": {
+          "name": "Jane Doe"
+        },
+        "apartment": {
+          "id": 4,
+          "unit_code": "A-102"
+        }
+      }
+    ]
   },
   "errors": null
 }
@@ -816,7 +957,25 @@ Response:
   "success": true,
   "message": "Payments loaded.",
   "data": {
-    "payments": "PaymentSummary[]"
+    "payments": [
+      {
+        "id": 10,
+        "lease_id": 1,
+        "amount": 150000,
+        "payment_method": "online",
+        "method": "online",
+        "payment_date": "2026-03-01",
+        "due_date": "2026-03-01",
+        "status": "paid",
+        "tenant": {
+          "name": "Jane Doe"
+        },
+        "apartment": {
+          "id": 4,
+          "unit_code": "A-102"
+        }
+      }
+    ]
   },
   "errors": null
 }
@@ -1525,12 +1684,19 @@ Response:
   "success": true,
   "message": "Tenant dashboard loaded.",
   "data": {
-    "metrics": "TenantDashboardMetrics"
+    "active_lease": "Lease",
+    "days_to_expiry": 120,
+    "last_payment": "Payment",
+    "payment_summary": {
+      "paid": 3,
+      "pending": 1,
+      "failed": 0
+    }
   },
   "errors": null
 }
 ```
-Model references: `TenantDashboardMetrics`.
+Model references: `Lease`, `Payment`.
 
 Alias:
 - GET `/api/tenant/dashboard`

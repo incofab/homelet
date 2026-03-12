@@ -10,6 +10,12 @@ class Payment extends Model
 {
     use HasFactory;
 
+    protected $appends = [
+        'method',
+        'due_date',
+        'apartment',
+    ];
+
     protected $fillable = [
         'lease_id',
         'tenant_id',
@@ -35,5 +41,30 @@ class Payment extends Model
     public function tenant()
     {
         return $this->belongsTo(User::class, 'tenant_id');
+    }
+
+    public function getMethodAttribute(): ?string
+    {
+        return $this->payment_method;
+    }
+
+    public function getDueDateAttribute(): ?string
+    {
+        return data_get($this->metadata, 'due_date')
+            ?? optional($this->payment_date)->toDateString();
+    }
+
+    public function getApartmentAttribute(): ?array
+    {
+        $apartment = $this->lease?->apartment;
+
+        if (! $apartment) {
+            return null;
+        }
+
+        return [
+            'id' => $apartment->id,
+            'unit_code' => $apartment->unit_code,
+        ];
     }
 }

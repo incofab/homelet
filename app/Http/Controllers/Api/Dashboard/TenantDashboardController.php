@@ -20,6 +20,7 @@ class TenantDashboardController extends Controller
         }
 
         $activeLease = Lease::query()
+            ->with('apartment.building')
             ->where('tenant_id', $user->id)
             ->where('status', 'active')
             ->latest('id')

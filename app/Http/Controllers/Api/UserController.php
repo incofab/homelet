@@ -36,4 +36,46 @@ class UserController extends Controller
             'users' => $users,
         ]);
     }
+
+    public function impersonate(Request $request, User $user): JsonResponse
+    {
+        $actor = $request->user('sanctum');
+
+        if (! $actor || ! $actor->isPlatformAdmin()) {
+            abort(403);
+        }
+
+        if ($actor->is($user) || $user->isPlatformAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Impersonation is only allowed for other non-admin users.',
+                'data' => null,
+                'errors' => [
+                    'user' => ['Impersonation is only allowed for other non-admin users.'],
+                ],
+            ], 422);
+        }
+
+        $token = $user->createToken(
+            sprintf('impersonation:%d:%d', $actor->id, $user->id),
+            ['impersonated', 'impersonator:'.$actor->id]
+        )->plainTextToken;
+
+        return $this->success('Impersonation started.', [
+            'user' => $user,
+            'dashboard' => $user->dashboard,
+            'dashboard_context' => $user->dashboardContext(),
+            'token' => $token,
+            'impersonation' => [
+                'impersonator' => [
+                    'id' => $actor->id,
+                    'name' => $actor->name,
+                ],
+                'impersonated_user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                ],
+            ],
+        ]);
+    }
 }

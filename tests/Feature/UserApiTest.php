@@ -53,3 +53,51 @@ test('non admin cannot list users', function () {
 
     $response->assertStatus(403);
 });
+
+test('platform admin can impersonate a non admin user', function () {
+    $admin = assignPlatformAdmin(User::factory()->create());
+    $user = User::factory()->create([
+        'name' => 'Jane Doe',
+    ]);
+
+    Sanctum::actingAs($admin);
+
+    $response = $this->postJson("/api/users/{$user->id}/impersonate");
+
+    $response->assertOk()
+        ->assertJsonPath('data.user.id', $user->id)
+        ->assertJsonPath('data.dashboard', 'home')
+        ->assertJsonPath('data.impersonation.impersonator.id', $admin->id)
+        ->assertJsonPath('data.impersonation.impersonated_user.id', $user->id)
+        ->assertJsonStructure([
+            'success',
+            'message',
+            'data' => ['user', 'dashboard', 'dashboard_context', 'token', 'impersonation'],
+            'errors',
+        ]);
+
+    $this->assertDatabaseCount('personal_access_tokens', 1);
+});
+
+test('platform admin cannot impersonate another admin', function () {
+    $admin = assignPlatformAdmin(User::factory()->create());
+    $otherAdmin = assignPlatformAdmin(User::factory()->create());
+
+    Sanctum::actingAs($admin);
+
+    $response = $this->postJson("/api/users/{$otherAdmin->id}/impersonate");
+
+    $response->assertStatus(422)
+        ->assertJsonPath('errors.user.0', 'Impersonation is only allowed for other non-admin users.');
+});
+
+test('non admin cannot impersonate users', function () {
+    $actor = User::factory()->create();
+    $user = User::factory()->create();
+
+    Sanctum::actingAs($actor);
+
+    $response = $this->postJson("/api/users/{$user->id}/impersonate");
+
+    $response->assertStatus(403);
+});

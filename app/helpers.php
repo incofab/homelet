@@ -116,3 +116,12 @@ if (! function_exists('formatWhatsappNumber')) {
         return $phone;
     }
 }
+
+if (! function_exists('normalizePhoneNumber')) {
+    function normalizePhoneNumber(?string $phone): ?string
+    {
+        $normalized = preg_replace('/\D+/', '', $phone ?? '');
+
+        return $normalized !== '' ? $normalized : null;
+    }
+}

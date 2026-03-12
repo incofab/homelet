@@ -112,7 +112,7 @@ export function BuildingDetailPublic() {
                             </p>
                             <p className="text-sm text-muted-foreground">
                               {apartment.yearly_price
-                                ? `${formatMoney(apartment.yearly_price / 12)}/mo`
+                                ? `${formatMoney(apartment.yearly_price)}/year`
                                 : 'Price unavailable'}
                             </p>
                           </div>

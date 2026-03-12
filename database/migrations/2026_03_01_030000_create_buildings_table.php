@@ -18,6 +18,10 @@ return new class extends Migration
             $table->string('state');
             $table->string('country');
             $table->text('description')->nullable();
+
+            $table->boolean('for_sale')->default(false);
+            $table->decimal('sale_price', 15, 2)->nullable();
+
             $table->timestamps();
         });
     }

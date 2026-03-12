@@ -37,4 +37,30 @@ describe("AdminLayout", () => {
       expect(screen.queryByRole("link", { name: "Users" })).not.toBeInTheDocument();
     });
   });
+
+  it("shows a tenant dashboard switch when the landlord also has an active lease", async () => {
+    mockFetch([
+      {
+        match: (url) => url.includes(api.authMe),
+        response: () =>
+          apiSuccess({
+            user: { id: 3, name: "Hybrid User", role: "user" },
+            dashboard_context: {
+              primary_dashboard: "admin",
+              is_platform_admin: false,
+              is_building_user: true,
+              has_active_lease: true,
+              available_dashboards: ["admin", "tenant"],
+            },
+          }),
+      },
+    ]);
+
+    renderWithRoute(<AdminLayout />, { route: "/admin", path: "/admin" });
+
+    expect(await screen.findByRole("link", { name: "Tenant Dashboard" })).toHaveAttribute(
+      "href",
+      "/tenant"
+    );
+  });
 });

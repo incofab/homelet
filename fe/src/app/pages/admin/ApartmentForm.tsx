@@ -8,7 +8,7 @@ import { Input } from '../../components/Input';
 
 type ApartmentFormValues = {
   unit: string;
-  monthlyRent: string;
+  yearlyRent: string;
   description: string;
   amenities: string;
   status: 'vacant' | 'occupied' | 'maintenance';
@@ -41,7 +41,7 @@ type ApartmentFormProps = {
 
 const DEFAULT_VALUES: ApartmentFormValues = {
   unit: '',
-  monthlyRent: '',
+  yearlyRent: '',
   description: '',
   amenities: '',
   status: 'vacant',
@@ -73,8 +73,7 @@ export function ApartmentForm({
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
-    const monthly = Number(formState.monthlyRent || 0);
-    const yearlyPrice = Number.isNaN(monthly) ? 0 : monthly * 12;
+    const yearlyPrice = Number(formState.yearlyRent || 0);
     const amenities = formState.amenities
       .split('\n')
       .map((item) => item.trim())
@@ -122,17 +121,17 @@ export function ApartmentForm({
           />
 
           <Input
-            label="Monthly Rent"
+            label="Yearly Rent"
             type="number"
             min="0"
-            placeholder="2500"
+            placeholder="1200000"
             required
             disabled={loading || submitting}
-            value={formState.monthlyRent}
+            value={formState.yearlyRent}
             onChange={(event) =>
               setFormState((prev) => ({
                 ...prev,
-                monthlyRent: event.target.value,
+                yearlyRent: event.target.value,
               }))
             }
           />

@@ -38,6 +38,17 @@ describe('BuildingDetail', () => {
       },
       {
         match: (url, init) =>
+          url.includes(api.apartmentAssignTenantLookup(9)) &&
+          init?.method === 'POST',
+        response: () =>
+          apiSuccess({
+            exists: false,
+            requires_name: true,
+            tenant: null,
+          }),
+      },
+      {
+        match: (url, init) =>
           url.includes(api.apartmentAssignTenant(9)) && init?.method === 'POST',
         response: () => apiSuccess({ apartment: { id: 9 } }, 201),
       },
@@ -54,12 +65,20 @@ describe('BuildingDetail', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Add Tenant' }));
     await userEvent.type(
+      screen.getByPlaceholderText('08012345678 or jane@example.com'),
+      'mary@example.com',
+    );
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'OK' })).not.toBeDisabled();
+    });
+    await userEvent.click(screen.getByRole('button', { name: 'OK' }));
+    await userEvent.type(
       screen.getByPlaceholderText('Jane Doe'),
       'Mary Tenant',
     );
     await userEvent.type(
-      screen.getByPlaceholderText('jane@example.com'),
-      'mary@example.com',
+      await screen.findByLabelText('Tenant Phone'),
+      '08012345678',
     );
     await userEvent.type(
       screen.getByLabelText('Lease Start Date'),
@@ -70,13 +89,25 @@ describe('BuildingDetail', () => {
     );
 
     await waitFor(() => {
+      const lookupRequest = fetchMock.mock.calls.find(
+        ([url, init]) =>
+          String(url).includes(api.apartmentAssignTenantLookup(9)) &&
+          init?.method === 'POST',
+      );
       const request = fetchMock.mock.calls.find(
         ([url, init]) =>
           String(url).includes(api.apartmentAssignTenant(9)) &&
+          !String(url).includes(api.apartmentAssignTenantLookup(9)) &&
           init?.method === 'POST',
       );
 
+      expect(lookupRequest).toBeTruthy();
       expect(request).toBeTruthy();
+      expect(JSON.parse(String(request?.[1]?.body))).toMatchObject({
+        tenant_email: 'mary@example.com',
+        tenant_phone: '08012345678',
+        tenant_name: 'Mary Tenant',
+      });
     });
   });
 });

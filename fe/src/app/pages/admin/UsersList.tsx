@@ -1,13 +1,17 @@
-import { Search, Shield, Users } from "lucide-react";
-import { useCallback, useDeferredValue, useMemo, useState } from "react";
-import { Navigate } from "react-router";
-import { Card } from "../../components/Card";
-import { EmptyState } from "../../components/EmptyState";
-import { StatusBadge } from "../../components/StatusBadge";
-import { useApiQuery } from "../../hooks/useApiQuery";
-import type { UserProfile } from "../../lib/models";
-import { PaginatedData } from "../../lib/paginatedData";
-import { api, routes } from "../../lib/urls";
+import { Search, Shield, Users } from 'lucide-react';
+import { useCallback, useDeferredValue, useMemo, useState } from 'react';
+import { Navigate, useNavigate } from 'react-router';
+import { Button } from '../../components/Button';
+import { Card } from '../../components/Card';
+import { EmptyState } from '../../components/EmptyState';
+import { StatusBadge } from '../../components/StatusBadge';
+import { useApiQuery } from '../../hooks/useApiQuery';
+import { apiPost, getAuthToken, setAuthToken } from '../../lib/api';
+import { setImpersonationState } from '../../lib/impersonation';
+import type { UserProfile } from '../../lib/models';
+import { PaginatedData } from '../../lib/paginatedData';
+import type { AuthResponse } from '../../lib/responses';
+import { api, routeForDashboard, routes } from '../../lib/urls';
 
 type PlatformUser = UserProfile & {
   email?: string;
@@ -15,28 +19,88 @@ type PlatformUser = UserProfile & {
   role?: string;
 };
 
+type CurrentUser = {
+  id?: number;
+  name?: string;
+  role?: string;
+};
+
 export function UsersList() {
-  const [search, setSearch] = useState("");
+  const navigate = useNavigate();
+  const [search, setSearch] = useState('');
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [impersonatingUserId, setImpersonatingUserId] = useState<number | null>(
+    null,
+  );
   const deferredSearch = useDeferredValue(search.trim());
-  const selectCurrentUser = useCallback((data: { user?: { role?: string } }) => data.user ?? {}, []);
-  const selectUsers = useCallback((data: unknown) => PaginatedData.from<PlatformUser>(data, "users"), []);
-  const meQuery = useApiQuery<{ user?: { role?: string } }, { role?: string }>(api.authMe, {
+  const selectCurrentUser = useCallback(
+    (data: { user?: CurrentUser }) => data.user ?? {},
+    [],
+  );
+  const selectUsers = useCallback(
+    (data: unknown) => PaginatedData.from<PlatformUser>(data, 'users'),
+    [],
+  );
+  const meQuery = useApiQuery<{ user?: CurrentUser }, CurrentUser>(api.authMe, {
     select: selectCurrentUser,
   });
-  const isPlatformAdmin = meQuery.data?.role === "admin";
+  const isPlatformAdmin = meQuery.data?.role === 'admin';
 
   const usersPath = useMemo(() => {
-    const query = deferredSearch ? `?q=${encodeURIComponent(deferredSearch)}` : "";
+    const query = deferredSearch
+      ? `?q=${encodeURIComponent(deferredSearch)}`
+      : '';
     return `${api.users}${query}`;
   }, [deferredSearch]);
 
-  const usersQuery = useApiQuery<unknown, PaginatedData<PlatformUser>>(usersPath, {
-    enabled: isPlatformAdmin,
-    select: selectUsers,
-    deps: [usersPath, isPlatformAdmin],
-  });
+  const usersQuery = useApiQuery<unknown, PaginatedData<PlatformUser>>(
+    usersPath,
+    {
+      enabled: isPlatformAdmin,
+      select: selectUsers,
+      deps: [usersPath, isPlatformAdmin],
+    },
+  );
 
   const users = usersQuery.data?.items ?? [];
+
+  const handleImpersonate = async (user: PlatformUser) => {
+    const originalToken = getAuthToken();
+
+    if (!originalToken) {
+      navigate(routes.login);
+      return;
+    }
+
+    setActionError(null);
+    setImpersonatingUserId(user.id);
+
+    try {
+      const data = await apiPost<AuthResponse>(api.userImpersonate(user.id));
+
+      setImpersonationState({
+        originalToken,
+        impersonatorId:
+          data.impersonation?.impersonator?.id ?? meQuery.data?.id ?? 0,
+        impersonatorName:
+          data.impersonation?.impersonator?.name ??
+          meQuery.data?.name ??
+          'Admin',
+        impersonatedUserId: user.id,
+        impersonatedUserName:
+          data.impersonation?.impersonated_user?.name ?? user.name,
+      });
+      setAuthToken(data.token);
+      // navigate(routeForDashboard(data.dashboard));
+      window.location.href = routeForDashboard(data.dashboard);
+    } catch (error) {
+      setActionError(
+        (error as Error).message || 'Unable to impersonate this user.',
+      );
+    } finally {
+      setImpersonatingUserId(null);
+    }
+  };
 
   if (!meQuery.loading && !isPlatformAdmin) {
     return <Navigate to={routes.adminRoot} replace />;
@@ -46,13 +110,20 @@ export function UsersList() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl mb-2">Users</h1>
-        <p className="text-muted-foreground">Search and review platform user accounts.</p>
+        <p className="text-muted-foreground">
+          Search and review platform user accounts.
+        </p>
       </div>
 
       <Card>
-        <label className="block text-sm mb-2 text-foreground">Search users</label>
+        <label className="block text-sm mb-2 text-foreground">
+          Search users
+        </label>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            size={18}
+          />
           <input
             type="search"
             placeholder="Search by name, email, or phone"
@@ -61,6 +132,9 @@ export function UsersList() {
             className="w-full pl-10 pr-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           />
         </div>
+        {actionError ? (
+          <p className="mt-3 text-sm text-destructive">{actionError}</p>
+        ) : null}
       </Card>
 
       <Card>
@@ -82,11 +156,15 @@ export function UsersList() {
                   <th className="text-left py-3 px-4">User</th>
                   <th className="text-left py-3 px-4">Contact</th>
                   <th className="text-left py-3 px-4">Role</th>
+                  <th className="text-left py-3 px-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map((user) => (
-                  <tr key={user.id} className="border-b border-border last:border-0 hover:bg-muted/50">
+                  <tr
+                    key={user.id}
+                    className="border-b border-border last:border-0 hover:bg-muted/50"
+                  >
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
@@ -94,21 +172,47 @@ export function UsersList() {
                         </div>
                         <div>
                           <p>{user.name}</p>
-                          <p className="text-sm text-muted-foreground">#{user.id}</p>
+                          <p className="text-sm text-muted-foreground">
+                            #{user.id}
+                          </p>
                         </div>
                       </div>
                     </td>
                     <td className="py-3 px-4">
                       <div className="text-sm">
-                        <p className="text-muted-foreground">{user.email ?? "—"}</p>
-                        <p className="text-muted-foreground">{user.phone ?? "—"}</p>
+                        <p className="text-muted-foreground">
+                          {user.email ?? '—'}
+                        </p>
+                        <p className="text-muted-foreground">
+                          {user.phone ?? '—'}
+                        </p>
                       </div>
                     </td>
                     <td className="py-3 px-4">
                       <div className="inline-flex items-center gap-2">
                         <Shield size={14} className="text-primary" />
-                        <StatusBadge status={(user.role ?? "user").toUpperCase()} type="request" />
+                        <StatusBadge
+                          status={(user.role ?? 'user').toUpperCase()}
+                          type="request"
+                        />
                       </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      {user.role === 'admin' ? (
+                        <span className="text-sm text-muted-foreground">
+                          Unavailable
+                        </span>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => handleImpersonate(user)}
+                          disabled={impersonatingUserId === user.id}
+                        >
+                          {impersonatingUserId === user.id
+                            ? 'Impersonating...'
+                            : 'Impersonate'}
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}

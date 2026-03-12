@@ -77,8 +77,8 @@ export function ApartmentDetailPublic() {
   const beds = apartment?.beds ?? apartment?.bedrooms ?? null;
   const baths = apartment?.baths ?? apartment?.bathrooms ?? null;
   const sqft = apartment?.sqft ?? apartment?.square_feet ?? null;
-  const monthlyPrice = apartment?.yearly_price
-    ? apartment.yearly_price / 12
+  const yearlyPrice = apartment?.yearly_price
+    ? apartment.yearly_price
     : null;
 
   const handleInputChange =
@@ -284,8 +284,8 @@ export function ApartmentDetailPublic() {
             <div className="space-y-6">
               <Card className="sticky top-24">
                 <div className="text-3xl text-primary mb-6">
-                  {monthlyPrice
-                    ? `${formatMoney(monthlyPrice)}/mo`
+                  {yearlyPrice
+                    ? `${formatMoney(yearlyPrice)}/year`
                     : 'Price unavailable'}
                 </div>
 

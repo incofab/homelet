@@ -35,7 +35,7 @@ class BuildingRegistrationRequestController extends Controller
             $requestData['owner_phone'] = $user->phone;
         } else {
             $requestData['owner_name'] = $payload['owner_name'];
-            $requestData['owner_email'] = $payload['owner_email'];
+            $requestData['owner_email'] = $payload['owner_email'] ?? null;
             $requestData['owner_phone'] = $payload['owner_phone'];
             $requestData['owner_password'] = Hash::make($payload['owner_password']);
         }

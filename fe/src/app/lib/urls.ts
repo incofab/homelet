@@ -8,6 +8,7 @@ export const routes = {
   registerBuilding: '/register-building',
   buildingPublic: (id: string | number) => `/building/${id}`,
   apartmentPublic: (id: string | number) => `/apartment/${id}`,
+  homeDashboard: '/dashboard',
 
   // Admin routes
   adminRoot: '/admin',
@@ -37,10 +38,25 @@ export const routes = {
   tenantChat: '/tenant/chat',
 };
 
+export type DashboardRouteKey = "admin" | "tenant" | "home";
+
+export const routeForDashboard = (dashboard?: DashboardRouteKey) => {
+  switch (dashboard) {
+    case "tenant":
+      return routes.tenantRoot;
+    case "home":
+      return routes.homeDashboard;
+    case "admin":
+    default:
+      return routes.adminRoot;
+  }
+};
+
 export const routePaths = {
   // Router path patterns
   buildingPublic: 'building/:id',
   apartmentPublic: 'apartment/:id',
+  homeDashboard: 'dashboard',
   login: 'login',
   register: 'register',
   registerBuilding: 'register-building',
@@ -93,6 +109,8 @@ export const api = {
 
   // Apartments API
   apartment: (id: string | number) => `/apartments/${id}`,
+  apartmentAssignTenantLookup: (id: string | number) =>
+    `/apartments/${id}/assign-tenant/lookup`,
   apartmentAssignTenant: (id: string | number) =>
     `/apartments/${id}/assign-tenant`,
   apartmentMedia: (id: string | number) => `/apartments/${id}/media`,
@@ -101,6 +119,7 @@ export const api = {
   // Tenants & payments API
   tenants: '/tenants',
   users: '/users',
+  userImpersonate: (id: string | number) => `/users/${id}/impersonate`,
   payments: '/payments',
   tenantPayments: '/tenant/payments',
 

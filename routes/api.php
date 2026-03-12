@@ -51,6 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('buildings/{building}/apartments', [ApartmentController::class, 'index']);
     Route::put('apartments/{apartment}', [ApartmentController::class, 'update']);
     Route::delete('apartments/{apartment}', [ApartmentController::class, 'destroy']);
+    Route::post('apartments/{apartment}/assign-tenant/lookup', [ApartmentController::class, 'lookupTenant']);
     Route::post('apartments/{apartment}/assign-tenant', [ApartmentController::class, 'assignTenant']);
     Route::post('payments', [PaymentController::class, 'store']);
     Route::get('payments', [PaymentController::class, 'index']);
@@ -58,6 +59,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('tenants', [TenantController::class, 'index']);
     Route::get('tenants/{tenant}', [TenantController::class, 'show']);
     Route::get('users', [UserController::class, 'index']);
+    Route::post('users/{user}/impersonate', [UserController::class, 'impersonate']);
     Route::get('rental-requests', [RentalRequestController::class, 'index']);
     Route::put('rental-requests/{rentalRequest}', [RentalRequestController::class, 'update']);
     Route::post('conversations', [ConversationController::class, 'store']);

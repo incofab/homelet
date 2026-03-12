@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation, useNavigate } from 'react-router';
+import { Outlet, Link, useLocation } from 'react-router';
 import {
   Building2,
   LayoutDashboard,
@@ -12,22 +12,29 @@ import {
   X,
   LogOut,
   ClipboardList,
+  KeyRound,
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
-import { apiPost, setAuthToken } from '../lib/api';
 import { api, routes } from '../lib/urls';
 import { useApiQuery } from '../hooks/useApiQuery';
+import type { DashboardContext } from '../lib/responses';
+import { useAuthSession } from '../hooks/useAuthSession';
+
+type MeResponse = {
+  user?: { role?: string };
+  dashboard_context?: DashboardContext;
+};
 
 export function AdminLayout() {
   const location = useLocation();
-  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
-  const selectCurrentUser = useCallback((data: { user?: { role?: string } }) => data.user ?? {}, []);
-  const meQuery = useApiQuery<{ user?: { role?: string } }, { role?: string }>(api.authMe, {
-    select: selectCurrentUser,
+  const { logout, loggingOut } = useAuthSession();
+  const selectProfile = useCallback((data: MeResponse) => data, []);
+  const meQuery = useApiQuery<MeResponse, MeResponse>(api.authMe, {
+    select: selectProfile,
   });
-  const isPlatformAdmin = meQuery.data?.role === 'admin';
+  const isPlatformAdmin = meQuery.data?.user?.role === 'admin';
+  const canSwitchToTenantDashboard = Boolean(meQuery.data?.dashboard_context?.has_active_lease);
   const navigation = useMemo(() => {
     const items = [
       { name: 'Dashboard', href: routes.adminRoot, icon: LayoutDashboard },
@@ -48,22 +55,12 @@ export function AdminLayout() {
       items.splice(4, 0, { name: 'Users', href: routes.adminUsers, icon: UserRound });
     }
 
-    return items;
-  }, [isPlatformAdmin]);
-
-  const handleLogout = async () => {
-    if (loggingOut) return;
-    setLoggingOut(true);
-    try {
-      await apiPost(api.authLogout);
-    } catch (error) {
-      // ignore network errors on logout
-    } finally {
-      setAuthToken(null);
-      navigate(routes.login);
-      setLoggingOut(false);
+    if (canSwitchToTenantDashboard) {
+      items.push({ name: 'Tenant Dashboard', href: routes.tenantRoot, icon: KeyRound });
     }
-  };
+
+    return items;
+  }, [canSwitchToTenantDashboard, isPlatformAdmin]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -110,7 +107,7 @@ export function AdminLayout() {
               type="button"
               onClick={() => {
                 setMobileMenuOpen(false);
-                handleLogout();
+                logout();
               }}
               className="flex w-full items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-muted text-left"
             >
@@ -151,7 +148,7 @@ export function AdminLayout() {
           })}
           <button
             type="button"
-            onClick={handleLogout}
+            onClick={logout}
             className="mt-4 flex w-full items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-muted text-left"
           >
             <LogOut size={20} />

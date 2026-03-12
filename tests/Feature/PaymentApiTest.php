@@ -105,7 +105,7 @@ test('payments index is scoped for admins and tenant endpoint is scoped to tenan
         'status' => 'active',
     ]);
 
-    Payment::factory()->create([
+    $tenantPayment = Payment::factory()->create([
         'lease_id' => $lease->id,
         'tenant_id' => $tenant->id,
     ]);
@@ -118,16 +118,26 @@ test('payments index is scoped for admins and tenant endpoint is scoped to tenan
         'status' => 'active',
     ]);
 
-    Payment::factory()->create([
+    $otherPayment = Payment::factory()->create([
         'lease_id' => $otherLease->id,
         'tenant_id' => $otherLease->tenant_id,
     ]);
 
     Sanctum::actingAs($admin);
     $adminResponse = $this->getJson('/api/payments');
-    $adminResponse->assertStatus(200)->assertJsonCount(2, 'data.payments.data');
+    $adminResponse->assertStatus(200)
+        ->assertJsonCount(2, 'data.payments.data')
+        ->assertJsonPath('data.payments.data.0.tenant.name', $otherLease->tenant->name)
+        ->assertJsonPath('data.payments.data.0.apartment.unit_code', $otherApartment->unit_code)
+        ->assertJsonPath('data.payments.data.0.method', $otherPayment->payment_method)
+        ->assertJsonPath('data.payments.data.0.due_date', $otherPayment->payment_date->toDateString());
 
     Sanctum::actingAs($tenant);
     $tenantResponse = $this->getJson('/api/tenant/payments');
-    $tenantResponse->assertStatus(200)->assertJsonCount(1, 'data.payments.data');
+    $tenantResponse->assertStatus(200)
+        ->assertJsonCount(1, 'data.payments.data')
+        ->assertJsonPath('data.payments.data.0.tenant.name', $tenant->name)
+        ->assertJsonPath('data.payments.data.0.apartment.unit_code', $apartment->unit_code)
+        ->assertJsonPath('data.payments.data.0.method', $tenantPayment->payment_method)
+        ->assertJsonPath('data.payments.data.0.due_date', $tenantPayment->payment_date->toDateString());
 });

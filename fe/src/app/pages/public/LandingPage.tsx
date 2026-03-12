@@ -10,24 +10,27 @@ import { env } from '../../lib/env';
 import { formatMoney } from '../../lib/format';
 import { PaginatedData } from '../../lib/paginatedData';
 import { useApiQuery } from '../../hooks/useApiQuery';
-import { api, routes } from '../../lib/urls';
+import { api, routeForDashboard, routes } from '../../lib/urls';
 import type { PublicBuilding, UserProfile } from '../../lib/models';
+import type { DashboardContext } from '../../lib/responses';
 
 type AuthenticatedUser = UserProfile & {
   role?: string;
 };
 
+type MeResponse = {
+  user?: AuthenticatedUser;
+  dashboard?: "admin" | "tenant" | "home";
+  dashboard_context?: DashboardContext;
+};
+
 export function LandingPage() {
   const authToken = useMemo(() => getAuthToken(), []);
   const buildingsQuery = useApiQuery<PublicBuilding[]>(api.publicBuildings);
-  const userQuery = useApiQuery<{ user: AuthenticatedUser }>(api.authMe, {
+  const userQuery = useApiQuery<MeResponse>(api.authMe, {
     enabled: Boolean(authToken),
   });
-  const currentUser = userQuery.data?.user;
-  const dashboardRoute =
-    currentUser?.role?.toLowerCase?.() === 'tenant'
-      ? routes.tenantRoot
-      : routes.adminRoot;
+  const dashboardRoute = routeForDashboard(userQuery.data?.dashboard);
   const shouldShowPublicAuthActions = !authToken;
 
   const publicBuildings = useMemo(() => {

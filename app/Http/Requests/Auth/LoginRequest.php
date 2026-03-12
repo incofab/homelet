@@ -14,9 +14,20 @@ class LoginRequest extends ApiRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            'identifier' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string'],
             'device_name' => ['sometimes', 'string', 'max:255'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $identifier = trim((string) $this->input('identifier'));
+
+        $this->merge([
+            'identifier' => str_contains($identifier, '@')
+                ? mb_strtolower($identifier)
+                : normalizePhoneNumber($identifier),
+        ]);
     }
 }

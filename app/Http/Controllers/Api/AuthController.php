@@ -16,8 +16,8 @@ class AuthController extends Controller
     {
         $user = User::create([
             'name' => $request->string('name')->toString(),
-            'email' => $request->string('email')->toString(),
-            'phone' => $request->string('phone')->toString() ?: null,
+            'email' => $request->input('email'),
+            'phone' => $request->string('phone')->toString(),
             'password' => $request->string('password')->toString(),
         ]);
 
@@ -26,17 +26,18 @@ class AuthController extends Controller
         return $this->success('Registration successful.', [
             'user' => $user,
             'dashboard' => $user->dashboard,
+            'dashboard_context' => $user->dashboardContext(),
             'token' => $token,
         ], 201);
     }
 
     public function login(LoginRequest $request): JsonResponse
     {
-        $user = User::where('email', $request->string('email')->toString())->first();
+        $user = User::whereIdentifier($request->string('identifier')->toString())->first();
 
         if (! $user || ! Hash::check($request->string('password')->toString(), $user->password)) {
             return $this->error('Invalid credentials.', [
-                'email' => ['The provided credentials are incorrect.'],
+                'identifier' => ['The provided credentials are incorrect.'],
             ], 422);
         }
 
@@ -45,6 +46,7 @@ class AuthController extends Controller
         return $this->success('Login successful.', [
             'user' => $user,
             'dashboard' => $user->dashboard,
+            'dashboard_context' => $user->dashboardContext(),
             'token' => $token,
         ]);
     }
@@ -61,6 +63,7 @@ class AuthController extends Controller
         return $this->success('Profile loaded.', [
             'user' => $request->user()->load('profileMedia'),
             'dashboard' => $request->user()->dashboard,
+            'dashboard_context' => $request->user()->dashboardContext(),
         ]);
     }
 

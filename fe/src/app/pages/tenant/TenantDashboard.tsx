@@ -1,51 +1,59 @@
-import { Home, DollarSign, Calendar, AlertCircle } from "lucide-react";
-import { Link } from "react-router";
-import { Card } from "../../components/Card";
-import { StatusBadge } from "../../components/StatusBadge";
-import { Button } from "../../components/Button";
-import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
-import { useApiQuery } from "../../hooks/useApiQuery";
-import { formatDate, formatMoney, formatStatusLabel } from "../../lib/format";
-import { env } from "../../lib/env";
-import { api, routes } from "../../lib/urls";
-import { PaginatedData, extractRecord } from "../../lib/paginatedData";
-import { useCallback } from "react";
-import type { Payment, UserProfile } from "../../lib/models";
-import type { TenantDashboardResponse } from "../../lib/responses";
+import { Home, DollarSign, Calendar, AlertCircle } from 'lucide-react';
+import { Link } from 'react-router';
+import { Card } from '../../components/Card';
+import { StatusBadge } from '../../components/StatusBadge';
+import { Button } from '../../components/Button';
+import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
+import { useApiQuery } from '../../hooks/useApiQuery';
+import { formatDate, formatMoney, formatStatusLabel } from '../../lib/format';
+import { env } from '../../lib/env';
+import { api, routes } from '../../lib/urls';
+import { PaginatedData, extractRecord } from '../../lib/paginatedData';
+import { useCallback } from 'react';
+import type { Payment, UserProfile } from '../../lib/models';
+import type { TenantDashboardResponse } from '../../lib/responses';
 
 export function TenantDashboard() {
   const selectMetrics = useCallback(
-    (data: unknown) => extractRecord<TenantDashboardResponse>(data, "metrics"),
-    []
+    (data: unknown) => data as TenantDashboardResponse,
+    [],
   );
   const selectPayments = useCallback(
-    (data: unknown) => PaginatedData.from<Payment>(data, "payments"),
-    []
+    (data: unknown) => PaginatedData.from<Payment>(data, 'payments'),
+    [],
   );
   const selectUser = useCallback(
-    (data: unknown) => extractRecord<UserProfile>(data, "user"),
-    []
+    (data: unknown) => extractRecord<UserProfile>(data, 'user'),
+    [],
   );
-  const dashboardQuery = useApiQuery<unknown, TenantDashboardResponse>(api.dashboardTenant, {
-    select: selectMetrics,
-  });
-  const paymentsQuery = useApiQuery<unknown, PaginatedData<Payment>>(api.tenantPayments, {
-    select: selectPayments,
-  });
-  const profileQuery = useApiQuery<unknown, UserProfile>(api.authMe, {
+  const dashboardQuery = useApiQuery<unknown, TenantDashboardResponse>(
+    api.dashboardTenant,
+    {
+      select: selectMetrics,
+    },
+  );
+  const paymentsQuery = useApiQuery<unknown, PaginatedData<Payment>>(
+    api.tenantPayments,
+    {
+      select: selectPayments,
+    },
+  );
+  const profileQuery = useApiQuery<unknown, UserProfile | null>(api.authMe, {
     select: selectUser,
   });
 
   const payments = paymentsQuery.data?.items ?? [];
   const lease = dashboardQuery.data?.active_lease;
-  const leaseApartment = lease?.apartment?.unit_code ?? lease?.apartment_unit ?? "Unit";
-  const leaseBuilding = lease?.apartment?.building?.name ?? lease?.building_name ?? "Building";
-  const monthlyRent = dashboardQuery.data?.last_payment?.amount ?? null;
+  const leaseApartment =
+    lease?.apartment?.unit_code ?? lease?.apartment_unit ?? 'Unit';
+  const leaseBuilding =
+    lease?.apartment?.building?.name ?? lease?.building_name ?? 'Building';
+  const annualRent = lease?.rent_amount ?? null;
 
   const recentPayments = payments.slice(0, 3).map((payment) => ({
     id: payment.id,
     amount: formatMoney(payment.amount),
-    date: payment.payment_date ? formatDate(payment.payment_date) : "—",
+    date: payment.payment_date ? formatDate(payment.payment_date) : '—',
     status: formatStatusLabel(payment.status),
   }));
 
@@ -53,7 +61,10 @@ export function TenantDashboard() {
     <div className="max-w-6xl mx-auto space-y-6">
       <div>
         <h1 className="text-3xl mb-2">
-          Welcome Back{profileQuery.data?.name ? `, ${profileQuery.data.name.split(" ")[0]}!` : "!"}
+          Welcome Back
+          {profileQuery.data?.name
+            ? `, ${profileQuery.data.name.split(' ')[0]}!`
+            : '!'}
         </h1>
         <p className="text-muted-foreground">Here's your rental overview</p>
       </div>
@@ -74,24 +85,41 @@ export function TenantDashboard() {
                 <h2 className="text-2xl mb-1">{leaseApartment}</h2>
                 <p className="text-muted-foreground">{leaseBuilding}</p>
               </div>
-              <StatusBadge status={formatStatusLabel(lease?.status ?? "active")} type="lease" />
+              <StatusBadge
+                status={formatStatusLabel(lease?.status ?? 'active')}
+                type="lease"
+              />
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Monthly Rent</p>
-                <p className="text-xl">{monthlyRent ? formatMoney(monthlyRent) : "—"}</p>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Annual Rent
+                </p>
+                <p className="text-xl">
+                  {annualRent ? formatMoney(annualRent) : '—'}
+                </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Lease Start</p>
-                <p className="text-xl">{lease?.start_date ? formatDate(lease.start_date) : "—"}</p>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Lease Start
+                </p>
+                <p className="text-xl">
+                  {lease?.start_date ? formatDate(lease.start_date) : '—'}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Lease End</p>
-                <p className="text-xl">{lease?.end_date ? formatDate(lease.end_date) : "—"}</p>
+                <p className="text-xl">
+                  {lease?.end_date ? formatDate(lease.end_date) : '—'}
+                </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Days Remaining</p>
-                <p className="text-xl text-success">{dashboardQuery.data?.days_to_expiry ?? "—"}</p>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Days Remaining
+                </p>
+                <p className="text-xl text-success">
+                  {dashboardQuery.data?.days_to_expiry ?? '—'}
+                </p>
               </div>
             </div>
           </div>
@@ -104,7 +132,9 @@ export function TenantDashboard() {
           <Card hover className="text-center">
             <DollarSign size={40} className="mx-auto mb-3 text-primary" />
             <h3 className="text-lg mb-1">Make Payment</h3>
-            <p className="text-sm text-muted-foreground">Pay your rent online</p>
+            <p className="text-sm text-muted-foreground">
+              Pay your rent online
+            </p>
           </Card>
         </Link>
         <Link to={routes.tenantMaintenance} className="block">
@@ -129,17 +159,22 @@ export function TenantDashboard() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Calendar size={24} className="text-info" />
-              <h3 className="text-xl">Next Payment Due</h3>
+              <h3 className="text-xl">Last Payment</h3>
             </div>
             <p className="text-3xl mb-1">
-              {dashboardQuery.data?.last_payment?.amount ? formatMoney(dashboardQuery.data.last_payment.amount) : "—"}
+              {dashboardQuery.data?.last_payment?.amount
+                ? formatMoney(dashboardQuery.data.last_payment.amount)
+                : '—'}
             </p>
             <p className="text-muted-foreground">
-              Due on {dashboardQuery.data?.last_payment?.payment_date ? formatDate(dashboardQuery.data.last_payment.payment_date) : "—"}
+              Paid on{' '}
+              {dashboardQuery.data?.last_payment?.payment_date
+                ? formatDate(dashboardQuery.data.last_payment.payment_date)
+                : '—'}
             </p>
           </div>
           <Link to={routes.tenantPayments}>
-            <Button>Pay Now</Button>
+            <Button>View Payments</Button>
           </Link>
         </div>
       </Card>
@@ -149,18 +184,27 @@ export function TenantDashboard() {
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl">Recent Payments</h3>
           <Link to={routes.tenantPayments}>
-            <Button variant="ghost" size="sm">View All</Button>
+            <Button variant="ghost" size="sm">
+              View All
+            </Button>
           </Link>
         </div>
         <div className="space-y-3">
           {recentPayments.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No payments recorded yet.</p>
+            <p className="text-sm text-muted-foreground">
+              No payments recorded yet.
+            </p>
           ) : (
             recentPayments.map((payment) => (
-              <div key={payment.id} className="flex items-center justify-between pb-3 border-b border-border last:border-0">
+              <div
+                key={payment.id}
+                className="flex items-center justify-between pb-3 border-b border-border last:border-0"
+              >
                 <div>
                   <p className="mb-1">Payment #{payment.id}</p>
-                  <p className="text-sm text-muted-foreground">Paid on {payment.date}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Paid on {payment.date}
+                  </p>
                 </div>
                 <div className="text-right">
                   <p className="mb-2">{payment.amount}</p>

@@ -99,7 +99,7 @@ export function ApartmentsList() {
                     </td>
                     <td className="py-3 px-4 text-muted-foreground">{apt.sqft ?? apt.square_feet ?? "—"}</td>
                     <td className="py-3 px-4">
-                      {apt.yearly_price ? `${formatMoney(apt.yearly_price / 12)}/mo` : "—"}
+                      {apt.yearly_price ? `${formatMoney(apt.yearly_price)}/year` : "—"}
                     </td>
                     <td className="py-3 px-4 text-muted-foreground">{apt.tenant?.name || "—"}</td>
                     <td className="py-3 px-4">

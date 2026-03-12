@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router';
-import { ArrowLeft, Edit, UserPlus, Bed, Bath, Maximize } from 'lucide-react';
+import { ArrowLeft, Edit, Bed, Bath, Maximize } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -9,13 +9,12 @@ import { env } from '../../lib/env';
 import { formatMoney, formatStatusLabel, formatDate } from '../../lib/format';
 import { api, routes } from '../../lib/urls';
 import { PaginatedData, extractRecord } from '../../lib/paginatedData';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import type { ApartmentDetail, Media } from '../../lib/models';
 import { AssignTenantForm } from './AssignTenantForm';
 
 export function ApartmentDetail() {
   const { id } = useParams();
-  const [showAssignTenantForm, setShowAssignTenantForm] = useState(false);
   const selectApartment = useCallback(
     (data: unknown) => extractRecord<ApartmentDetail>(data, 'apartment'),
     [],
@@ -150,36 +149,27 @@ export function ApartmentDetail() {
           <Card>
             <div className="text-2xl text-primary mb-6">
               {apartment?.yearly_price
-                ? `${formatMoney(apartment.yearly_price / 12)}/mo`
+                ? `${formatMoney(apartment.yearly_price)}/year`
                 : '—'}
             </div>
             {apartment?.status?.toLowerCase?.() === 'vacant' ? (
               <div className="space-y-4">
-                <Button
-                  className="w-full"
-                  onClick={() => setShowAssignTenantForm((prev) => !prev)}
-                >
-                  <UserPlus size={18} className="mr-2" />
-                  {showAssignTenantForm ? 'Hide Form' : 'Assign Tenant'}
-                </Button>
-                {showAssignTenantForm ? (
-                  <AssignTenantForm
-                    apartments={[
-                      {
-                        id: apartment.id,
-                        unit_code: apartment.unit_code,
-                        yearly_price: apartment.yearly_price,
-                        status: apartment.status,
-                      },
-                    ]}
-                    defaultApartmentId={apartment.id}
-                    submitLabel="Assign Tenant"
-                    onSuccess={async () => {
-                      setShowAssignTenantForm(false);
-                      await apartmentQuery.refetch();
-                    }}
-                  />
-                ) : null}
+                <AssignTenantForm
+                  apartments={[
+                    {
+                      id: apartment.id,
+                      unit_code: apartment.unit_code,
+                      yearly_price: apartment.yearly_price,
+                      status: apartment.status,
+                    },
+                  ]}
+                  defaultApartmentId={apartment.id}
+                  triggerLabel="Assign Tenant"
+                  submitLabel="Assign Tenant"
+                  onSuccess={async () => {
+                    await apartmentQuery.refetch();
+                  }}
+                />
               </div>
             ) : (
               <div className="space-y-4">

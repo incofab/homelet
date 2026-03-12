@@ -106,8 +106,8 @@ describe('LandingPage', () => {
               user: {
                 id: 7,
                 name: 'Ada Tenant',
-                role: 'tenant',
               },
+              dashboard: 'tenant',
             },
             errors: null,
           }),

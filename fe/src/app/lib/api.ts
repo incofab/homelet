@@ -1,6 +1,10 @@
 import { apiRoot, env } from "./env";
 
 type ApiErrorPayload = Record<string, string[]> | null;
+type ApiActivityListener = (pendingRequests: number) => void;
+
+const apiActivityListeners = new Set<ApiActivityListener>();
+let pendingApiRequests = 0;
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -19,6 +23,29 @@ export class ApiError extends Error {
     this.errors = errors;
   }
 }
+
+const notifyApiActivityListeners = () => {
+  apiActivityListeners.forEach((listener) => listener(pendingApiRequests));
+};
+
+const beginApiRequest = () => {
+  pendingApiRequests += 1;
+  notifyApiActivityListeners();
+};
+
+const endApiRequest = () => {
+  pendingApiRequests = Math.max(0, pendingApiRequests - 1);
+  notifyApiActivityListeners();
+};
+
+export const subscribeToApiActivity = (listener: ApiActivityListener) => {
+  apiActivityListeners.add(listener);
+  listener(pendingApiRequests);
+
+  return () => {
+    apiActivityListeners.delete(listener);
+  };
+};
 
 export const getAuthToken = () => {
   if (typeof window === "undefined") return null;
@@ -65,26 +92,32 @@ export const apiRequest = async <T>(
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(buildUrl(path), {
-    ...options,
-    headers,
-  });
+  beginApiRequest();
 
-  const json = await parseJson(response);
+  try {
+    const response = await fetch(buildUrl(path), {
+      ...options,
+      headers,
+    });
 
-  if (!response.ok) {
-    const message = json?.message || `Request failed with status ${response.status}`;
-    throw new ApiError(message, response.status, json?.errors ?? null);
-  }
+    const json = await parseJson(response);
 
-  if (json && typeof json === "object" && "success" in json) {
-    if (!json.success) {
-      throw new ApiError(json.message || "Request failed", response.status, json.errors ?? null);
+    if (!response.ok) {
+      const message = json?.message || `Request failed with status ${response.status}`;
+      throw new ApiError(message, response.status, json?.errors ?? null);
     }
-    return json.data as T;
-  }
 
-  return json as T;
+    if (json && typeof json === "object" && "success" in json) {
+      if (!json.success) {
+        throw new ApiError(json.message || "Request failed", response.status, json.errors ?? null);
+      }
+      return json.data as T;
+    }
+
+    return json as T;
+  } finally {
+    endApiRequest();
+  }
 };
 
 export const apiGet = async <T>(path: string, options: RequestInit = {}) => {

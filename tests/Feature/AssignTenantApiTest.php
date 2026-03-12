@@ -29,6 +29,7 @@ test('admin can assign tenant and create lease', function () {
 
     $payload = [
         'tenant_email' => 'tenant@example.com',
+        'tenant_phone' => '(555) 000-1111',
         'tenant_name' => 'Test Tenant',
         'start_date' => '2026-03-01',
     ];
@@ -38,10 +39,11 @@ test('admin can assign tenant and create lease', function () {
 
     $response->assertStatus(201);
 
-    $tenant = User::where('email', 'tenant@example.com')->first();
+    $tenant = User::where('phone', '5550001111')->first();
 
     expect($tenant)->not->toBeNull();
     expect($tenant->role)->toBe(User::ROLE_USER);
+    expect($tenant->email)->toBe('tenant@example.com');
 
     $lease = Lease::where('apartment_id', $apartment->id)->first();
 
@@ -57,6 +59,67 @@ test('admin can assign tenant and create lease', function () {
     Mail::assertSent(TenancyAgreementMail::class, function ($mail) use ($tenant) {
         return $mail->hasTo($tenant->email);
     });
+});
+
+test('manager can look up an existing tenant before assignment', function () {
+    $owner = User::factory()->create();
+    $manager = User::factory()->create();
+    $tenant = User::factory()->create([
+        'name' => 'Existing Tenant',
+        'email' => 'tenant@example.com',
+        'phone' => '5550001111',
+    ]);
+
+    $building = Building::factory()->create(['owner_id' => $owner->id]);
+    assignBuildingRole($building, $manager, Building::ROLE_MANAGER);
+
+    $apartment = Apartment::factory()->create([
+        'building_id' => $building->id,
+        'status' => 'vacant',
+    ]);
+
+    Sanctum::actingAs($manager);
+    $response = $this->postJson("/api/apartments/{$apartment->id}/assign-tenant/lookup", [
+        'tenant_email' => 'tenant@example.com',
+        'tenant_phone' => '(555) 000-1111',
+    ]);
+
+    $response->assertOk()
+        ->assertJsonPath('data.exists', true)
+        ->assertJsonPath('data.requires_name', false)
+        ->assertJsonPath('data.tenant.id', $tenant->id)
+        ->assertJsonPath('data.tenant.name', 'Existing Tenant');
+});
+
+test('tenant lookup fails when phone and email belong to different users', function () {
+    $owner = User::factory()->create();
+    $manager = User::factory()->create();
+
+    $building = Building::factory()->create(['owner_id' => $owner->id]);
+    assignBuildingRole($building, $manager, Building::ROLE_MANAGER);
+
+    $apartment = Apartment::factory()->create([
+        'building_id' => $building->id,
+        'status' => 'vacant',
+    ]);
+
+    User::factory()->create([
+        'email' => 'first@example.com',
+        'phone' => '5550001111',
+    ]);
+    User::factory()->create([
+        'email' => 'second@example.com',
+        'phone' => '5550002222',
+    ]);
+
+    Sanctum::actingAs($manager);
+    $response = $this->postJson("/api/apartments/{$apartment->id}/assign-tenant/lookup", [
+        'tenant_email' => 'first@example.com',
+        'tenant_phone' => '5550002222',
+    ]);
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors(['tenant_email', 'tenant_phone']);
 });
 
 test('assigning tenant fails when active lease exists', function () {
@@ -78,7 +141,7 @@ test('assigning tenant fails when active lease exists', function () {
 
     Sanctum::actingAs($manager);
     $response = $this->postJson("/api/apartments/{$apartment->id}/assign-tenant", [
-        'tenant_email' => 'newtenant@example.com',
+        'tenant_phone' => '5552223333',
         'start_date' => '2026-03-01',
         'rent_amount' => 150_000,
     ]);
@@ -99,9 +162,59 @@ test('tenant cannot assign tenant to apartment', function () {
 
     Sanctum::actingAs($tenant);
     $response = $this->postJson("/api/apartments/{$apartment->id}/assign-tenant", [
-        'tenant_email' => 'blocked@example.com',
+        'tenant_phone' => '5559990000',
         'start_date' => '2026-03-01',
     ]);
 
     $response->assertStatus(403);
+});
+
+test('assign tenant can match an existing user by phone without email', function () {
+    $owner = User::factory()->create();
+    $manager = User::factory()->create();
+    $existingTenant = User::factory()->create([
+        'email' => null,
+        'phone' => '5557778888',
+    ]);
+
+    $building = Building::factory()->create(['owner_id' => $owner->id]);
+    assignBuildingRole($building, $manager, Building::ROLE_MANAGER);
+
+    $apartment = Apartment::factory()->create([
+        'building_id' => $building->id,
+        'status' => 'vacant',
+    ]);
+
+    Sanctum::actingAs($manager);
+    $response = $this->postJson("/api/apartments/{$apartment->id}/assign-tenant", [
+        'tenant_phone' => '555-777-8888',
+        'start_date' => '2026-03-01',
+    ]);
+
+    $response->assertStatus(201);
+
+    expect(Lease::where('tenant_id', $existingTenant->id)->exists())->toBeTrue();
+    expect(User::where('phone', '5557778888')->count())->toBe(1);
+});
+
+test('assign tenant requires a name when creating a new tenant', function () {
+    $owner = User::factory()->create();
+    $manager = User::factory()->create();
+
+    $building = Building::factory()->create(['owner_id' => $owner->id]);
+    assignBuildingRole($building, $manager, Building::ROLE_MANAGER);
+
+    $apartment = Apartment::factory()->create([
+        'building_id' => $building->id,
+        'status' => 'vacant',
+    ]);
+
+    Sanctum::actingAs($manager);
+    $response = $this->postJson("/api/apartments/{$apartment->id}/assign-tenant", [
+        'tenant_phone' => '5553334444',
+        'start_date' => '2026-03-01',
+    ]);
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors(['tenant_name']);
 });

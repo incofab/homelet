@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Apartment\AssignTenantRequest;
+use App\Http\Requests\Apartment\LookupTenantRequest;
 use App\Http\Requests\Apartment\StoreApartmentRequest;
 use App\Http\Requests\Apartment\UpdateApartmentRequest;
 use App\Jobs\SendTenancyAgreementEmail;
@@ -17,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ApartmentController extends Controller
 {
@@ -82,6 +84,22 @@ class ApartmentController extends Controller
         return $this->success('Apartment deleted.');
     }
 
+    public function lookupTenant(LookupTenantRequest $request, Apartment $apartment): JsonResponse
+    {
+        $this->authorize('assignTenant', $apartment);
+
+        $tenant = $this->resolveTenantFromContactDetails(
+            $request->input('tenant_email'),
+            $request->input('tenant_phone'),
+        );
+
+        return $this->success('Tenant lookup completed.', [
+            'exists' => (bool) $tenant,
+            'requires_name' => ! $tenant,
+            'tenant' => $tenant,
+        ]);
+    }
+
     public function assignTenant(AssignTenantRequest $request, Apartment $apartment, LeaseService $leaseService): JsonResponse
     {
         $this->authorize('assignTenant', $apartment);
@@ -90,16 +108,52 @@ class ApartmentController extends Controller
         $lease = null;
 
         DB::transaction(function () use ($request, $apartment, $leaseService, &$tenant, &$lease): void {
-            $email = $request->string('tenant_email')->toString();
+            $email = $request->input('tenant_email');
+            $phone = $request->string('tenant_phone')->toString();
             $name = $request->string('tenant_name')->toString();
 
-            $tenant = User::firstOrCreate(
-                ['email' => $email],
-                [
-                    'name' => $name !== '' ? $name : Str::before($email, '@'),
+            $tenant = $this->resolveTenantFromContactDetails($email, $phone);
+
+            if (! $tenant) {
+                if ($name === '') {
+                    throw ValidationException::withMessages([
+                        'tenant_name' => ['Tenant name is required when creating a new tenant.'],
+                    ]);
+                }
+
+                $tenant = User::create([
+                    'name' => $name,
+                    'email' => $email,
+                    'phone' => $phone,
                     'password' => Hash::make('password'),
-                ]
-            );
+                ]);
+            } else {
+                $updates = [];
+
+                if ($name !== '' && $tenant->name !== $name) {
+                    $updates['name'] = $name;
+                }
+
+                if (! $tenant->phone) {
+                    $updates['phone'] = $phone;
+                } elseif ($tenant->phone !== $phone) {
+                    throw ValidationException::withMessages([
+                        'tenant_phone' => ['Phone number does not match the existing user record.'],
+                    ]);
+                }
+
+                if ($email && ! $tenant->email) {
+                    $updates['email'] = $email;
+                } elseif ($email && $tenant->email !== $email) {
+                    throw ValidationException::withMessages([
+                        'tenant_email' => ['Email does not match the existing user record.'],
+                    ]);
+                }
+
+                if ($updates !== []) {
+                    $tenant->update($updates);
+                }
+            }
 
             $apartment->tenants()->syncWithoutDetaching([$tenant->id]);
 
@@ -127,5 +181,20 @@ class ApartmentController extends Controller
             'lease' => $lease,
             'apartment' => $apartment->refresh()->load('media'),
         ], 201);
+    }
+
+    private function resolveTenantFromContactDetails(?string $email, ?string $phone): ?User
+    {
+        $tenantByPhone = $phone ? User::query()->where('phone', $phone)->first() : null;
+        $tenantByEmail = $email ? User::query()->where('email', $email)->first() : null;
+
+        if ($tenantByPhone && $tenantByEmail && $tenantByPhone->id !== $tenantByEmail->id) {
+            throw ValidationException::withMessages([
+                'tenant_phone' => ['Phone number belongs to a different user than the supplied email.'],
+                'tenant_email' => ['Email belongs to a different user than the supplied phone number.'],
+            ]);
+        }
+
+        return $tenantByPhone ?? $tenantByEmail;
     }
 }

@@ -50,7 +50,7 @@ describe('EditApartment', () => {
     });
 
     expect(await screen.findByDisplayValue('B4')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('80000')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('960000')).toBeInTheDocument();
 
     await userEvent.selectOptions(screen.getByLabelText('Status'), 'occupied');
     await userEvent.click(screen.getByRole('checkbox'));

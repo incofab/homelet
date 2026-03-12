@@ -4,7 +4,7 @@ namespace App\Http\Requests\Apartment;
 
 use App\Http\Requests\ApiRequest;
 
-class AssignTenantRequest extends ApiRequest
+class LookupTenantRequest extends ApiRequest
 {
     public function authorize(): bool
     {
@@ -14,11 +14,8 @@ class AssignTenantRequest extends ApiRequest
     public function rules(): array
     {
         return [
-            'tenant_email' => ['nullable', 'email', 'max:255'],
-            'tenant_phone' => ['required', 'string', 'regex:/^\d+$/', 'max:20'],
-            'tenant_name' => ['nullable', 'string', 'max:255'],
-            'start_date' => ['required', 'date'],
-            'rent_amount' => ['nullable', 'integer', 'min:0'],
+            'tenant_email' => ['nullable', 'email', 'max:255', 'required_without:tenant_phone'],
+            'tenant_phone' => ['nullable', 'string', 'regex:/^\d+$/', 'max:20', 'required_without:tenant_email'],
         ];
     }
 
@@ -26,7 +23,7 @@ class AssignTenantRequest extends ApiRequest
     {
         $this->merge([
             'tenant_email' => $this->filled('tenant_email') ? mb_strtolower(trim((string) $this->input('tenant_email'))) : null,
-            'tenant_phone' => normalizePhoneNumber($this->input('tenant_phone')),
+            'tenant_phone' => $this->filled('tenant_phone') ? normalizePhoneNumber($this->input('tenant_phone')) : null,
         ]);
     }
 }

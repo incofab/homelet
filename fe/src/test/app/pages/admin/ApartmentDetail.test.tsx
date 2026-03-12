@@ -31,6 +31,22 @@ describe('ApartmentDetail', () => {
       },
       {
         match: (url, init) =>
+          url.includes(api.apartmentAssignTenantLookup(1)) &&
+          init?.method === 'POST',
+        response: () =>
+          apiSuccess({
+            exists: true,
+            requires_name: false,
+            tenant: {
+              id: 99,
+              name: 'Jane Tenant',
+              email: 'jane@example.com',
+              phone: '08012345678',
+            },
+          }),
+      },
+      {
+        match: (url, init) =>
           url.includes(api.apartmentAssignTenant(1)) && init?.method === 'POST',
         response: () => apiSuccess({ apartment: { id: 1 } }, 201),
       },
@@ -55,31 +71,27 @@ describe('ApartmentDetail', () => {
       screen.getByRole('button', { name: 'Assign Tenant' }),
     );
     await userEvent.type(
-      screen.getByPlaceholderText('Jane Doe'),
-      'Jane Tenant',
+      screen.getByPlaceholderText('08012345678 or jane@example.com'),
+      '08012345678',
     );
-    await userEvent.type(
-      screen.getByPlaceholderText('jane@example.com'),
-      'jane@example.com',
-    );
-    await userEvent.type(
-      screen.getByLabelText('Lease Start Date'),
-      '2026-04-01',
-    );
-    await userEvent.clear(screen.getByPlaceholderText('1200000'));
-    await userEvent.type(screen.getByPlaceholderText('1200000'), '1200000');
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Assign Tenant' }),
-    );
-
     await waitFor(() => {
-      const request = fetchMock.mock.calls.find(
+      const lookupRequest = fetchMock.mock.calls.find(
         ([url, init]) =>
-          String(url).includes(api.apartmentAssignTenant(1)) &&
+          String(url).includes(api.apartmentAssignTenantLookup(1)) &&
           init?.method === 'POST',
       );
 
-      expect(request).toBeTruthy();
+      expect(lookupRequest).toBeTruthy();
     });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'OK' })).not.toBeDisabled();
+    });
+    await userEvent.click(screen.getByRole('button', { name: 'OK' }));
+    await userEvent.type(
+      await screen.findByLabelText('Lease Start Date'),
+      '2026-04-01',
+    );
+    expect(screen.getByRole('button', { name: 'Change Tenant' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Assign Tenant' })).toBeInTheDocument();
   });
 });

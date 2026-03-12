@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Builder;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -17,6 +18,12 @@ class User extends Authenticatable
     public const ROLE_ADMIN = 'admin';
 
     public const ROLE_USER = 'user';
+
+    public const DASHBOARD_ADMIN = 'admin';
+
+    public const DASHBOARD_TENANT = 'tenant';
+
+    public const DASHBOARD_HOME = 'home';
 
     protected $appends = [
         'role',
@@ -60,8 +67,27 @@ class User extends Authenticatable
 
     protected static function booted(): void
     {
+        static::saving(function (User $user): void {
+            $user->email = $user->email ? mb_strtolower(trim($user->email)) : null;
+            $user->phone = normalizePhoneNumber($user->phone);
+        });
+
         static::created(function (User $user): void {
             $user->assignRole(Role::findOrCreate(self::ROLE_USER));
+        });
+    }
+
+    public function scopeWhereIdentifier(Builder $query, string $identifier): Builder
+    {
+        $normalizedPhone = normalizePhoneNumber($identifier);
+        $normalizedEmail = mb_strtolower(trim($identifier));
+
+        return $query->where(function (Builder $builder) use ($normalizedPhone, $normalizedEmail) {
+            $builder->where('email', $normalizedEmail);
+
+            if ($normalizedPhone) {
+                $builder->orWhere('phone', $normalizedPhone);
+            }
         });
     }
 
@@ -72,7 +98,15 @@ class User extends Authenticatable
 
     public function getDashboardAttribute(): string
     {
-        return $this->shouldUseTenantDashboard() ? 'tenant' : 'admin';
+        if ($this->isPlatformAdmin() || $this->isBuildingUser()) {
+            return self::DASHBOARD_ADMIN;
+        }
+
+        if ($this->shouldUseTenantDashboard()) {
+            return self::DASHBOARD_TENANT;
+        }
+
+        return self::DASHBOARD_HOME;
     }
 
     public function buildings()
@@ -135,9 +169,48 @@ class User extends Authenticatable
         return $this->hasRole(self::ROLE_ADMIN);
     }
 
+    public function isBuildingUser(): bool
+    {
+        return Building::query()
+            ->where('owner_id', $this->id)
+            ->orWhereHas('users', function (Builder $query): void {
+                $query->where('users.id', $this->id);
+            })
+            ->exists();
+    }
+
     public function shouldUseTenantDashboard(): bool
     {
         return $this->activeLease()->exists();
+    }
+
+    public function dashboardContext(): array
+    {
+        $isPlatformAdmin = $this->isPlatformAdmin();
+        $isBuildingUser = $this->isBuildingUser();
+        $hasActiveLease = $this->shouldUseTenantDashboard();
+
+        $availableDashboards = [];
+
+        if ($isPlatformAdmin || $isBuildingUser) {
+            $availableDashboards[] = self::DASHBOARD_ADMIN;
+        }
+
+        if ($hasActiveLease) {
+            $availableDashboards[] = self::DASHBOARD_TENANT;
+        }
+
+        if ($availableDashboards === []) {
+            $availableDashboards[] = self::DASHBOARD_HOME;
+        }
+
+        return [
+            'primary_dashboard' => $this->dashboard,
+            'is_platform_admin' => $isPlatformAdmin,
+            'is_building_user' => $isBuildingUser,
+            'has_active_lease' => $hasActiveLease,
+            'available_dashboards' => $availableDashboards,
+        ];
     }
 
     public function hasBuildingRole(Building $building, string|array $roles): bool

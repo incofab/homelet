@@ -20,6 +20,10 @@ class PaymentController extends Controller
         $buildingIds = $user->buildingIdsForRoles([Building::ROLE_LANDLORD, Building::ROLE_MANAGER]);
 
         $payments = paginateFromRequest(Payment::query()
+            ->with([
+                'tenant:id,name',
+                'lease.apartment:id,unit_code',
+            ])
             ->whereHas('lease.apartment', function ($query) use ($buildingIds) {
                 $query->whereIn('building_id', $buildingIds);
             })
@@ -37,6 +41,10 @@ class PaymentController extends Controller
         $user = $request->user('sanctum');
 
         $payments = paginateFromRequest(Payment::query()
+            ->with([
+                'tenant:id,name',
+                'lease.apartment:id,unit_code',
+            ])
             ->where('tenant_id', $user->id)
             ->latest('id'));
 

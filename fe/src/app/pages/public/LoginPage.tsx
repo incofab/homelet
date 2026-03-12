@@ -1,35 +1,39 @@
-import { Link, useNavigate } from "react-router";
-import { Button } from "../../components/Button";
-import { Input } from "../../components/Input";
-import { Home } from "lucide-react";
-import { useState } from "react";
-import type { FormEvent } from "react";
-import { apiPost, setAuthToken } from "../../lib/api";
-import { env } from "../../lib/env";
-import { api, routes } from "../../lib/urls";
-import type { AuthResponse } from "../../lib/responses";
+import { Link, useNavigate } from 'react-router';
+import { Button } from '../../components/Button';
+import { Input } from '../../components/Input';
+import { Home } from 'lucide-react';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
+import { apiPost, setAuthToken } from '../../lib/api';
+import { env } from '../../lib/env';
+import { clearImpersonationState } from '../../lib/impersonation';
+import { api, routeForDashboard, routes } from '../../lib/urls';
+import type { AuthResponse } from '../../lib/responses';
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const [formState, setFormState] = useState({ email: "", password: "" });
-  const [status, setStatus] = useState<{ type: "idle" | "error"; message?: string }>({ type: "idle" });
+  const [formState, setFormState] = useState({ identifier: '', password: '' });
+  const [status, setStatus] = useState<{
+    type: 'idle' | 'error';
+    message?: string;
+  }>({ type: 'idle' });
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setSubmitting(true);
-    setStatus({ type: "idle" });
+    setStatus({ type: 'idle' });
 
     try {
       const data = await apiPost<AuthResponse>(api.authLogin, formState);
+      clearImpersonationState();
       setAuthToken(data.token);
-      if (data.dashboard === "tenant") {
-        navigate(routes.tenantRoot);
-      } else {
-        navigate(routes.adminRoot);
-      }
+      navigate(routeForDashboard(data.dashboard));
     } catch (error) {
-      setStatus({ type: "error", message: (error as Error).message || "Unable to sign in." });
+      setStatus({
+        type: 'error',
+        message: (error as Error).message || 'Unable to sign in.',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -50,11 +54,16 @@ export function LoginPage() {
         <div className="bg-card rounded-lg border border-border p-8">
           <form className="space-y-4" onSubmit={handleSubmit}>
             <Input
-              type="email"
-              label="Email"
-              placeholder="you@example.com"
-              value={formState.email}
-              onChange={(event) => setFormState((prev) => ({ ...prev, email: event.target.value }))}
+              type="text"
+              label="Email or Phone"
+              placeholder="you@example.com or 08012345678"
+              value={formState.identifier}
+              onChange={(event) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  identifier: event.target.value,
+                }))
+              }
               required
             />
             <Input
@@ -62,7 +71,12 @@ export function LoginPage() {
               label="Password"
               placeholder="Enter your password"
               value={formState.password}
-              onChange={(event) => setFormState((prev) => ({ ...prev, password: event.target.value }))}
+              onChange={(event) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  password: event.target.value,
+                }))
+              }
               required
             />
 
@@ -76,17 +90,19 @@ export function LoginPage() {
               </a>
             </div>
 
-            {status.type === "error" && (
+            {status.type === 'error' && (
               <p className="text-sm text-destructive">{status.message}</p>
             )}
 
             <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? "Signing In..." : "Sign In"}
+              {submitting ? 'Signing In...' : 'Sign In'}
             </Button>
           </form>
 
           <div className="mt-6 text-center text-sm">
-            <span className="text-muted-foreground">Don't have an account? </span>
+            <span className="text-muted-foreground">
+              Don't have an account?{' '}
+            </span>
             <Link to={routes.register} className="text-primary hover:underline">
               Sign up
             </Link>

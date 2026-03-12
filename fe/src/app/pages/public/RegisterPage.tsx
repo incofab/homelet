@@ -1,41 +1,45 @@
-import { Link, useNavigate } from "react-router";
-import { Button } from "../../components/Button";
-import { Input } from "../../components/Input";
-import { Home } from "lucide-react";
-import { useState } from "react";
-import type { FormEvent } from "react";
-import { apiPost, setAuthToken } from "../../lib/api";
-import { env } from "../../lib/env";
-import { api, routes } from "../../lib/urls";
-import type { AuthResponse } from "../../lib/responses";
+import { Link, useNavigate } from 'react-router';
+import { Button } from '../../components/Button';
+import { Input } from '../../components/Input';
+import { Home } from 'lucide-react';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
+import { apiPost, setAuthToken } from '../../lib/api';
+import { env } from '../../lib/env';
+import { clearImpersonationState } from '../../lib/impersonation';
+import { api, routeForDashboard, routes } from '../../lib/urls';
+import type { AuthResponse } from '../../lib/responses';
 
 export function RegisterPage() {
   const navigate = useNavigate();
   const [formState, setFormState] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    password: "",
-    password_confirmation: "",
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    password_confirmation: '',
   });
-  const [status, setStatus] = useState<{ type: "idle" | "error"; message?: string }>({ type: "idle" });
+  const [status, setStatus] = useState<{
+    type: 'idle' | 'error';
+    message?: string;
+  }>({ type: 'idle' });
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setSubmitting(true);
-    setStatus({ type: "idle" });
+    setStatus({ type: 'idle' });
 
     try {
       const data = await apiPost<AuthResponse>(api.authRegister, formState);
+      clearImpersonationState();
       setAuthToken(data.token);
-      if (data.dashboard === "tenant") {
-        navigate(routes.tenantRoot);
-      } else {
-        navigate(routes.adminRoot);
-      }
+      navigate(routeForDashboard(data.dashboard));
     } catch (error) {
-      setStatus({ type: "error", message: (error as Error).message || "Unable to register." });
+      setStatus({
+        type: 'error',
+        message: (error as Error).message || 'Unable to register.',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -60,30 +64,41 @@ export function RegisterPage() {
               label="Full Name"
               placeholder="Jane Doe"
               value={formState.name}
-              onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))}
+              onChange={(event) =>
+                setFormState((prev) => ({ ...prev, name: event.target.value }))
+              }
               required
             />
             <Input
               type="email"
-              label="Email"
+              label="Email (Optional)"
               placeholder="you@example.com"
               value={formState.email}
-              onChange={(event) => setFormState((prev) => ({ ...prev, email: event.target.value }))}
-              required
+              onChange={(event) =>
+                setFormState((prev) => ({ ...prev, email: event.target.value }))
+              }
             />
             <Input
               type="tel"
-              label="Phone (Optional)"
+              label="Phone"
               placeholder="1234567890"
               value={formState.phone}
-              onChange={(event) => setFormState((prev) => ({ ...prev, phone: event.target.value }))}
+              onChange={(event) =>
+                setFormState((prev) => ({ ...prev, phone: event.target.value }))
+              }
+              required
             />
             <Input
               type="password"
               label="Password"
               placeholder="Create a password"
               value={formState.password}
-              onChange={(event) => setFormState((prev) => ({ ...prev, password: event.target.value }))}
+              onChange={(event) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  password: event.target.value,
+                }))
+              }
               required
             />
             <Input
@@ -91,21 +106,28 @@ export function RegisterPage() {
               label="Confirm Password"
               placeholder="Confirm your password"
               value={formState.password_confirmation}
-              onChange={(event) => setFormState((prev) => ({ ...prev, password_confirmation: event.target.value }))}
+              onChange={(event) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  password_confirmation: event.target.value,
+                }))
+              }
               required
             />
 
-            {status.type === "error" && (
+            {status.type === 'error' && (
               <p className="text-sm text-destructive">{status.message}</p>
             )}
 
             <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? "Creating Account..." : "Sign Up"}
+              {submitting ? 'Creating Account...' : 'Sign Up'}
             </Button>
           </form>
 
           <div className="mt-6 text-center text-sm">
-            <span className="text-muted-foreground">Already have an account? </span>
+            <span className="text-muted-foreground">
+              Already have an account?{' '}
+            </span>
             <Link to={routes.login} className="text-primary hover:underline">
               Sign in
             </Link>

@@ -15,10 +15,18 @@ class RegisterRequest extends ApiRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'phone' => ['nullable', 'string', 'max:50'],
+            'email' => ['nullable', 'string', 'email', 'max:255', 'unique:users,email'],
+            'phone' => ['required', 'string', 'regex:/^\d+$/', 'max:20', 'unique:users,phone'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'device_name' => ['sometimes', 'string', 'max:255'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'email' => $this->filled('email') ? mb_strtolower(trim((string) $this->input('email'))) : null,
+            'phone' => normalizePhoneNumber($this->input('phone')),
+        ]);
     }
 }

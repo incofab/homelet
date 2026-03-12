@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router';
+import { AppShell } from './layouts/AppShell';
 import { Root } from './layouts/Root';
 import { AdminLayout } from './layouts/AdminLayout';
 import { TenantLayout } from './layouts/TenantLayout';
@@ -11,6 +12,7 @@ import { ApartmentDetailPublic } from './pages/public/ApartmentDetailPublic';
 import { LoginPage } from './pages/public/LoginPage';
 import { RegisterPage } from './pages/public/RegisterPage';
 import { RegisterBuildingPublic } from './pages/public/RegisterBuildingPublic';
+import { HomeDashboard } from './pages/user/HomeDashboard';
 
 // Admin pages
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -38,60 +40,66 @@ import { ChatTenant } from './pages/tenant/ChatTenant';
 
 export const router = createBrowserRouter([
   {
-    path: routes.root,
-    Component: Root,
+    Component: AppShell,
     children: [
-      { index: true, Component: LandingPage },
-      { path: routePaths.buildingPublic, Component: BuildingDetailPublic },
-      { path: routePaths.apartmentPublic, Component: ApartmentDetailPublic },
-      { path: routePaths.login, Component: LoginPage },
-      { path: routePaths.register, Component: RegisterPage },
-      { path: routePaths.registerBuilding, Component: RegisterBuildingPublic },
-    ],
-  },
-  {
-    path: routes.adminRoot,
-    Component: AdminLayout,
-    children: [
-      { index: true, Component: AdminDashboard },
-      { path: routePaths.adminBuildings, Component: BuildingsList },
-      { path: 'buildings/new', Component: RegisterBuildingRequest },
       {
-        path: routePaths.adminBuildingRequestNew,
-        Component: RegisterBuildingRequest,
+        path: routes.root,
+        Component: Root,
+        children: [
+          { index: true, Component: LandingPage },
+          { path: routePaths.buildingPublic, Component: BuildingDetailPublic },
+          { path: routePaths.apartmentPublic, Component: ApartmentDetailPublic },
+          { path: routePaths.homeDashboard, Component: HomeDashboard },
+          { path: routePaths.login, Component: LoginPage },
+          { path: routePaths.register, Component: RegisterPage },
+          { path: routePaths.registerBuilding, Component: RegisterBuildingPublic },
+        ],
       },
       {
-        path: routePaths.adminBuildingRequests,
-        Component: BuildingRegistrationRequestsList,
+        path: routes.adminRoot,
+        Component: AdminLayout,
+        children: [
+          { index: true, Component: AdminDashboard },
+          { path: routePaths.adminBuildings, Component: BuildingsList },
+          { path: 'buildings/new', Component: RegisterBuildingRequest },
+          {
+            path: routePaths.adminBuildingRequestNew,
+            Component: RegisterBuildingRequest,
+          },
+          {
+            path: routePaths.adminBuildingRequests,
+            Component: BuildingRegistrationRequestsList,
+          },
+          {
+            path: routePaths.adminBuildingRequest,
+            Component: BuildingRegistrationRequestDetail,
+          },
+          { path: routePaths.adminBuilding, Component: BuildingDetail },
+          { path: routePaths.adminBuildingApartments, Component: ApartmentsList },
+          {
+            path: routePaths.adminBuildingApartmentsNew,
+            Component: CreateApartment,
+          },
+          { path: routePaths.adminApartment, Component: ApartmentDetail },
+          { path: routePaths.adminApartmentEdit, Component: EditApartment },
+          { path: routePaths.adminTenants, Component: TenantsList },
+          { path: routePaths.adminUsers, Component: UsersList },
+          { path: routePaths.adminPayments, Component: PaymentsList },
+          { path: routePaths.adminMaintenance, Component: MaintenanceList },
+          { path: routePaths.adminRentalRequests, Component: RentalRequestsList },
+          { path: routePaths.adminChat, Component: ChatAdmin },
+        ],
       },
       {
-        path: routePaths.adminBuildingRequest,
-        Component: BuildingRegistrationRequestDetail,
+        path: routes.tenantRoot,
+        Component: TenantLayout,
+        children: [
+          { index: true, Component: TenantDashboard },
+          { path: routePaths.tenantPayments, Component: TenantPayments },
+          { path: routePaths.tenantMaintenance, Component: TenantMaintenance },
+          { path: routePaths.tenantChat, Component: ChatTenant },
+        ],
       },
-      { path: routePaths.adminBuilding, Component: BuildingDetail },
-      { path: routePaths.adminBuildingApartments, Component: ApartmentsList },
-      {
-        path: routePaths.adminBuildingApartmentsNew,
-        Component: CreateApartment,
-      },
-      { path: routePaths.adminApartment, Component: ApartmentDetail },
-      { path: routePaths.adminApartmentEdit, Component: EditApartment },
-      { path: routePaths.adminTenants, Component: TenantsList },
-      { path: routePaths.adminUsers, Component: UsersList },
-      { path: routePaths.adminPayments, Component: PaymentsList },
-      { path: routePaths.adminMaintenance, Component: MaintenanceList },
-      { path: routePaths.adminRentalRequests, Component: RentalRequestsList },
-      { path: routePaths.adminChat, Component: ChatAdmin },
-    ],
-  },
-  {
-    path: routes.tenantRoot,
-    Component: TenantLayout,
-    children: [
-      { index: true, Component: TenantDashboard },
-      { path: routePaths.tenantPayments, Component: TenantPayments },
-      { path: routePaths.tenantMaintenance, Component: TenantMaintenance },
-      { path: routePaths.tenantChat, Component: ChatTenant },
     ],
   },
 ]);
