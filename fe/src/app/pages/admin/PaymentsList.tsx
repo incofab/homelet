@@ -9,6 +9,7 @@ import { useCallback, useMemo } from "react";
 import { api } from "../../lib/urls";
 import { PaginatedData } from "../../lib/paginatedData";
 import type { Payment } from "../../lib/models";
+import { RecordPaymentDialog } from "./RecordPaymentDialog";
 
 export function PaymentsList() {
   const selectPayments = useCallback(
@@ -46,10 +47,7 @@ export function PaymentsList() {
             <Filter size={20} className="mr-2" />
             Filter
           </Button>
-          <Button>
-            <Plus size={20} className="mr-2" />
-            Record Payment
-          </Button>
+          <RecordPaymentDialog onSuccess={paymentsQuery.refetch} />
         </div>
       </div>
 
