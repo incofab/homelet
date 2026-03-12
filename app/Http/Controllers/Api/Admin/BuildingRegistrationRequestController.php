@@ -5,11 +5,12 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Building\ApproveBuildingRegistrationRequest;
 use App\Http\Requests\Building\RejectBuildingRegistrationRequest;
-use App\Models\Building;
-use App\Models\BuildingRegistrationRequest;
-use App\Models\User;
 use App\Mail\BuildingRegistrationApprovedMail;
 use App\Mail\BuildingRegistrationRejectedMail;
+use App\Models\Building;
+use App\Models\BuildingRegistrationRequest;
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -72,6 +73,7 @@ class BuildingRegistrationRequestController extends Controller
                     ]);
                 }
 
+                $owner->syncRoles([Role::findOrCreate(User::ROLE_USER)]);
                 $buildingRegistrationRequest->user()->associate($owner);
             }
 
@@ -141,7 +143,7 @@ class BuildingRegistrationRequestController extends Controller
     {
         $user = request()->user('sanctum');
 
-        if (! $user || ! $user->hasRole('admin')) {
+        if (! $user || ! $user->isPlatformAdmin()) {
             abort(403);
         }
 

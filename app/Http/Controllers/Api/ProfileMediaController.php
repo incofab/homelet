@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Media\StoreMediaRequest;
-use App\Models\Media;
 use App\Services\MediaService;
 use Illuminate\Http\JsonResponse;
 

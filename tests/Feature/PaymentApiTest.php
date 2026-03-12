@@ -4,7 +4,6 @@ use App\Models\Apartment;
 use App\Models\Building;
 use App\Models\Lease;
 use App\Models\Payment;
-use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -43,7 +42,7 @@ test('manager can record manual payment for building lease', function () {
     $tenant = User::factory()->create();
 
     $building = Building::factory()->create(['owner_id' => $owner->id]);
-    $building->users()->attach($manager->id, ['role_in_building' => 'manager']);
+    assignBuildingRole($building, $manager, Building::ROLE_MANAGER);
 
     $apartment = Apartment::factory()->create(['building_id' => $building->id]);
 
@@ -94,14 +93,10 @@ test('tenant cannot record manual payment', function () {
 
 test('payments index is scoped for admins and tenant endpoint is scoped to tenant', function () {
     $owner = User::factory()->create();
-    $admin = User::factory()->create();
+    $admin = assignPlatformAdmin(User::factory()->create());
     $tenant = User::factory()->create();
 
-    $tenantRole = Role::firstOrCreate(['name' => 'tenant']);
-    $tenant->roles()->syncWithoutDetaching([$tenantRole->id]);
-
     $building = Building::factory()->create(['owner_id' => $owner->id]);
-    $building->users()->attach($admin->id, ['role_in_building' => 'admin']);
 
     $apartment = Apartment::factory()->create(['building_id' => $building->id]);
     $lease = Lease::factory()->create([
@@ -130,7 +125,7 @@ test('payments index is scoped for admins and tenant endpoint is scoped to tenan
 
     Sanctum::actingAs($admin);
     $adminResponse = $this->getJson('/api/payments');
-    $adminResponse->assertStatus(200)->assertJsonCount(1, 'data.payments.data');
+    $adminResponse->assertStatus(200)->assertJsonCount(2, 'data.payments.data');
 
     Sanctum::actingAs($tenant);
     $tenantResponse = $this->getJson('/api/tenant/payments');

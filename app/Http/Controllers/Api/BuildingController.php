@@ -15,13 +15,19 @@ class BuildingController extends Controller
     {
         $user = $request->user();
 
-        $buildings = paginateFromRequest(Building::query()
-            ->where('owner_id', $user->id)
-            ->orWhereHas('users', function ($query) use ($user) {
-                $query->where('users.id', $user->id);
-            })
-            ->with('media')
-            ->latest('id'));
+        $query = Building::query()->with('media')->latest('id');
+
+        if (! $user->isPlatformAdmin()) {
+            $query->where(function ($buildingQuery) use ($user) {
+                $buildingQuery
+                    ->where('owner_id', $user->id)
+                    ->orWhereHas('users', function ($query) use ($user) {
+                        $query->where('users.id', $user->id);
+                    });
+            });
+        }
+
+        $buildings = paginateFromRequest($query);
 
         return $this->success('Buildings loaded.', [
             'buildings' => $buildings,
@@ -30,7 +36,21 @@ class BuildingController extends Controller
 
     public function store(StoreBuildingRequest $request): JsonResponse
     {
-        abort(403);
+        $user = $request->user('sanctum');
+
+        if (! $user || ! $user->isPlatformAdmin()) {
+            abort(403);
+        }
+
+        $payload = $request->validated();
+        $building = Building::create([
+            ...$payload,
+            'owner_id' => $payload['owner_id'] ?? $user->id,
+        ]);
+
+        return $this->success('Building created.', [
+            'building' => $building->fresh(),
+        ], 201);
     }
 
     public function show(Request $request, Building $building): JsonResponse
@@ -61,5 +81,4 @@ class BuildingController extends Controller
 
         return $this->success('Building deleted.');
     }
-
 }

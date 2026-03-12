@@ -19,6 +19,7 @@ export const routes = {
   adminBuildingApartmentsNew: (buildingId: string | number) => `/admin/buildings/${buildingId}/apartments/new`,
   adminApartment: (id: string | number) => `/admin/apartments/${id}`,
   adminTenants: "/admin/tenants",
+  adminUsers: "/admin/users",
   adminPayments: "/admin/payments",
   adminMaintenance: "/admin/maintenance",
   adminRentalRequests: "/admin/rental-requests",
@@ -46,6 +47,7 @@ export const routePaths = {
   adminBuildingApartmentsNew: "buildings/:buildingId/apartments/new",
   adminApartment: "apartments/:id",
   adminTenants: "tenants",
+  adminUsers: "users",
   adminPayments: "payments",
   adminMaintenance: "maintenance",
   adminRentalRequests: "rental-requests",
@@ -85,6 +87,7 @@ export const api = {
 
   // Tenants & payments API
   tenants: "/tenants",
+  users: "/users",
   payments: "/payments",
   tenantPayments: "/tenant/payments",
 

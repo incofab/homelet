@@ -7,40 +7,45 @@ use App\Models\User;
 
 class BuildingPolicy
 {
+    public function before(User $user, string $ability): ?bool
+    {
+        return $user->isPlatformAdmin() ? true : null;
+    }
+
     public function view(User $user, Building $building): bool
     {
-        return $this->isOwner($user, $building)
-            || $this->hasRoleInBuilding($user, $building, ['admin', 'manager']);
+        return $user->canViewBuilding($building);
     }
 
     public function update(User $user, Building $building): bool
     {
-        return $this->isOwner($user, $building)
-            || $this->hasRoleInBuilding($user, $building, ['admin', 'manager']);
+        return $user->canManageBuilding($building);
     }
 
     public function delete(User $user, Building $building): bool
     {
-        return $this->isOwner($user, $building)
-            || $this->hasRoleInBuilding($user, $building, ['admin']);
+        return $user->hasBuildingRole($building, Building::ROLE_LANDLORD);
     }
 
-    public function manageManagers(User $user, Building $building): bool
+    public function manageRoles(User $user, Building $building, ?string $role = null): bool
     {
-        return $this->isOwner($user, $building)
-            || $this->hasRoleInBuilding($user, $building, ['admin']);
+        if ($user->isPlatformAdmin()) {
+            return true;
+        }
+
+        if ($role === Building::ROLE_LANDLORD) {
+            return false;
+        }
+
+        return $user->hasBuildingRole($building, Building::ROLE_LANDLORD);
     }
 
-    private function isOwner(User $user, Building $building): bool
+    public function removeRole(User $user, Building $building, string $role): bool
     {
-        return $user->id === $building->owner_id;
-    }
+        if ($user->isPlatformAdmin()) {
+            return true;
+        }
 
-    private function hasRoleInBuilding(User $user, Building $building, array $roles): bool
-    {
-        return $building->users()
-            ->where('users.id', $user->id)
-            ->wherePivotIn('role_in_building', $roles)
-            ->exists();
+        return $this->manageRoles($user, $building, $role);
     }
 }

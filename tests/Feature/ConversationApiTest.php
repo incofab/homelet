@@ -5,7 +5,6 @@ use App\Models\Building;
 use App\Models\Conversation;
 use App\Models\Lease;
 use App\Models\Message;
-use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -14,14 +13,10 @@ uses(RefreshDatabase::class);
 
 test('admin can create conversation for apartment with tenant participant', function () {
     $owner = User::factory()->create();
-    $admin = User::factory()->create();
+    $admin = assignPlatformAdmin(User::factory()->create());
     $tenant = User::factory()->create();
 
-    $tenantRole = Role::firstOrCreate(['name' => 'tenant']);
-    $tenant->roles()->syncWithoutDetaching([$tenantRole->id]);
-
     $building = Building::factory()->create(['owner_id' => $owner->id]);
-    $building->users()->attach($admin->id, ['role_in_building' => 'admin']);
 
     $apartment = Apartment::factory()->create(['building_id' => $building->id]);
 
@@ -46,8 +41,6 @@ test('admin can create conversation for apartment with tenant participant', func
 
 test('tenant cannot create conversation outside their leased apartment', function () {
     $tenant = User::factory()->create();
-    $tenantRole = Role::firstOrCreate(['name' => 'tenant']);
-    $tenant->roles()->syncWithoutDetaching([$tenantRole->id]);
 
     $building = Building::factory()->create();
     $apartment = Apartment::factory()->create(['building_id' => $building->id]);
@@ -64,10 +57,6 @@ test('tenant cannot create conversation outside their leased apartment', functio
 test('tenant to tenant conversation is blocked', function () {
     $tenantA = User::factory()->create();
     $tenantB = User::factory()->create();
-
-    $tenantRole = Role::firstOrCreate(['name' => 'tenant']);
-    $tenantA->roles()->syncWithoutDetaching([$tenantRole->id]);
-    $tenantB->roles()->syncWithoutDetaching([$tenantRole->id]);
 
     $building = Building::factory()->create();
     $apartmentA = Apartment::factory()->create(['building_id' => $building->id]);
@@ -98,14 +87,12 @@ test('manager cannot create conversation for unrelated building', function () {
     $manager = User::factory()->create();
     $building = Building::factory()->create();
 
-    $building->users()->attach($manager->id, ['role_in_building' => 'manager']);
+    assignBuildingRole($building, $manager, Building::ROLE_MANAGER);
 
     $otherBuilding = Building::factory()->create();
     $otherApartment = Apartment::factory()->create(['building_id' => $otherBuilding->id]);
 
     $tenant = User::factory()->create();
-    $tenantRole = Role::firstOrCreate(['name' => 'tenant']);
-    $tenant->roles()->syncWithoutDetaching([$tenantRole->id]);
 
     Lease::factory()->create([
         'apartment_id' => $otherApartment->id,
@@ -124,14 +111,10 @@ test('manager cannot create conversation for unrelated building', function () {
 
 test('participants can list conversations and send messages', function () {
     $owner = User::factory()->create();
-    $admin = User::factory()->create();
+    $admin = assignPlatformAdmin(User::factory()->create());
     $tenant = User::factory()->create();
 
-    $tenantRole = Role::firstOrCreate(['name' => 'tenant']);
-    $tenant->roles()->syncWithoutDetaching([$tenantRole->id]);
-
     $building = Building::factory()->create(['owner_id' => $owner->id]);
-    $building->users()->attach($admin->id, ['role_in_building' => 'admin']);
 
     $apartment = Apartment::factory()->create(['building_id' => $building->id]);
 

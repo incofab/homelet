@@ -15,7 +15,7 @@ class TenantDashboardController extends Controller
     {
         $user = $request->user('sanctum');
 
-        if (! $user->hasRole('tenant')) {
+        if (! $user->activeLease()->exists()) {
             abort(403);
         }
 
@@ -58,5 +58,4 @@ class TenantDashboardController extends Controller
             'payment_summary' => $paymentSummary,
         ]);
     }
-
 }

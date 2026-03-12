@@ -5,7 +5,6 @@ use App\Models\Building;
 use App\Models\Lease;
 use App\Models\MaintenanceRequest;
 use App\Models\Media;
-use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -19,10 +18,9 @@ test('admin can upload building media and list it', function () {
     config(['filesystems.default' => 'public']);
 
     $owner = User::factory()->create();
-    $admin = User::factory()->create();
+    $admin = assignPlatformAdmin(User::factory()->create());
 
     $building = Building::factory()->create(['owner_id' => $owner->id]);
-    $building->users()->attach($admin->id, ['role_in_building' => 'admin']);
 
     Sanctum::actingAs($admin);
     $response = $this->postJson("/api/buildings/{$building->id}/media", [
@@ -58,8 +56,6 @@ test('tenant can upload maintenance request media for own request', function () 
     config(['filesystems.default' => 'public']);
 
     $tenant = User::factory()->create();
-    $tenantRole = Role::firstOrCreate(['name' => 'tenant']);
-    $tenant->roles()->syncWithoutDetaching([$tenantRole->id]);
 
     $apartment = Apartment::factory()->create();
     Lease::factory()->create([

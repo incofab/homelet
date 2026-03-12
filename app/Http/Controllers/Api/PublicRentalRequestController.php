@@ -17,5 +17,4 @@ class PublicRentalRequestController extends Controller
             'rental_request' => $rentalRequest,
         ], 201);
     }
-
 }

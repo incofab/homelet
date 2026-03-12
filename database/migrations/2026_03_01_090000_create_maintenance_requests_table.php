@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('tenant_id')->constrained('users')->cascadeOnDelete();
             $table->string('title');
             $table->text('description');
-            $table->string('status')->default('open');//, ['open', 'in_progress', 'resolved'])->default('open');
+            $table->string('status')->default('open'); // , ['open', 'in_progress', 'resolved'])->default('open');
             $table->timestamps();
 
             $table->index(['apartment_id', 'status']);

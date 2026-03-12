@@ -20,10 +20,12 @@ test('register creates a user and returns a token', function () {
         ->assertJsonPath('success', true)
         ->assertJsonPath('message', 'Registration successful.')
         ->assertJsonPath('data.user.email', 'jane@example.com')
+        ->assertJsonPath('data.user.role', 'user')
+        ->assertJsonPath('data.dashboard', 'admin')
         ->assertJsonStructure([
             'success',
             'message',
-            'data' => ['user', 'token'],
+            'data' => ['user', 'dashboard', 'token'],
             'errors',
         ]);
 
@@ -46,10 +48,12 @@ test('login returns a token for valid credentials', function () {
         ->assertJsonPath('success', true)
         ->assertJsonPath('message', 'Login successful.')
         ->assertJsonPath('data.user.email', $user->email)
+        ->assertJsonPath('data.user.role', 'user')
+        ->assertJsonPath('data.dashboard', 'admin')
         ->assertJsonStructure([
             'success',
             'message',
-            'data' => ['user', 'token'],
+            'data' => ['user', 'dashboard', 'token'],
             'errors',
         ]);
 
@@ -65,7 +69,9 @@ test('me returns the authenticated user', function () {
     $response
         ->assertStatus(200)
         ->assertJsonPath('success', true)
-        ->assertJsonPath('data.user.id', $user->id);
+        ->assertJsonPath('data.user.id', $user->id)
+        ->assertJsonPath('data.user.role', 'user')
+        ->assertJsonPath('data.dashboard', 'admin');
 });
 
 test('logout deletes the current access token', function () {

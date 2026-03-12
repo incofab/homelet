@@ -29,6 +29,9 @@ This document describes all available API routes, request/response payloads, and
   ```
 - Dates: `YYYY-MM-DD`
 - Money: integer kobo
+- Platform roles: `user`, `admin` (managed with Spatie permissions).
+- Building roles live on `building_users.role`: `landlord`, `manager`, `caretaker`.
+- Role names are globally unique in this project. The Spatie `guard_name` column remains in the schema but is ignored at the application level.
 
 ## Authentication
 
@@ -54,11 +57,15 @@ Response:
   "message": "Registration successful.",
   "data": {
     "token": "string",
+    "dashboard": "admin",
     "user": "User"
   },
   "errors": null
 }
 ```
+Notes:
+- Every newly registered account is automatically assigned the platform `user` role.
+- `dashboard` is the recommended frontend landing area (`admin` or `tenant`).
 Model references: `User`.
 
 ### POST `/api/auth/login`
@@ -80,6 +87,7 @@ Response:
   "message": "Login successful.",
   "data": {
     "token": "string",
+    "dashboard": "admin",
     "user": "User"
   },
   "errors": null
@@ -96,8 +104,9 @@ Response:
 ```json
 {
   "success": true,
-  "message": "User loaded.",
+  "message": "Profile loaded.",
   "data": {
+    "dashboard": "admin",
     "user": "User"
   },
   "errors": null
@@ -114,11 +123,35 @@ Response:
 ```json
 {
   "success": true,
-  "message": "Logged out.",
+  "message": "Logout successful.",
   "data": null,
   "errors": null
 }
 ```
+
+## Users
+
+### GET `/api/users`
+List platform users.
+
+Authorization:
+- Platform admin only.
+
+Query params:
+- `q` optional search term matched against `name`, `email`, and `phone`.
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Users loaded.",
+  "data": {
+    "users": "User[]"
+  },
+  "errors": null
+}
+```
+Model references: `User[]`.
 
 ## Buildings
 
@@ -126,11 +159,13 @@ Response:
 Create a building.
 
 Authorization:
-- Disabled. Buildings must be created via building registration requests and approved by an admin.
+- Platform admin only.
+- Normal users must submit a building registration request instead.
 
 Request body:
 ```json
 {
+  "owner_id": 12,
   "name": "Sunrise Apartments",
   "address_line1": "12 Main St",
   "address_line2": "Suite 4",
@@ -147,16 +182,22 @@ Model references: `BuildingCreateRequest`.
 Response:
 ```json
 {
-  "success": false,
-  "message": "Forbidden.",
-  "data": null,
+  "success": true,
+  "message": "Building created.",
+  "data": {
+    "building": "Building"
+  },
   "errors": null
 }
 ```
 Model references: `Building`.
 
 ### GET `/api/buildings`
-List buildings accessible to the user (owner/admin/manager).
+List buildings accessible to the authenticated user.
+
+Authorization:
+- Platform admin can see all buildings.
+- Platform user can see buildings where they are a `landlord`, `manager`, or `caretaker`.
 
 Request: none
 
@@ -177,7 +218,7 @@ Model references: `BuildingSummary[]`.
 Get a single building.
 
 Authorization:
-- Owner/admin/manager only.
+- Platform admin, landlord, manager, or caretaker.
 
 Request: none
 
@@ -198,7 +239,7 @@ Model references: `Building`.
 Update building details.
 
 Authorization:
-- Owner/admin/manager only.
+- Platform admin, landlord, or manager.
 
 Notes:
 - If `for_sale` is `true`, `sale_price` is required (integer kobo).
@@ -231,7 +272,7 @@ Model references: `Building`.
 Delete a building.
 
 Authorization:
-- Owner/admin only.
+- Platform admin or landlord.
 
 Request: none
 
@@ -395,19 +436,21 @@ Response:
 ```
 Model references: `BuildingRegistrationRequest`.
 
-## Building Managers
+## Building Roles
 
 ### POST `/api/buildings/{building}/managers`
-Add a manager to a building (by email). If user does not exist, it is created.
+Assign a building role to a user (by email). If the user does not exist, it is created.
 
 Authorization:
-- Owner/admin only.
+- Platform admin can assign `landlord`, `manager`, or `caretaker`.
+- Landlords can assign `manager` or `caretaker`.
 
 Request body:
 ```json
 {
   "email": "manager@example.com",
-  "name": "Manager Name"
+  "name": "Manager Name",
+  "role": "manager"
 }
 ```
 Model references: `BuildingManagerCreateRequest`.
@@ -416,9 +459,10 @@ Response:
 ```json
 {
   "success": true,
-  "message": "Manager added.",
+  "message": "Building role assigned.",
   "data": {
-    "manager": "User"
+    "user": "User",
+    "role": "manager"
   },
   "errors": null
 }
@@ -426,10 +470,12 @@ Response:
 Model references: `User`.
 
 ### DELETE `/api/buildings/{building}/managers/{user}`
-Remove a manager from a building.
+Remove a building role assignment.
 
 Authorization:
-- Owner/admin only.
+- Platform admin can remove any building role.
+- Landlords can remove `manager` and `caretaker` roles.
+- The primary landlord (`buildings.owner_id`) cannot be removed from the building.
 
 Request: none
 
@@ -437,7 +483,7 @@ Response:
 ```json
 {
   "success": true,
-  "message": "Manager removed.",
+  "message": "Building role removed.",
   "data": null,
   "errors": null
 }
@@ -449,7 +495,7 @@ Response:
 Create an apartment in a building.
 
 Authorization:
-- Owner/admin/manager only.
+- Platform admin, landlord, or manager.
 
 Request body:
 ```json
@@ -483,7 +529,7 @@ Model references: `Apartment`.
 List apartments for a building.
 
 Authorization:
-- Owner/admin/manager only.
+- Platform admin, landlord, manager, or caretaker.
 
 Request: none
 
@@ -504,7 +550,7 @@ Model references: `ApartmentSummary[]`.
 Get a single apartment.
 
 Authorization:
-- Owner/admin/manager for the building.
+- Platform admin, landlord, manager, or caretaker for the building.
 - Tenant can view only if assigned to the apartment.
 
 Request: none
@@ -526,7 +572,7 @@ Model references: `Apartment`.
 Update apartment details.
 
 Authorization:
-- Owner/admin/manager only.
+- Platform admin, landlord, or manager.
 
 Request body:
 ```json
@@ -555,7 +601,7 @@ Model references: `Apartment`.
 Delete an apartment.
 
 Authorization:
-- Owner/admin/manager only.
+- Platform admin, landlord, or manager.
 - Blocked if apartment is occupied or has tenants.
 
 Request: none
@@ -579,7 +625,7 @@ Authorization:
 - Owner/admin/manager only.
 
 Behavior:
-- Creates tenant user if missing and assigns `tenant` role.
+- Creates the user if missing. New accounts still receive the default platform `user` role.
 - Creates active lease with `end_date = start_date + 1 year`.
 - Sets apartment status to `occupied`.
 - Entire operation is transactional.
@@ -602,7 +648,7 @@ Response:
 ```json
 {
   "success": true,
-  "message": "Tenant assigned and lease created.",
+  "message": "Tenant assigned.",
   "data": {
     "tenant": "User",
     "lease": "Lease",
@@ -619,7 +665,7 @@ Model references: `User`, `Lease`, `Apartment`.
 List tenants for buildings the authenticated user can manage.
 
 Authorization:
-- Owner/admin/manager only.
+- Platform admin, landlord, or manager.
 
 Request: none
 
@@ -645,7 +691,8 @@ Model references: `User`, `LeaseSummary`.
 Get a tenant profile with lease and payment history.
 
 Authorization:
-- Owner/admin/manager only.
+- Platform admin always has access.
+- Landlords and managers can view tenants in their buildings.
 - Tenant must have a lease in a building the user can manage.
 
 Request: none
@@ -672,7 +719,7 @@ Record a payment.
 
 Authorization:
 - Tenant can submit `online` payments for their own lease.
-- Admin/manager can submit `manual` payments for leases in their building.
+- Platform admin, landlord, and manager can submit `manual` payments.
 
 Request body:
 ```json
@@ -705,10 +752,11 @@ Response:
 Model references: `Payment`.
 
 ### GET `/api/payments`
-List payments for buildings the admin/manager owns/manages.
+List payments visible to the authenticated operator.
 
 Authorization:
-- Owner/admin/manager only.
+- Platform admin sees all payments.
+- Landlords and managers see payments for their buildings.
 
 Request: none
 
@@ -729,7 +777,7 @@ Model references: `PaymentSummary[]`.
 List payments for the authenticated tenant.
 
 Authorization:
-- Tenant only.
+- Any authenticated user with lease payments.
 
 Request: none
 
@@ -819,10 +867,11 @@ Alias:
 - POST `/api/public/request-interest`
 
 ### GET `/api/rental-requests`
-List rental requests scoped to buildings the admin/manager owns/manages.
+List rental requests visible to the authenticated operator.
 
 Authorization:
-- Owner/admin/manager only.
+- Platform admin sees all rental requests.
+- Landlords and managers see requests for their buildings.
 
 Request: none
 
@@ -843,7 +892,7 @@ Model references: `RentalRequestSummary[]`.
 Update rental request status.
 
 Authorization:
-- Owner/admin/manager only.
+- Platform admin, landlord, or manager.
 
 Request body:
 ```json
@@ -873,7 +922,7 @@ Create a conversation tied to a building or apartment.
 
 Authorization:
 - Tenant must have an active lease for the apartment/building.
-- Admin/manager/owner only within their building scope.
+- Platform admin, landlord, or manager only within building scope.
 - No tenant-to-tenant conversations.
 
 Request body:
@@ -981,14 +1030,14 @@ Response:
 ```json
 {
   "success": true,
-  "message": "Messages marked as read.",
+  "message": "Conversation marked as read.",
   "data": {
-    "read_at": "string"
+    "updated": 3
   },
   "errors": null
 }
 ```
-Model references: none (read receipt only).
+Model references: none.
 
 ## Maintenance Requests
 
@@ -996,7 +1045,7 @@ Model references: none (read receipt only).
 Create a maintenance request.
 
 Authorization:
-- Tenant only, and must have an active lease for the apartment.
+- Authenticated user with an active lease for the apartment.
 
 Request body:
 ```json
@@ -1026,7 +1075,8 @@ List maintenance requests.
 
 Authorization:
 - Tenant: only their own requests.
-- Owner/admin/manager: requests for their buildings.
+- Platform admin: all requests.
+- Landlord/manager/caretaker: requests for their buildings.
 
 Request: none
 
@@ -1047,7 +1097,7 @@ Model references: `MaintenanceRequestSummary[]`.
 Update maintenance request status.
 
 Authorization:
-- Owner/admin/manager only.
+- Platform admin, landlord, manager, or caretaker.
 
 Request body:
 ```json
@@ -1082,7 +1132,7 @@ Common request fields:
 List media for a building.
 
 Authorization:
-- Owner/admin/manager for the building.
+- Platform admin, landlord, or manager for the building.
 
 Request: none
 
@@ -1103,7 +1153,7 @@ Model references: `Media[]`.
 Upload building media (images/videos).
 
 Authorization:
-- Owner/admin/manager for the building.
+- Platform admin, landlord, or manager for the building.
 
 Multipart form-data:
 ```
@@ -1129,7 +1179,7 @@ Model references: `Media`.
 List media for an apartment.
 
 Authorization:
-- Owner/admin/manager for the building.
+- Platform admin, landlord, manager, or caretaker for the building.
 - Tenant can view only if assigned to the apartment.
 
 Request: none
@@ -1151,7 +1201,7 @@ Model references: `Media[]`.
 Upload apartment media (images/videos).
 
 Authorization:
-- Owner/admin/manager for the building.
+- Platform admin, landlord, or manager for the building.
 
 Multipart form-data:
 ```
@@ -1178,7 +1228,7 @@ List media for a maintenance request.
 
 Authorization:
 - Tenant owner of the request.
-- Owner/admin/manager for the building.
+- Platform admin, landlord, manager, or caretaker for the building.
 
 Request: none
 
@@ -1200,7 +1250,7 @@ Upload maintenance request media (images/videos).
 
 Authorization:
 - Tenant owner of the request.
-- Owner/admin/manager for the building.
+- Platform admin, landlord, manager, or caretaker for the building.
 
 Multipart form-data:
 ```
@@ -1375,10 +1425,11 @@ Model references: `Review`.
 ## Dashboards
 
 ### GET `/api/dashboard/admin`
-Admin/manager dashboard metrics (scoped to managed/owned buildings).
+Operations dashboard metrics.
 
 Authorization:
-- Owner/admin/manager only.
+- Platform admin sees all buildings.
+- Landlords and managers see their building portfolio.
 
 Request: none
 
@@ -1399,7 +1450,7 @@ Model references: `AdminDashboardMetrics`.
 Tenant dashboard metrics.
 
 Authorization:
-- Tenant only.
+- Authenticated user with an active lease.
 
 Request: none
 
@@ -1449,6 +1500,10 @@ These are Artisan commands executed by the scheduler; not HTTP endpoints.
   - `--rental-requests` (default `2`)
   - `--building-reviews` (default `2`)
   - `--apartment-reviews` (default `2`)
+
+### `users:assign-admin {email}`
+- Assigns the platform `admin` role to an existing user.
+- This is the only supported path for granting platform admin access.
 
 ## Tenancy Agreement + Quit Notice (Behavioral)
 

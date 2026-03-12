@@ -14,7 +14,7 @@ test('service prevents multiple active leases for the same apartment', function 
     $tenant = User::factory()->create();
     $otherTenant = User::factory()->create();
 
-    $service = new LeaseService();
+    $service = new LeaseService;
 
     $service->create([
         'apartment_id' => $apartment->id,
@@ -44,7 +44,7 @@ test('service allows new active lease when existing lease is not active', functi
         'status' => 'expired',
     ]);
 
-    $service = new LeaseService();
+    $service = new LeaseService;
 
     $lease = $service->create([
         'apartment_id' => $apartment->id,

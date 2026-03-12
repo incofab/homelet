@@ -4,7 +4,6 @@ use App\Models\Apartment;
 use App\Models\Building;
 use App\Models\Lease;
 use App\Models\Payment;
-use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -13,14 +12,10 @@ uses(RefreshDatabase::class);
 
 test('admin can list tenants scoped to managed buildings', function () {
     $owner = User::factory()->create();
-    $admin = User::factory()->create();
+    $admin = assignPlatformAdmin(User::factory()->create());
     $tenant = User::factory()->create();
 
-    $tenantRole = Role::firstOrCreate(['name' => 'tenant']);
-    $tenant->roles()->syncWithoutDetaching([$tenantRole->id]);
-
     $building = Building::factory()->create(['owner_id' => $owner->id]);
-    $building->users()->attach($admin->id, ['role_in_building' => 'admin']);
     $apartment = Apartment::factory()->create(['building_id' => $building->id]);
     Lease::factory()->create([
         'apartment_id' => $apartment->id,
@@ -29,7 +24,6 @@ test('admin can list tenants scoped to managed buildings', function () {
     ]);
 
     $otherTenant = User::factory()->create();
-    $otherTenant->roles()->syncWithoutDetaching([$tenantRole->id]);
     $otherBuilding = Building::factory()->create();
     $otherApartment = Apartment::factory()->create(['building_id' => $otherBuilding->id]);
     Lease::factory()->create([
@@ -42,19 +36,15 @@ test('admin can list tenants scoped to managed buildings', function () {
     $response = $this->getJson('/api/tenants');
 
     $response->assertStatus(200)
-        ->assertJsonCount(1, 'data.tenants.data');
+        ->assertJsonCount(2, 'data.tenants.data');
 });
 
 test('admin can view tenant details for managed building', function () {
     $owner = User::factory()->create();
-    $admin = User::factory()->create();
+    $admin = assignPlatformAdmin(User::factory()->create());
     $tenant = User::factory()->create();
 
-    $tenantRole = Role::firstOrCreate(['name' => 'tenant']);
-    $tenant->roles()->syncWithoutDetaching([$tenantRole->id]);
-
     $building = Building::factory()->create(['owner_id' => $owner->id]);
-    $building->users()->attach($admin->id, ['role_in_building' => 'admin']);
     $apartment = Apartment::factory()->create(['building_id' => $building->id]);
     $lease = Lease::factory()->create([
         'apartment_id' => $apartment->id,
@@ -78,8 +68,6 @@ test('admin can view tenant details for managed building', function () {
 
 test('tenant cannot list tenants', function () {
     $tenant = User::factory()->create();
-    $tenantRole = Role::firstOrCreate(['name' => 'tenant']);
-    $tenant->roles()->syncWithoutDetaching([$tenantRole->id]);
 
     Sanctum::actingAs($tenant);
     $response = $this->getJson('/api/tenants');
@@ -87,12 +75,9 @@ test('tenant cannot list tenants', function () {
     $response->assertStatus(403);
 });
 
-test('admin cannot view tenant outside managed buildings', function () {
-    $admin = User::factory()->create();
+test('platform admin can view tenant outside managed buildings', function () {
+    $admin = assignPlatformAdmin(User::factory()->create());
     $tenant = User::factory()->create();
-
-    $tenantRole = Role::firstOrCreate(['name' => 'tenant']);
-    $tenant->roles()->syncWithoutDetaching([$tenantRole->id]);
 
     $otherBuilding = Building::factory()->create();
     $otherApartment = Apartment::factory()->create(['building_id' => $otherBuilding->id]);
@@ -105,5 +90,5 @@ test('admin cannot view tenant outside managed buildings', function () {
     Sanctum::actingAs($admin);
     $response = $this->getJson("/api/tenants/{$tenant->id}");
 
-    $response->assertStatus(403);
+    $response->assertStatus(200);
 });

@@ -18,9 +18,6 @@ class TenantController extends Controller
         $buildingIds = $this->buildingIdsFor($actor);
 
         $tenants = paginateFromRequest(User::query()
-            ->whereHas('roles', function ($query) {
-                $query->where('name', 'tenant');
-            })
             ->whereHas('leases.apartment', function ($query) use ($buildingIds) {
                 $query->whereIn('building_id', $buildingIds);
             })
@@ -36,7 +33,7 @@ class TenantController extends Controller
     {
         $this->authorize('view', $tenant);
 
-        if (! $tenant->hasRole('tenant')) {
+        if (! $tenant->leases()->exists()) {
             abort(404);
         }
 
@@ -58,12 +55,6 @@ class TenantController extends Controller
 
     private function buildingIdsFor(User $user)
     {
-        $owned = Building::query()->where('owner_id', $user->id)->pluck('id');
-
-        $assigned = $user->buildings()
-            ->wherePivotIn('role_in_building', ['admin', 'manager'])
-            ->pluck('buildings.id');
-
-        return $owned->merge($assigned)->unique();
+        return $user->buildingIdsForRoles([Building::ROLE_LANDLORD, Building::ROLE_MANAGER]);
     }
 }

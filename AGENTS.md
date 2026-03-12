@@ -58,7 +58,7 @@ we are building a property management system for tenants and landlords
 - `fe/src/app/pages` contains route-level screens; `fe/src/app/routes.ts` defines route mappings.
 - `fe/src/app/components` holds reusable UI components; `fe/src/app/layouts` holds layout wrappers.
 - `fe/src/styles` contains global CSS (`index.css`, `tailwind.css`, `theme.css`, `fonts.css`).
-- `fe/src/imports` stores design reference material (e.g., `rentpilot-design-spec.md`).
+- `fe/src/imports` stores design reference material (e.g., `tenanta-design-spec.md`).
 
 ## Build, Test, and Development Commands
 

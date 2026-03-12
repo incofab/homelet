@@ -7,11 +7,21 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable;
+
+    public const ROLE_ADMIN = 'admin';
+
+    public const ROLE_USER = 'user';
+
+    protected $appends = [
+        'role',
+        'dashboard',
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -48,33 +58,27 @@ class User extends Authenticatable
         ];
     }
 
-    public function roles()
+    protected static function booted(): void
     {
-        return $this->belongsToMany(Role::class);
+        static::created(function (User $user): void {
+            $user->assignRole(Role::findOrCreate(self::ROLE_USER));
+        });
     }
 
-    public function hasRole(string|array $roles): bool
+    public function getRoleAttribute(): string
     {
-        $roles = is_array($roles) ? $roles : [$roles];
-
-        return $this->roles()->whereIn('name', $roles)->exists();
+        return $this->hasRole(self::ROLE_ADMIN) ? self::ROLE_ADMIN : self::ROLE_USER;
     }
 
-    public function hasPermission(string|array $permissions): bool
+    public function getDashboardAttribute(): string
     {
-        $permissions = is_array($permissions) ? $permissions : [$permissions];
-
-        return $this->roles()
-            ->whereHas('permissions', function ($query) use ($permissions) {
-                $query->whereIn('name', $permissions);
-            })
-            ->exists();
+        return $this->shouldUseTenantDashboard() ? 'tenant' : 'admin';
     }
 
     public function buildings()
     {
         return $this->belongsToMany(Building::class, 'building_users')
-            ->withPivot('role_in_building')
+            ->withPivot('role')
             ->withTimestamps();
     }
 
@@ -124,5 +128,90 @@ class User extends Authenticatable
     public function reviews()
     {
         return $this->hasMany(Review::class);
+    }
+
+    public function isPlatformAdmin(): bool
+    {
+        return $this->hasRole(self::ROLE_ADMIN);
+    }
+
+    public function shouldUseTenantDashboard(): bool
+    {
+        return $this->activeLease()->exists();
+    }
+
+    public function hasBuildingRole(Building $building, string|array $roles): bool
+    {
+        if ($this->isPlatformAdmin()) {
+            return true;
+        }
+
+        $roles = is_array($roles) ? $roles : [$roles];
+
+        if (in_array(Building::ROLE_LANDLORD, $roles, true) && $this->id === $building->owner_id) {
+            return true;
+        }
+
+        return $this->buildings()
+            ->where('buildings.id', $building->id)
+            ->wherePivotIn('role', $roles)
+            ->exists();
+    }
+
+    public function ownedBuildingIds()
+    {
+        return Building::query()
+            ->where('owner_id', $this->id)
+            ->pluck('id');
+    }
+
+    public function buildingIdsForRoles(array $roles)
+    {
+        if ($this->isPlatformAdmin()) {
+            return Building::query()->pluck('id');
+        }
+
+        $owned = in_array(Building::ROLE_LANDLORD, $roles, true)
+            ? $this->ownedBuildingIds()
+            : collect();
+
+        $assigned = $this->buildings()
+            ->wherePivotIn('role', $roles)
+            ->pluck('buildings.id');
+
+        return $owned->merge($assigned)->unique()->values();
+    }
+
+    public function canManageBuilding(Building $building): bool
+    {
+        return $this->hasBuildingRole($building, [Building::ROLE_LANDLORD, Building::ROLE_MANAGER]);
+    }
+
+    public function canViewBuilding(Building $building): bool
+    {
+        return $this->hasBuildingRole($building, [
+            Building::ROLE_LANDLORD,
+            Building::ROLE_MANAGER,
+            Building::ROLE_CARETAKER,
+        ]);
+    }
+
+    public function canHandleMaintenance(Building $building): bool
+    {
+        return $this->hasBuildingRole($building, [
+            Building::ROLE_LANDLORD,
+            Building::ROLE_MANAGER,
+            Building::ROLE_CARETAKER,
+        ]);
+    }
+
+    public function isTenantInBuilding(Building $building): bool
+    {
+        return $this->leases()
+            ->where('status', 'active')
+            ->whereHas('apartment', function ($query) use ($building) {
+                $query->where('building_id', $building->id);
+            })
+            ->exists();
     }
 }

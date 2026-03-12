@@ -1,12 +1,17 @@
-import { Outlet, Link, useLocation } from "react-router";
-import { LayoutDashboard, DollarSign, Wrench, MessageSquare } from "lucide-react";
-import { routes } from "../lib/urls";
+import { Outlet, Link, useLocation } from 'react-router';
+import {
+  LayoutDashboard,
+  DollarSign,
+  Wrench,
+  MessageSquare,
+} from 'lucide-react';
+import { routes } from '../lib/urls';
 
 const navigation = [
-  { name: "Dashboard", href: routes.tenantRoot, icon: LayoutDashboard },
-  { name: "Payments", href: routes.tenantPayments, icon: DollarSign },
-  { name: "Maintenance", href: routes.tenantMaintenance, icon: Wrench },
-  { name: "Chat", href: routes.tenantChat, icon: MessageSquare },
+  { name: 'Dashboard', href: routes.tenantRoot, icon: LayoutDashboard },
+  { name: 'Payments', href: routes.tenantPayments, icon: DollarSign },
+  { name: 'Maintenance', href: routes.tenantMaintenance, icon: Wrench },
+  { name: 'Chat', href: routes.tenantChat, icon: MessageSquare },
 ];
 
 export function TenantLayout() {
@@ -17,7 +22,7 @@ export function TenantLayout() {
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-10">
         <div className="px-4 lg:px-8 py-4">
-          <h1 className="text-xl text-primary">RentPilot</h1>
+          <h1 className="text-xl text-primary">Tenanta</h1>
         </div>
       </header>
 
@@ -37,7 +42,7 @@ export function TenantLayout() {
                 key={item.name}
                 to={item.href}
                 className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors ${
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  isActive ? 'text-primary' : 'text-muted-foreground'
                 }`}
               >
                 <Icon size={20} />

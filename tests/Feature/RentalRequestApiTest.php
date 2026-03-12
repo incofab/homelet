@@ -47,10 +47,9 @@ test('public can create rental request via request-interest alias', function () 
 
 test('admin can list rental requests scoped to building', function () {
     $owner = User::factory()->create();
-    $admin = User::factory()->create();
+    $admin = assignPlatformAdmin(User::factory()->create());
 
     $building = Building::factory()->create(['owner_id' => $owner->id]);
-    $building->users()->attach($admin->id, ['role_in_building' => 'admin']);
 
     $apartment = Apartment::factory()->create(['building_id' => $building->id]);
     RentalRequest::factory()->create(['apartment_id' => $apartment->id]);
@@ -62,7 +61,7 @@ test('admin can list rental requests scoped to building', function () {
     Sanctum::actingAs($admin);
     $response = $this->getJson('/api/rental-requests');
 
-    $response->assertStatus(200)->assertJsonCount(1, 'data.rental_requests.data');
+    $response->assertStatus(200)->assertJsonCount(2, 'data.rental_requests.data');
 });
 
 test('manager can update rental request status and tenant cannot', function () {
@@ -71,7 +70,7 @@ test('manager can update rental request status and tenant cannot', function () {
     $tenant = User::factory()->create();
 
     $building = Building::factory()->create(['owner_id' => $owner->id]);
-    $building->users()->attach($manager->id, ['role_in_building' => 'manager']);
+    assignBuildingRole($building, $manager, Building::ROLE_MANAGER);
 
     $apartment = Apartment::factory()->create(['building_id' => $building->id]);
     $rentalRequest = RentalRequest::factory()->create([

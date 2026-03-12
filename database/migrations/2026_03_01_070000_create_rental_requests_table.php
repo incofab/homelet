@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('email');
             $table->string('phone')->nullable();
             $table->text('message')->nullable();
-            $table->string('status')->default('new');//, ['new', 'contacted', 'closed'])->default('new');
+            $table->string('status')->default('new'); // , ['new', 'contacted', 'closed'])->default('new');
             $table->timestamps();
 
             $table->index(['apartment_id', 'status']);

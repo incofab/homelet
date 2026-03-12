@@ -16,12 +16,7 @@ class RentalRequestController extends Controller
         $this->authorize('viewAny', RentalRequest::class);
 
         $user = $request->user('sanctum');
-        $buildingIds = $user->buildings()
-            ->wherePivotIn('role_in_building', ['admin', 'manager'])
-            ->pluck('buildings.id')
-            ->merge(Building::query()->where('owner_id', $user->id)->pluck('id'))
-            ->unique()
-            ->values();
+        $buildingIds = $user->buildingIdsForRoles([Building::ROLE_LANDLORD, Building::ROLE_MANAGER]);
 
         $requests = paginateFromRequest(RentalRequest::query()
             ->whereHas('apartment', function ($query) use ($buildingIds) {
@@ -44,5 +39,4 @@ class RentalRequestController extends Controller
             'rental_request' => $rentalRequest->refresh(),
         ]);
     }
-
 }

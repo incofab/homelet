@@ -10,21 +10,20 @@ uses(RefreshDatabase::class);
 
 test('building owner admin manager can crud apartments', function () {
     $owner = User::factory()->create();
-    $admin = User::factory()->create();
+    $admin = assignPlatformAdmin(User::factory()->create());
     $manager = User::factory()->create();
 
     $building = Building::factory()->create([
         'owner_id' => $owner->id,
     ]);
 
-    $building->users()->attach($admin->id, ['role_in_building' => 'admin']);
-    $building->users()->attach($manager->id, ['role_in_building' => 'manager']);
+    assignBuildingRole($building, $manager, Building::ROLE_MANAGER);
 
     $apartment = Apartment::factory()->create([
         'building_id' => $building->id,
     ]);
 
-    $policy = new ApartmentPolicy();
+    $policy = new ApartmentPolicy;
 
     expect($policy->create($owner, $building))->toBeTrue();
     expect($policy->update($owner, $apartment))->toBeTrue();
@@ -54,7 +53,7 @@ test('tenant can only view their leased apartment', function () {
 
     $apartment->tenants()->attach($tenant->id);
 
-    $policy = new ApartmentPolicy();
+    $policy = new ApartmentPolicy;
 
     expect($policy->view($tenant, $apartment))->toBeTrue();
     expect($policy->update($tenant, $apartment))->toBeFalse();

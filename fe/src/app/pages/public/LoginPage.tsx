@@ -23,8 +23,7 @@ export function LoginPage() {
     try {
       const data = await apiPost<AuthResponse>(api.authLogin, formState);
       setAuthToken(data.token);
-      const role = data.user.role?.toLowerCase?.() ?? "";
-      if (role === "tenant") {
+      if (data.dashboard === "tenant") {
         navigate(routes.tenantRoot);
       } else {
         navigate(routes.adminRoot);

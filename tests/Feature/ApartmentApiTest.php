@@ -42,7 +42,7 @@ test('manager can update apartment but tenant cannot', function () {
     $tenant = User::factory()->create();
 
     $building = Building::factory()->create(['owner_id' => $owner->id]);
-    $building->users()->attach($manager->id, ['role_in_building' => 'manager']);
+    assignBuildingRole($building, $manager, Building::ROLE_MANAGER);
 
     $apartment = Apartment::factory()->create([
         'building_id' => $building->id,

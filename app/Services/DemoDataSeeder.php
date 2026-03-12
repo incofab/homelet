@@ -10,7 +10,6 @@ use App\Models\Message;
 use App\Models\Payment;
 use App\Models\RentalRequest;
 use App\Models\Review;
-use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\RbacSeeder;
 use Faker\Generator;
@@ -19,9 +18,7 @@ use Illuminate\Support\Str;
 
 class DemoDataSeeder
 {
-    public function __construct(private LeaseService $leaseService)
-    {
-    }
+    public function __construct(private LeaseService $leaseService) {}
 
     public function seed(array $options = []): array
     {
@@ -29,10 +26,6 @@ class DemoDataSeeder
         $faker = app(Generator::class);
 
         app(RbacSeeder::class)->run();
-
-        $adminRole = Role::firstOrCreate(['name' => 'admin']);
-        $managerRole = Role::firstOrCreate(['name' => 'manager']);
-        $tenantRole = Role::firstOrCreate(['name' => 'tenant']);
 
         $summary = [
             'buildings' => 0,
@@ -50,7 +43,6 @@ class DemoDataSeeder
         for ($i = 0; $i < $options['buildings']; $i++) {
             $owner = User::factory()->create();
             $summary['users']++;
-            $owner->roles()->syncWithoutDetaching([$adminRole->id]);
 
             $forSale = $faker->boolean(20);
 
@@ -68,10 +60,7 @@ class DemoDataSeeder
                 $summary['users'] += $managers->count();
 
                 foreach ($managers as $manager) {
-                    $manager->roles()->syncWithoutDetaching([$managerRole->id]);
-                    $building->users()->syncWithoutDetaching([
-                        $manager->id => ['role_in_building' => 'manager'],
-                    ]);
+                    $building->assignUserRole($manager, Building::ROLE_MANAGER);
                 }
             }
 
@@ -105,7 +94,6 @@ class DemoDataSeeder
                 $tenant = User::factory()->create();
                 $summary['users']++;
 
-                $tenant->roles()->syncWithoutDetaching([$tenantRole->id]);
                 $apartment->tenants()->syncWithoutDetaching([$tenant->id]);
 
                 $startDate = Carbon::now()->subDays($faker->numberBetween(0, 30));

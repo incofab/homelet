@@ -153,8 +153,8 @@ class ConversationController extends Controller
         $buildingId = $building?->id;
         $apartmentId = $apartment?->id;
 
-        $tenantParticipants = $participants->filter(function (User $user) {
-            return $user->hasRole('tenant');
+        $tenantParticipants = $participants->filter(function (User $user) use ($building, $apartment) {
+            return $this->isTenantParticipant($user, $building, $apartment);
         });
 
         if ($tenantParticipants->isNotEmpty()) {
@@ -193,7 +193,7 @@ class ConversationController extends Controller
         }
 
         $invalidStaff = $participants->filter(function (User $user) use ($buildingId) {
-            if ($user->hasRole('tenant')) {
+            if ($this->isTenantParticipant($user, Building::query()->find($buildingId), null)) {
                 return false;
             }
 
@@ -212,7 +212,7 @@ class ConversationController extends Controller
         $buildingId = $building?->id;
         $apartmentId = $apartment?->id;
 
-        if ($actor->hasRole('tenant')) {
+        if ($this->isTenantParticipant($actor, $building, $apartment)) {
             $hasLease = Lease::query()
                 ->where('status', 'active')
                 ->where('tenant_id', $actor->id)
@@ -244,14 +244,24 @@ class ConversationController extends Controller
             return false;
         }
 
-        if (Building::query()->where('id', $buildingId)->where('owner_id', $user->id)->exists()) {
-            return true;
-        }
+        $building = Building::query()->find($buildingId);
 
-        return $user->buildings()
-            ->where('buildings.id', $buildingId)
-            ->wherePivotIn('role_in_building', ['admin', 'manager'])
-            ->exists();
+        return $building ? $user->canManageBuilding($building) : false;
     }
 
+    private function isTenantParticipant(User $user, ?Building $building, ?Apartment $apartment): bool
+    {
+        return Lease::query()
+            ->where('status', 'active')
+            ->where('tenant_id', $user->id)
+            ->when($apartment?->id, function ($query) use ($apartment) {
+                $query->where('apartment_id', $apartment->id);
+            })
+            ->when(! $apartment?->id && $building?->id, function ($query) use ($building) {
+                $query->whereHas('apartment', function ($subQuery) use ($building) {
+                    $subQuery->where('building_id', $building->id);
+                });
+            })
+            ->exists();
+    }
 }

@@ -2,6 +2,7 @@ import type { Building, BuildingRegistrationRequest, Tenant, UserProfile } from 
 
 export interface AuthResponse {
   token: string;
+  dashboard?: "admin" | "tenant";
   user: UserProfile & { email?: string; role?: string };
 }
 

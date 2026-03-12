@@ -4,7 +4,6 @@ use App\Models\Apartment;
 use App\Models\Building;
 use App\Models\Lease;
 use App\Models\Payment;
-use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -16,10 +15,9 @@ test('admin dashboard returns scoped counts and sums', function () {
     Carbon::setTestNow(Carbon::parse('2026-03-01'));
 
     $owner = User::factory()->create();
-    $admin = User::factory()->create();
+    $admin = assignPlatformAdmin(User::factory()->create());
 
     $building = Building::factory()->create(['owner_id' => $owner->id]);
-    $building->users()->attach($admin->id, ['role_in_building' => 'admin']);
 
     $vacantApartment = Apartment::factory()->create([
         'building_id' => $building->id,
@@ -75,14 +73,14 @@ test('admin dashboard returns scoped counts and sums', function () {
 
     Sanctum::actingAs($admin);
     $response = $this->getJson('/api/dashboard/admin');
-    
+
     $response->assertStatus(200)
-        ->assertJsonPath('data.counts.buildings', 1)
-        ->assertJsonPath('data.counts.apartments', 2)
+        ->assertJsonPath('data.counts.buildings', 2)
+        ->assertJsonPath('data.counts.apartments', 3)
         ->assertJsonPath('data.counts.vacant', 1)
-        ->assertJsonPath('data.counts.occupied', 1)
-        ->assertJsonPath('data.expiring_leases_next_90_days', 1)
-        ->assertJsonPath('data.total_income_paid', '100000.00')
+        ->assertJsonPath('data.counts.occupied', 2)
+        ->assertJsonPath('data.expiring_leases_next_90_days', 2)
+        ->assertJsonPath('data.total_income_paid', 600000)
         ->assertJsonPath('data.pending_payments', 1);
 });
 
@@ -90,8 +88,6 @@ test('tenant dashboard returns lease details and payment summary', function () {
     Carbon::setTestNow(Carbon::parse('2026-03-01'));
 
     $tenant = User::factory()->create();
-    $tenantRole = Role::firstOrCreate(['name' => 'tenant']);
-    $tenant->roles()->syncWithoutDetaching([$tenantRole->id]);
 
     $apartment = Apartment::factory()->create([
         'status' => 'occupied',
@@ -131,8 +127,6 @@ test('tenant dashboard returns lease details and payment summary', function () {
 
 test('tenant dashboard alias route returns metrics', function () {
     $tenant = User::factory()->create();
-    $tenantRole = Role::firstOrCreate(['name' => 'tenant']);
-    $tenant->roles()->syncWithoutDetaching([$tenantRole->id]);
 
     $apartment = Apartment::factory()->create([
         'status' => 'occupied',

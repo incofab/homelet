@@ -1,26 +1,27 @@
 <?php
 
-use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\Admin\BuildingRegistrationRequestController as AdminBuildingRegistrationRequestController;
 use App\Http\Controllers\Api\ApartmentController;
+use App\Http\Controllers\Api\ApartmentMediaController;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BuildingController;
 use App\Http\Controllers\Api\BuildingManagerController;
+use App\Http\Controllers\Api\BuildingMediaController;
 use App\Http\Controllers\Api\BuildingRegistrationRequestController;
-use App\Http\Controllers\Api\Admin\BuildingRegistrationRequestController as AdminBuildingRegistrationRequestController;
-use App\Http\Controllers\Api\PaymentController;
-use App\Http\Controllers\Api\PublicApartmentController;
-use App\Http\Controllers\Api\PublicBuildingForSaleController;
-use App\Http\Controllers\Api\PublicRentalRequestController;
-use App\Http\Controllers\Api\RentalRequestController;
 use App\Http\Controllers\Api\ConversationController;
 use App\Http\Controllers\Api\Dashboard\AdminDashboardController;
 use App\Http\Controllers\Api\Dashboard\TenantDashboardController;
 use App\Http\Controllers\Api\MaintenanceRequestController;
-use App\Http\Controllers\Api\BuildingMediaController;
-use App\Http\Controllers\Api\ApartmentMediaController;
 use App\Http\Controllers\Api\MaintenanceRequestMediaController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProfileMediaController;
+use App\Http\Controllers\Api\PublicApartmentController;
+use App\Http\Controllers\Api\PublicBuildingForSaleController;
+use App\Http\Controllers\Api\PublicRentalRequestController;
+use App\Http\Controllers\Api\RentalRequestController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\TenantController;
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('api')->get('/health', function () {
@@ -55,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('tenant/payments', [PaymentController::class, 'tenantIndex']);
     Route::get('tenants', [TenantController::class, 'index']);
     Route::get('tenants/{tenant}', [TenantController::class, 'show']);
+    Route::get('users', [UserController::class, 'index']);
     Route::get('rental-requests', [RentalRequestController::class, 'index']);
     Route::put('rental-requests/{rentalRequest}', [RentalRequestController::class, 'update']);
     Route::post('conversations', [ConversationController::class, 'store']);

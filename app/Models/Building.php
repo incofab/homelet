@@ -10,6 +10,12 @@ class Building extends Model
 {
     use HasFactory;
 
+    public const ROLE_LANDLORD = 'landlord';
+
+    public const ROLE_MANAGER = 'manager';
+
+    public const ROLE_CARETAKER = 'caretaker';
+
     protected $fillable = [
         'owner_id',
         'name',
@@ -35,9 +41,7 @@ class Building extends Model
                 return;
             }
 
-            $building->users()->syncWithoutDetaching([
-                $building->owner_id => ['role_in_building' => 'admin'],
-            ]);
+            $building->assignUserRole($building->owner, self::ROLE_LANDLORD);
         });
     }
 
@@ -49,7 +53,7 @@ class Building extends Model
     public function users()
     {
         return $this->belongsToMany(User::class, 'building_users')
-            ->withPivot('role_in_building')
+            ->withPivot('role')
             ->withTimestamps();
     }
 
@@ -66,5 +70,18 @@ class Building extends Model
     public function reviews()
     {
         return $this->morphMany(Review::class, 'reviewable');
+    }
+
+    public function assignUserRole(User $user, string $role): void
+    {
+        $existing = $this->users()->where('users.id', $user->id)->exists();
+
+        if ($existing) {
+            $this->users()->updateExistingPivot($user->id, ['role' => $role]);
+
+            return;
+        }
+
+        $this->users()->attach($user->id, ['role' => $role]);
     }
 }

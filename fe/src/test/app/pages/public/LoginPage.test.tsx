@@ -22,7 +22,8 @@ describe("LoginPage", () => {
         match: (url, init) => url.includes(api.authLogin) && init?.method === "POST",
         response: () =>
           apiSuccess({
-            user: { id: 1, name: "Jane Tenant", email: "jane@example.com", role: "tenant" },
+            user: { id: 1, name: "Jane Tenant", email: "jane@example.com", role: "user" },
+            dashboard: "tenant",
             token: "tenant-token",
           }),
       },

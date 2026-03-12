@@ -7,6 +7,11 @@ use App\Models\User;
 
 class TenantPolicy
 {
+    public function before(User $user, string $ability): ?bool
+    {
+        return $user->isPlatformAdmin() ? true : null;
+    }
+
     public function viewAny(User $user): bool
     {
         return $this->buildingIdsFor($user)->isNotEmpty();
@@ -14,7 +19,7 @@ class TenantPolicy
 
     public function view(User $user, User $tenant): bool
     {
-        if (! $tenant->hasRole('tenant')) {
+        if (! $tenant->leases()->where('status', 'active')->exists()) {
             return false;
         }
 
@@ -33,12 +38,6 @@ class TenantPolicy
 
     private function buildingIdsFor(User $user)
     {
-        $owned = Building::query()->where('owner_id', $user->id)->pluck('id');
-
-        $assigned = $user->buildings()
-            ->wherePivotIn('role_in_building', ['admin', 'manager'])
-            ->pluck('buildings.id');
-
-        return $owned->merge($assigned)->unique();
+        return $user->buildingIdsForRoles([Building::ROLE_LANDLORD, Building::ROLE_MANAGER]);
     }
 }

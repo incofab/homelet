@@ -42,12 +42,12 @@ test('demo seed command creates connected data', function () {
 
     expect($apartment->status)->toBe('occupied');
     expect($apartment->tenants()->where('users.id', $lease->tenant_id)->exists())->toBeTrue();
-    expect($lease->tenant->hasRole('tenant'))->toBeTrue();
+    expect($lease->tenant->role)->toBe('user');
 
     $building = Building::first();
     expect($building->users()
         ->where('users.id', $building->owner_id)
-        ->wherePivot('role_in_building', 'admin')
+        ->wherePivot('role', Building::ROLE_LANDLORD)
         ->exists())->toBeTrue();
 
     $maintenanceRequest = MaintenanceRequest::first();
@@ -61,8 +61,8 @@ test('demo seed command creates connected data', function () {
     $participants = $conversation->participants()->get();
 
     expect($participants)->toHaveCount(2);
-    expect($participants->contains(fn ($user) => $user->hasRole('tenant')))->toBeTrue();
-    expect($participants->contains(fn ($user) => ! $user->hasRole('tenant')))->toBeTrue();
+    expect($participants->contains(fn ($user) => $user->leases()->where('status', 'active')->exists()))->toBeTrue();
+    expect($participants->contains(fn ($user) => $user->buildings()->wherePivot('role', Building::ROLE_MANAGER)->exists() || $user->ownedBuildingIds()->isNotEmpty()))->toBeTrue();
 
     $rentalRequest = RentalRequest::first();
     $rentalApartment = $rentalRequest->apartment;

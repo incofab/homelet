@@ -13,9 +13,7 @@ class BuildingRegistrationApprovedMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public BuildingRegistrationRequest $request)
-    {
-    }
+    public function __construct(public BuildingRegistrationRequest $request) {}
 
     public function envelope(): Envelope
     {

@@ -12,6 +12,29 @@ function tokenFor(User $user): string
     return $user->createToken('test')->plainTextToken;
 }
 
+test('platform admin can create buildings directly', function () {
+    $admin = assignPlatformAdmin(User::factory()->create());
+    $owner = User::factory()->create();
+
+    $payload = [
+        'owner_id' => $owner->id,
+        'name' => 'Main Plaza',
+        'address_line1' => '123 Main St',
+        'address_line2' => null,
+        'city' => 'Austin',
+        'state' => 'TX',
+        'country' => 'USA',
+        'description' => 'Primary building',
+    ];
+
+    $createResponse = $this->withToken(tokenFor($admin))
+        ->postJson('/api/buildings', $payload);
+
+    $createResponse->assertStatus(201)
+        ->assertJsonPath('data.building.name', 'Main Plaza')
+        ->assertJsonPath('data.building.owner_id', $owner->id);
+});
+
 test('owner cannot create buildings directly', function () {
     $owner = User::factory()->create();
 
@@ -62,7 +85,7 @@ test('manager can view and update but cannot delete', function () {
         'owner_id' => $owner->id,
     ]);
 
-    $building->users()->attach($manager->id, ['role_in_building' => 'manager']);
+    assignBuildingRole($building, $manager, Building::ROLE_MANAGER);
 
     $showResponse = $this->withToken(tokenFor($manager))
         ->getJson("/api/buildings/{$building->id}");
@@ -104,41 +127,53 @@ test('tenant cannot view update or delete building', function () {
     $deleteResponse->assertStatus(403);
 });
 
-test('only owner or admin can manage managers', function () {
+test('platform admin can assign landlords while landlords can assign managers and caretakers', function () {
     $owner = User::factory()->create();
     $admin = User::factory()->create();
     $manager = User::factory()->create();
+    assignPlatformAdmin($admin);
 
     $building = Building::factory()->create([
         'owner_id' => $owner->id,
     ]);
 
-    $building->users()->attach($admin->id, ['role_in_building' => 'admin']);
-    $building->users()->attach($manager->id, ['role_in_building' => 'manager']);
+    assignBuildingRole($building, $manager, Building::ROLE_MANAGER);
 
-    expect($building->users()->wherePivot('user_id', $manager->id)->value('role_in_building'))
-        ->toBe('manager');
-
-    $payload = ['email' => 'newmanager@example.com', 'name' => 'New Manager'];
+    expect($building->users()->where('users.id', $manager->id)->first()?->pivot->role)
+        ->toBe(Building::ROLE_MANAGER);
 
     $ownerResponse = $this->withToken(tokenFor($owner))
         ->postJson(
             "/api/buildings/{$building->id}/managers",
-            $payload
+            ['email' => 'newmanager@example.com', 'name' => 'New Manager', 'role' => Building::ROLE_MANAGER]
         );
     $ownerResponse->assertStatus(201);
 
-    $adminResponse = $this->withToken(tokenFor($admin))
+    $caretakerResponse = $this->withToken(tokenFor($owner))
         ->postJson(
             "/api/buildings/{$building->id}/managers",
-            ['email' => 'adminadd@example.com']
+            ['email' => 'caretaker@example.com', 'name' => 'Caretaker', 'role' => Building::ROLE_CARETAKER]
         );
+    $caretakerResponse->assertStatus(201);
+
+    Sanctum::actingAs($admin);
+    $adminResponse = $this->postJson(
+        "/api/buildings/{$building->id}/managers",
+        ['email' => 'landlord@example.com', 'role' => Building::ROLE_LANDLORD]
+    );
     $adminResponse->assertStatus(201);
+
+    Sanctum::actingAs($owner);
+    $ownerCannotAssignLandlord = $this->postJson(
+        "/api/buildings/{$building->id}/managers",
+        ['email' => 'blocked-landlord@example.com', 'role' => Building::ROLE_LANDLORD]
+    );
+    $ownerCannotAssignLandlord->assertStatus(403);
 
     Sanctum::actingAs($manager);
     $managerResponse = $this->postJson(
         "/api/buildings/{$building->id}/managers",
-        ['email' => 'blocked@example.com']
+        ['email' => 'blocked@example.com', 'role' => Building::ROLE_MANAGER]
     );
     $managerResponse->assertStatus(403);
 

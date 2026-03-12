@@ -2,11 +2,11 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Lease;
 use App\Jobs\SendQuitNoticeEmail;
+use App\Models\Lease;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ExpireLeases extends Command
 {

@@ -9,24 +9,24 @@ uses(RefreshDatabase::class);
 
 test('user can be assigned a role and checked with hasRole', function () {
     $user = User::factory()->create();
-    $role = Role::create(['name' => 'manager']);
+    $role = Role::findOrCreate('admin');
 
-    $user->roles()->attach($role);
+    $user->assignRole($role);
 
-    expect($user->hasRole('manager'))->toBeTrue()
-        ->and($user->hasRole('admin'))->toBeFalse();
+    expect($user->hasRole('admin'))->toBeTrue()
+        ->and($user->hasRole('manager'))->toBeFalse();
 });
 
 test('user permissions resolve through roles', function () {
     $user = User::factory()->create();
-    $role = Role::create(['name' => 'tenant']);
-    $permission = Permission::create(['name' => 'lease.view']);
-    $otherPermission = Permission::create(['name' => 'lease.delete']);
+    $role = Role::findOrCreate('admin');
+    $permission = Permission::findOrCreate('lease.view');
+    $otherPermission = Permission::findOrCreate('lease.delete');
 
-    $role->permissions()->attach($permission);
-    $user->roles()->attach($role);
+    $role->givePermissionTo($permission);
+    $user->assignRole($role);
 
-    expect($user->hasPermission('lease.view'))->toBeTrue()
-        ->and($user->hasPermission('lease.delete'))->toBeFalse()
-        ->and($user->hasPermission(['lease.view', 'lease.delete']))->toBeTrue();
+    expect($user->hasPermissionTo('lease.view'))->toBeTrue()
+        ->and($user->hasPermissionTo('lease.delete'))->toBeFalse()
+        ->and($user->hasAnyPermission(['lease.view', 'lease.delete']))->toBeTrue();
 });

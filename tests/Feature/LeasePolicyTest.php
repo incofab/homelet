@@ -11,7 +11,7 @@ uses(RefreshDatabase::class);
 
 test('building owner admin manager can view leases', function () {
     $owner = User::factory()->create();
-    $admin = User::factory()->create();
+    $admin = assignPlatformAdmin(User::factory()->create());
     $manager = User::factory()->create();
     $tenant = User::factory()->create();
 
@@ -19,8 +19,7 @@ test('building owner admin manager can view leases', function () {
         'owner_id' => $owner->id,
     ]);
 
-    $building->users()->attach($admin->id, ['role_in_building' => 'admin']);
-    $building->users()->attach($manager->id, ['role_in_building' => 'manager']);
+    assignBuildingRole($building, $manager, Building::ROLE_MANAGER);
 
     $apartment = Apartment::factory()->create([
         'building_id' => $building->id,
@@ -31,7 +30,7 @@ test('building owner admin manager can view leases', function () {
         'tenant_id' => $tenant->id,
     ]);
 
-    $policy = new LeasePolicy();
+    $policy = new LeasePolicy;
 
     expect($policy->view($owner, $lease))->toBeTrue();
     expect($policy->view($admin, $lease))->toBeTrue();
@@ -56,7 +55,7 @@ test('tenant can view their own lease only', function () {
         'tenant_id' => $tenant->id,
     ]);
 
-    $policy = new LeasePolicy();
+    $policy = new LeasePolicy;
 
     expect($policy->view($tenant, $lease))->toBeTrue();
     expect($policy->view($otherTenant, $lease))->toBeFalse();

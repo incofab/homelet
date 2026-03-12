@@ -8,7 +8,7 @@ import { StatusBadge } from "../../components/StatusBadge";
 import { useApiQuery } from "../../hooks/useApiQuery";
 import { formatStatusLabel } from "../../lib/format";
 import { api, routes } from "../../lib/urls";
-import { extractRecord } from "../../lib/paginatedData";
+import { PaginatedData } from "../../lib/paginatedData";
 import type { BuildingRegistrationRequest } from "../../lib/models";
 
 const STATUS_OPTIONS = ["pending", "approved", "rejected"] as const;
@@ -24,15 +24,15 @@ export function BuildingRegistrationRequestsList() {
   }, [statusFilter]);
 
   const selectRequests = useCallback((data: unknown) => {
-    return extractRecord<BuildingRegistrationRequest[]>(data, "requests") ?? [];
+    return PaginatedData.from<BuildingRegistrationRequest>(data, "requests");
   }, []);
 
-  const requestsQuery = useApiQuery<unknown, BuildingRegistrationRequest[]>(requestsPath, {
+  const requestsQuery = useApiQuery<unknown, PaginatedData<BuildingRegistrationRequest>>(requestsPath, {
     select: selectRequests,
     deps: [requestsPath],
   });
 
-  const requests = requestsQuery.data ?? [];
+  const requests = requestsQuery.data?.items ?? [];
 
   return (
     <div className="space-y-6">

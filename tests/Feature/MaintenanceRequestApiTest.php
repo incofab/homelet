@@ -4,7 +4,6 @@ use App\Models\Apartment;
 use App\Models\Building;
 use App\Models\Lease;
 use App\Models\MaintenanceRequest;
-use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -13,8 +12,6 @@ uses(RefreshDatabase::class);
 
 test('tenant can create maintenance request for their apartment', function () {
     $tenant = User::factory()->create();
-    $tenantRole = Role::firstOrCreate(['name' => 'tenant']);
-    $tenant->roles()->syncWithoutDetaching([$tenantRole->id]);
 
     $building = Building::factory()->create();
     $apartment = Apartment::factory()->create(['building_id' => $building->id]);
@@ -40,8 +37,6 @@ test('tenant can create maintenance request for their apartment', function () {
 
 test('tenant cannot create maintenance request for other apartment', function () {
     $tenant = User::factory()->create();
-    $tenantRole = Role::firstOrCreate(['name' => 'tenant']);
-    $tenant->roles()->syncWithoutDetaching([$tenantRole->id]);
 
     $building = Building::factory()->create();
     $apartment = Apartment::factory()->create(['building_id' => $building->id]);
@@ -58,10 +53,9 @@ test('tenant cannot create maintenance request for other apartment', function ()
 
 test('admin can list maintenance requests scoped to building', function () {
     $owner = User::factory()->create();
-    $admin = User::factory()->create();
+    $admin = assignPlatformAdmin(User::factory()->create());
 
     $building = Building::factory()->create(['owner_id' => $owner->id]);
-    $building->users()->attach($admin->id, ['role_in_building' => 'admin']);
 
     $apartment = Apartment::factory()->create(['building_id' => $building->id]);
     MaintenanceRequest::factory()->create(['apartment_id' => $apartment->id]);
@@ -73,15 +67,18 @@ test('admin can list maintenance requests scoped to building', function () {
     Sanctum::actingAs($admin);
     $response = $this->getJson('/api/maintenance-requests');
 
-    $response->assertStatus(200)->assertJsonCount(1, 'data.maintenance_requests.data');
+    $response->assertStatus(200)->assertJsonCount(2, 'data.maintenance_requests.data');
 });
 
 test('tenant can list their own maintenance requests only', function () {
     $tenant = User::factory()->create();
-    $tenantRole = Role::firstOrCreate(['name' => 'tenant']);
-    $tenant->roles()->syncWithoutDetaching([$tenantRole->id]);
-
     $apartment = Apartment::factory()->create();
+    Lease::factory()->create([
+        'apartment_id' => $apartment->id,
+        'tenant_id' => $tenant->id,
+        'status' => 'active',
+    ]);
+
     MaintenanceRequest::factory()->create([
         'apartment_id' => $apartment->id,
         'tenant_id' => $tenant->id,
@@ -104,7 +101,7 @@ test('manager can update maintenance request status and tenant cannot', function
     $tenant = User::factory()->create();
 
     $building = Building::factory()->create(['owner_id' => $owner->id]);
-    $building->users()->attach($manager->id, ['role_in_building' => 'manager']);
+    assignBuildingRole($building, $manager, Building::ROLE_MANAGER);
 
     $apartment = Apartment::factory()->create(['building_id' => $building->id]);
     $request = MaintenanceRequest::factory()->create([

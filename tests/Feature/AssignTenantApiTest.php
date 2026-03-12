@@ -1,10 +1,10 @@
 <?php
 
+use App\Mail\TenancyAgreementMail;
 use App\Models\Apartment;
 use App\Models\Building;
 use App\Models\Lease;
 use App\Models\User;
-use App\Mail\TenancyAgreementMail;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
@@ -19,7 +19,7 @@ test('admin can assign tenant and create lease', function () {
     $admin = User::factory()->create();
 
     $building = Building::factory()->create(['owner_id' => $owner->id]);
-    $building->users()->attach($admin->id, ['role_in_building' => 'admin']);
+    assignPlatformAdmin($admin);
 
     $apartment = Apartment::factory()->create([
         'building_id' => $building->id,
@@ -41,7 +41,7 @@ test('admin can assign tenant and create lease', function () {
     $tenant = User::where('email', 'tenant@example.com')->first();
 
     expect($tenant)->not->toBeNull();
-    expect($tenant->roles()->where('name', 'tenant')->exists())->toBeTrue();
+    expect($tenant->role)->toBe(User::ROLE_USER);
 
     $lease = Lease::where('apartment_id', $apartment->id)->first();
 
@@ -64,7 +64,7 @@ test('assigning tenant fails when active lease exists', function () {
     $manager = User::factory()->create();
 
     $building = Building::factory()->create(['owner_id' => $owner->id]);
-    $building->users()->attach($manager->id, ['role_in_building' => 'manager']);
+    assignBuildingRole($building, $manager, Building::ROLE_MANAGER);
 
     $apartment = Apartment::factory()->create([
         'building_id' => $building->id,

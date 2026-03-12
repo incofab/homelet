@@ -12,11 +12,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('building_id')->constrained('buildings')->cascadeOnDelete();
             $table->string('unit_code');
-            $table->string('type');//, ['one_room', 'self_contain', 'one_bedroom', 'two_bedroom', 'three_bedroom', 'custom']);
+            $table->string('type'); // , ['one_room', 'self_contain', 'one_bedroom', 'two_bedroom', 'three_bedroom', 'custom']);
             $table->decimal('yearly_price', 15, 2);
             $table->text('description')->nullable();
             $table->string('floor')->nullable();
-            $table->string('status')->default('vacant');//, ['vacant', 'occupied', 'maintenance'])->default('vacant');
+            $table->string('status')->default('vacant'); // , ['vacant', 'occupied', 'maintenance'])->default('vacant');
             $table->boolean('is_public')->default(false);
             $table->json('amenities')->nullable();
             $table->timestamps();

@@ -8,6 +8,11 @@ use App\Models\User;
 
 class ApartmentPolicy
 {
+    public function before(User $user, string $ability): ?bool
+    {
+        return $user->isPlatformAdmin() ? true : null;
+    }
+
     public function view(User $user, Apartment $apartment): bool
     {
         return $this->hasBuildingAccess($user, $apartment->building)
@@ -41,13 +46,6 @@ class ApartmentPolicy
 
     private function hasBuildingAccess(User $user, Building $building): bool
     {
-        if ($user->id === $building->owner_id) {
-            return true;
-        }
-
-        return $building->users()
-            ->where('users.id', $user->id)
-            ->wherePivotIn('role_in_building', ['admin', 'manager'])
-            ->exists();
+        return $user->canManageBuilding($building);
     }
 }

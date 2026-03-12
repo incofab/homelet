@@ -14,6 +14,7 @@ class StoreBuildingRequest extends ApiRequest
     public function rules(): array
     {
         return [
+            'owner_id' => ['nullable', 'integer', 'exists:users,id'],
             'name' => ['required', 'string', 'max:255'],
             'address_line1' => ['required', 'string', 'max:255'],
             'address_line2' => ['nullable', 'string', 'max:255'],

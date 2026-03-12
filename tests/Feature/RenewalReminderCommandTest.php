@@ -1,6 +1,5 @@
 <?php
 
-use App\Jobs\SendRenewalReminderEmail;
 use App\Mail\RenewalReminderMail;
 use App\Models\Lease;
 use App\Models\User;

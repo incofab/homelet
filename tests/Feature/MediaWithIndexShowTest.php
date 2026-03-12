@@ -81,9 +81,14 @@ test('apartment index and show include media', function () {
 
 test('maintenance request index includes media for tenant', function () {
     $tenant = User::factory()->create();
-    $tenantRole = \App\Models\Role::firstOrCreate(['name' => 'tenant']);
-    $tenant->roles()->syncWithoutDetaching([$tenantRole->id]);
+    $apartment = Apartment::factory()->create();
+    \App\Models\Lease::factory()->create([
+        'apartment_id' => $apartment->id,
+        'tenant_id' => $tenant->id,
+        'status' => 'active',
+    ]);
     $request = MaintenanceRequest::factory()->create([
+        'apartment_id' => $apartment->id,
         'tenant_id' => $tenant->id,
     ]);
 

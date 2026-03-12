@@ -19,7 +19,7 @@ class MaintenanceRequestController extends Controller
 
         $user = $request->user('sanctum');
 
-        if ($user->hasRole('tenant')) {
+        if ($user->activeLease()->exists()) {
             $requests = paginateFromRequest(MaintenanceRequest::query()
                 ->where('tenant_id', $user->id)
                 ->with('media')
@@ -30,12 +30,11 @@ class MaintenanceRequestController extends Controller
             ]);
         }
 
-        $buildingIds = $user->buildings()
-            ->wherePivotIn('role_in_building', ['admin', 'manager'])
-            ->pluck('buildings.id')
-            ->merge(Building::query()->where('owner_id', $user->id)->pluck('id'))
-            ->unique()
-            ->values();
+        $buildingIds = $user->buildingIdsForRoles([
+            Building::ROLE_LANDLORD,
+            Building::ROLE_MANAGER,
+            Building::ROLE_CARETAKER,
+        ]);
 
         $requests = paginateFromRequest(MaintenanceRequest::query()
             ->whereHas('apartment', function ($query) use ($buildingIds) {
@@ -78,5 +77,4 @@ class MaintenanceRequestController extends Controller
             'maintenance_request' => $maintenanceRequest->refresh()->load('media'),
         ]);
     }
-
 }

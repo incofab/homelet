@@ -1,9 +1,9 @@
 <?php
 
+use App\Mail\QuitNoticeMail;
 use App\Models\Apartment;
 use App\Models\Lease;
 use App\Models\User;
-use App\Mail\QuitNoticeMail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;

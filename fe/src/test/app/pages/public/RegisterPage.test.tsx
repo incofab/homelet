@@ -16,27 +16,28 @@ vi.mock("react-router", async () => {
 });
 
 describe("RegisterPage", () => {
-  it("registers a user and routes admins to admin dashboard", async () => {
+  it("registers a user and routes to the management dashboard by default", async () => {
     mockFetch([
       {
         match: (url, init) => url.includes(api.authRegister) && init?.method === "POST",
         response: () =>
           apiSuccess({
-            user: { id: 2, name: "Admin User", email: "admin@example.com", role: "admin" },
-            token: "admin-token",
+            user: { id: 2, name: "Platform User", email: "user@example.com", role: "user" },
+            dashboard: "admin",
+            token: "user-token",
           }),
       },
     ]);
 
     renderWithRoute(<RegisterPage />);
 
-    await userEvent.type(screen.getByPlaceholderText("Jane Doe"), "Admin User");
-    await userEvent.type(screen.getByPlaceholderText("you@example.com"), "admin@example.com");
+    await userEvent.type(screen.getByPlaceholderText("Jane Doe"), "Platform User");
+    await userEvent.type(screen.getByPlaceholderText("you@example.com"), "user@example.com");
     await userEvent.type(screen.getByPlaceholderText("Create a password"), "secret");
     await userEvent.type(screen.getByPlaceholderText("Confirm your password"), "secret");
     await userEvent.click(screen.getByRole("button", { name: "Sign Up" }));
 
-    expect(window.localStorage.getItem("tenanta_token")).toBe("admin-token");
+    expect(window.localStorage.getItem("tenanta_token")).toBe("user-token");
     expect(mockNavigate).toHaveBeenCalledWith(routes.adminRoot);
   });
 });

@@ -20,6 +20,7 @@ import { ApartmentsList } from "./pages/admin/ApartmentsList";
 import { ApartmentDetail } from "./pages/admin/ApartmentDetail";
 import { CreateApartment } from "./pages/admin/CreateApartment";
 import { TenantsList } from "./pages/admin/TenantsList";
+import { UsersList } from "./pages/admin/UsersList";
 import { PaymentsList } from "./pages/admin/PaymentsList";
 import { MaintenanceList } from "./pages/admin/MaintenanceList";
 import { RentalRequestsList } from "./pages/admin/RentalRequestsList";
@@ -60,6 +61,7 @@ export const router = createBrowserRouter([
       { path: routePaths.adminBuildingApartmentsNew, Component: CreateApartment },
       { path: routePaths.adminApartment, Component: ApartmentDetail },
       { path: routePaths.adminTenants, Component: TenantsList },
+      { path: routePaths.adminUsers, Component: UsersList },
       { path: routePaths.adminPayments, Component: PaymentsList },
       { path: routePaths.adminMaintenance, Component: MaintenanceList },
       { path: routePaths.adminRentalRequests, Component: RentalRequestsList },

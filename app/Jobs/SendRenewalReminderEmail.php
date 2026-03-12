@@ -15,9 +15,7 @@ class SendRenewalReminderEmail implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function __construct(public Lease $lease)
-    {
-    }
+    public function __construct(public Lease $lease) {}
 
     public function handle(): void
     {

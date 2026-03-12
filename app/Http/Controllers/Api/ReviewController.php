@@ -7,7 +7,6 @@ use App\Http\Requests\Review\StoreReviewRequest;
 use App\Models\Apartment;
 use App\Models\Building;
 use App\Models\Lease;
-use App\Models\Review;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

@@ -1,10 +1,10 @@
 <?php
 
-use App\Models\Building;
 use App\Models\BuildingRegistrationRequest;
-use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
+use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
@@ -14,10 +14,10 @@ function tokenForUser(User $user): string
 }
 
 test('authenticated user can submit request and admin can approve', function () {
+    Mail::fake();
+
     $owner = User::factory()->create();
-    $admin = User::factory()->create();
-    $adminRole = Role::create(['name' => 'admin']);
-    $admin->roles()->attach($adminRole);
+    $admin = assignPlatformAdmin(User::factory()->create());
 
     $payload = [
         'name' => 'Main Plaza',
@@ -37,8 +37,8 @@ test('authenticated user can submit request and admin can approve', function () 
 
     $requestId = $createResponse->json('data.request.id');
 
-    $approveResponse = $this->withToken(tokenForUser($admin))
-        ->postJson("/api/admin/building-registration-requests/{$requestId}/approve");
+    Sanctum::actingAs($admin);
+    $approveResponse = $this->postJson("/api/admin/building-registration-requests/{$requestId}/approve");
 
     $approveResponse->assertStatus(200)
         ->assertJsonPath('data.request.status', 'approved');
@@ -56,9 +56,9 @@ test('authenticated user can submit request and admin can approve', function () 
 });
 
 test('public request creates user and building on approval', function () {
-    $admin = User::factory()->create();
-    $adminRole = Role::create(['name' => 'admin']);
-    $admin->roles()->attach($adminRole);
+    Mail::fake();
+
+    $admin = assignPlatformAdmin(User::factory()->create());
 
     $payload = [
         'name' => 'Skyline Towers',
@@ -82,8 +82,8 @@ test('public request creates user and building on approval', function () {
 
     $requestId = $createResponse->json('data.request.id');
 
-    $approveResponse = $this->withToken(tokenForUser($admin))
-        ->postJson("/api/admin/building-registration-requests/{$requestId}/approve");
+    Sanctum::actingAs($admin);
+    $approveResponse = $this->postJson("/api/admin/building-registration-requests/{$requestId}/approve");
 
     $approveResponse->assertStatus(200)
         ->assertJsonPath('data.request.status', 'approved');

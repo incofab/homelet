@@ -17,14 +17,7 @@ class AdminDashboardController extends Controller
     {
         $user = $request->user('sanctum');
 
-        $buildingIds = $user->buildings()
-            ->wherePivotIn('role_in_building', ['admin', 'manager'])
-            ->pluck('buildings.id')
-            ->merge(
-                Building::query()->where('owner_id', $user->id)->pluck('id')
-            )
-            ->unique()
-            ->values();
+        $buildingIds = $user->buildingIdsForRoles([Building::ROLE_LANDLORD, Building::ROLE_MANAGER]);
 
         if ($buildingIds->isEmpty()) {
             abort(403);
@@ -71,5 +64,4 @@ class AdminDashboardController extends Controller
             'pending_payments' => $pendingPayments,
         ]);
     }
-
 }

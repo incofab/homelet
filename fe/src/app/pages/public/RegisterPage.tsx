@@ -29,8 +29,7 @@ export function RegisterPage() {
     try {
       const data = await apiPost<AuthResponse>(api.authRegister, formState);
       setAuthToken(data.token);
-      const role = data.user.role?.toLowerCase?.() ?? "";
-      if (role === "tenant") {
+      if (data.dashboard === "tenant") {
         navigate(routes.tenantRoot);
       } else {
         navigate(routes.adminRoot);

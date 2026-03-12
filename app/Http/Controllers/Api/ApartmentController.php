@@ -6,11 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Apartment\AssignTenantRequest;
 use App\Http\Requests\Apartment\StoreApartmentRequest;
 use App\Http\Requests\Apartment\UpdateApartmentRequest;
+use App\Jobs\SendTenancyAgreementEmail;
 use App\Models\Apartment;
 use App\Models\Building;
-use App\Models\Role;
 use App\Models\User;
-use App\Jobs\SendTenancyAgreementEmail;
 use App\Services\LeaseService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -47,6 +46,8 @@ class ApartmentController extends Controller
 
     public function show(Request $request, Apartment $apartment): JsonResponse
     {
+        $this->authorize('view', $apartment);
+
         return $this->success('Apartment loaded.', [
             'apartment' => $apartment->load('media'),
         ]);
@@ -100,9 +101,6 @@ class ApartmentController extends Controller
                 ]
             );
 
-            $tenantRole = Role::firstOrCreate(['name' => 'tenant']);
-            $tenant->roles()->syncWithoutDetaching([$tenantRole->id]);
-
             $apartment->tenants()->syncWithoutDetaching([$tenant->id]);
 
             $startDate = Carbon::parse($request->date('start_date'));
@@ -130,5 +128,4 @@ class ApartmentController extends Controller
             'apartment' => $apartment->refresh()->load('media'),
         ], 201);
     }
-
 }

@@ -25,6 +25,7 @@ class AuthController extends Controller
 
         return $this->success('Registration successful.', [
             'user' => $user,
+            'dashboard' => $user->dashboard,
             'token' => $token,
         ], 201);
     }
@@ -43,6 +44,7 @@ class AuthController extends Controller
 
         return $this->success('Login successful.', [
             'user' => $user,
+            'dashboard' => $user->dashboard,
             'token' => $token,
         ]);
     }
@@ -58,6 +60,7 @@ class AuthController extends Controller
     {
         return $this->success('Profile loaded.', [
             'user' => $request->user()->load('profileMedia'),
+            'dashboard' => $request->user()->dashboard,
         ]);
     }
 
