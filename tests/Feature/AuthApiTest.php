@@ -112,6 +112,7 @@ test('login returns admin dashboard for platform admins', function () {
 
     $response
         ->assertOk()
+        ->assertJsonPath('data.user.role', 'admin')
         ->assertJsonPath('data.dashboard', 'admin')
         ->assertJsonPath('data.dashboard_context.is_platform_admin', true)
         ->assertJsonPath('data.dashboard_context.is_building_user', false)
@@ -134,6 +135,7 @@ test('login returns admin dashboard for building users', function () {
 
     $response
         ->assertOk()
+        ->assertJsonPath('data.user.role', 'landlord')
         ->assertJsonPath('data.dashboard', 'admin')
         ->assertJsonPath('data.dashboard_context.is_platform_admin', false)
         ->assertJsonPath('data.dashboard_context.is_building_user', true)
@@ -170,11 +172,56 @@ test('login prefers admin dashboard when building user also has an active lease'
 
     $response
         ->assertOk()
+        ->assertJsonPath('data.user.role', 'landlord')
         ->assertJsonPath('data.dashboard', 'admin')
         ->assertJsonPath('data.dashboard_context.is_building_user', true)
         ->assertJsonPath('data.dashboard_context.has_active_lease', true)
         ->assertJsonPath('data.dashboard_context.available_dashboards.0', 'admin')
         ->assertJsonPath('data.dashboard_context.available_dashboards.1', 'tenant');
+});
+
+test('me returns tenant role for users with an active lease', function () {
+    Carbon::setTestNow(Carbon::parse('2026-03-12'));
+
+    $user = User::factory()->create();
+    $apartment = Apartment::factory()->create([
+        'status' => 'occupied',
+    ]);
+
+    Lease::factory()->create([
+        'apartment_id' => $apartment->id,
+        'tenant_id' => $user->id,
+        'status' => 'active',
+        'end_date' => Carbon::today()->addMonth()->toDateString(),
+    ]);
+
+    $token = $user->createToken('api');
+
+    $response = $this->withToken($token->plainTextToken)->getJson('/api/auth/me');
+
+    $response
+        ->assertOk()
+        ->assertJsonPath('data.user.role', 'tenant')
+        ->assertJsonPath('data.dashboard', 'tenant')
+        ->assertJsonPath('data.dashboard_context.primary_dashboard', 'tenant');
+});
+
+test('me returns manager role for assigned building managers', function () {
+    $owner = User::factory()->create();
+    $manager = User::factory()->create();
+    $building = Building::factory()->create(['owner_id' => $owner->id]);
+
+    assignBuildingRole($building, $manager, Building::ROLE_MANAGER);
+
+    $token = $manager->createToken('api');
+
+    $response = $this->withToken($token->plainTextToken)->getJson('/api/auth/me');
+
+    $response
+        ->assertOk()
+        ->assertJsonPath('data.user.role', 'manager')
+        ->assertJsonPath('data.dashboard', 'admin')
+        ->assertJsonPath('data.dashboard_context.primary_dashboard', 'admin');
 });
 
 test('logout deletes the current access token', function () {

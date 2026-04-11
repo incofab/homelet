@@ -5,15 +5,10 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Building\ApproveBuildingRegistrationRequest;
 use App\Http\Requests\Building\RejectBuildingRegistrationRequest;
-use App\Mail\BuildingRegistrationApprovedMail;
-use App\Mail\BuildingRegistrationRejectedMail;
-use App\Models\Building;
 use App\Models\BuildingRegistrationRequest;
-use App\Models\Role;
 use App\Models\User;
+use App\Services\BuildingRegistrationRequestService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 
 class BuildingRegistrationRequestController extends Controller
 {
@@ -47,7 +42,8 @@ class BuildingRegistrationRequestController extends Controller
 
     public function approve(
         ApproveBuildingRegistrationRequest $request,
-        BuildingRegistrationRequest $buildingRegistrationRequest
+        BuildingRegistrationRequest $buildingRegistrationRequest,
+        BuildingRegistrationRequestService $buildingRegistrationRequestService
     ): JsonResponse {
         $admin = $this->ensureAdmin();
 
@@ -55,70 +51,19 @@ class BuildingRegistrationRequestController extends Controller
             return $this->error('Only pending requests can be approved.', 422);
         }
 
-        $owner = null;
-        $building = null;
-
-        DB::transaction(function () use ($buildingRegistrationRequest, $admin, &$owner, &$building): void {
-            $owner = $buildingRegistrationRequest->user;
-
-            if (! $owner) {
-                $owner = User::query()
-                    ->where('phone', $buildingRegistrationRequest->owner_phone)
-                    ->when(
-                        $buildingRegistrationRequest->owner_email,
-                        fn ($query) => $query->orWhere('email', $buildingRegistrationRequest->owner_email)
-                    )
-                    ->first();
-
-                if (! $owner) {
-                    $owner = User::create([
-                        'name' => $buildingRegistrationRequest->owner_name,
-                        'email' => $buildingRegistrationRequest->owner_email,
-                        'phone' => $buildingRegistrationRequest->owner_phone,
-                        'password' => $buildingRegistrationRequest->owner_password,
-                    ]);
-                }
-
-                $owner->syncRoles([Role::findOrCreate(User::ROLE_USER)]);
-                $buildingRegistrationRequest->user()->associate($owner);
-            }
-
-            $building = Building::create([
-                'owner_id' => $owner->id,
-                'name' => $buildingRegistrationRequest->name,
-                'address_line1' => $buildingRegistrationRequest->address_line1,
-                'address_line2' => $buildingRegistrationRequest->address_line2,
-                'city' => $buildingRegistrationRequest->city,
-                'state' => $buildingRegistrationRequest->state,
-                'country' => $buildingRegistrationRequest->country,
-                'description' => $buildingRegistrationRequest->description,
-                'for_sale' => $buildingRegistrationRequest->for_sale,
-                'sale_price' => $buildingRegistrationRequest->sale_price,
-            ]);
-
-            $buildingRegistrationRequest->building()->associate($building);
-            $buildingRegistrationRequest->status = BuildingRegistrationRequest::STATUS_APPROVED;
-            $buildingRegistrationRequest->approved_by = $admin->id;
-            $buildingRegistrationRequest->approved_at = now();
-            $buildingRegistrationRequest->save();
-        });
-
-        if ($owner->email) {
-            Mail::to($owner->email)->send(new BuildingRegistrationApprovedMail(
-                $buildingRegistrationRequest->fresh(['building', 'user'])
-            ));
-        }
+        $approval = $buildingRegistrationRequestService->approve($buildingRegistrationRequest, $admin);
 
         return $this->success('Building registration request approved.', [
-            'request' => $buildingRegistrationRequest->refresh(),
-            'building' => $building,
-            'owner' => $owner,
+            'request' => $approval['request'],
+            'building' => $approval['building'],
+            'owner' => $approval['owner'],
         ]);
     }
 
     public function reject(
         RejectBuildingRegistrationRequest $request,
-        BuildingRegistrationRequest $buildingRegistrationRequest
+        BuildingRegistrationRequest $buildingRegistrationRequest,
+        BuildingRegistrationRequestService $buildingRegistrationRequestService
     ): JsonResponse {
         $admin = $this->ensureAdmin();
 
@@ -126,24 +71,14 @@ class BuildingRegistrationRequestController extends Controller
             return $this->error('Only pending requests can be rejected.', 422);
         }
 
-        $buildingRegistrationRequest->update([
-            'status' => BuildingRegistrationRequest::STATUS_REJECTED,
-            'rejected_by' => $admin->id,
-            'rejected_at' => now(),
-            'rejection_reason' => $request->string('rejection_reason')->toString(),
-        ]);
-
-        $email = $buildingRegistrationRequest->user?->email
-            ?? $buildingRegistrationRequest->owner_email;
-
-        if ($email) {
-            Mail::to($email)->send(new BuildingRegistrationRejectedMail(
-                $buildingRegistrationRequest->fresh()
-            ));
-        }
+        $rejectedRequest = $buildingRegistrationRequestService->reject(
+            $buildingRegistrationRequest,
+            $admin,
+            $request->string('rejection_reason')->toString(),
+        );
 
         return $this->success('Building registration request rejected.', [
-            'request' => $buildingRegistrationRequest->refresh(),
+            'request' => $rejectedRequest,
         ]);
     }
 

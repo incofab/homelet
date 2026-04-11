@@ -42,7 +42,7 @@ test('demo seed command creates connected data', function () {
 
     expect($apartment->status)->toBe('occupied');
     expect($apartment->tenants()->where('users.id', $lease->tenant_id)->exists())->toBeTrue();
-    expect($lease->tenant->role)->toBe('user');
+    expect($lease->tenant->role)->toBe('tenant');
 
     $building = Building::first();
     expect($building->users()

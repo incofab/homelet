@@ -21,6 +21,11 @@ describe("AdminLayout", () => {
     renderWithRoute(<AdminLayout />, { route: "/admin", path: "/admin" });
 
     expect(await screen.findByRole("link", { name: "Users" })).toBeInTheDocument();
+    expect(screen.getAllByText("Platform Admin").length).toBeGreaterThan(0);
+    expect(screen.queryByRole("link", { name: "Tenants" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Expenses" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Payments" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Maintenance" })).not.toBeInTheDocument();
   });
 
   it("hides the users navigation item for non-admin users", async () => {
@@ -62,5 +67,37 @@ describe("AdminLayout", () => {
       "href",
       "/tenant"
     );
+  });
+
+  it("uses the landlord sidebar theme and shows the role label", async () => {
+    mockFetch([
+      {
+        match: (url) => url.includes(api.authMe),
+        response: () => apiSuccess({ user: { id: 4, name: "Landlord", role: "landlord" } }),
+      },
+    ]);
+
+    renderWithRoute(<AdminLayout />, { route: "/admin", path: "/admin" });
+
+    expect(await screen.findAllByText("Landlord")).not.toHaveLength(0);
+    expect(screen.getByRole("link", { name: "Expenses" })).toHaveAttribute("href", "/admin/expenses");
+    expect(screen.getByRole("link", { name: "Maintenance" })).toHaveAttribute("href", "/admin/maintenance");
+    expect(screen.getByTestId("admin-sidebar").className).toContain("bg-emerald-950");
+  });
+
+  it("uses the manager sidebar theme and shows the role label", async () => {
+    mockFetch([
+      {
+        match: (url) => url.includes(api.authMe),
+        response: () => apiSuccess({ user: { id: 5, name: "Manager", role: "manager" } }),
+      },
+    ]);
+
+    renderWithRoute(<AdminLayout />, { route: "/admin", path: "/admin" });
+
+    expect(await screen.findAllByText("Manager")).not.toHaveLength(0);
+    expect(screen.getByRole("link", { name: "Expenses" })).toHaveAttribute("href", "/admin/expenses");
+    expect(screen.getByRole("link", { name: "Maintenance" })).toHaveAttribute("href", "/admin/maintenance");
+    expect(screen.getByTestId("admin-sidebar").className).toContain("bg-sky-950");
   });
 });

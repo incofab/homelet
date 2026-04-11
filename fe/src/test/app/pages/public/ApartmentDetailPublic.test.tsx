@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { ApartmentDetailPublic } from '../../../../app/pages/public/ApartmentDetailPublic';
 import { apiSuccess, mockFetch, renderWithRoute } from '../../../testUtils';
 import { api, routePaths, routes } from '../../../../app/lib/urls';
@@ -16,6 +16,7 @@ const mockApartment = {
   baths: 2,
   sqft: 900,
   building: {
+    id: 4,
     name: 'Sunrise Apartments',
     city: 'Lagos',
     state: 'Lagos',
@@ -42,7 +43,7 @@ describe('ApartmentDetailPublic', () => {
   it('renders apartment details and submits a rental request', async () => {
     const fetchMock = mockFetch([
       {
-        match: (url) => url.includes(api.publicApartment(1)),
+        match: (url) => String(url).endsWith(api.publicApartment(1)),
         response: () => apiSuccess({ apartment: mockApartment }),
       },
       {
@@ -68,6 +69,7 @@ describe('ApartmentDetailPublic', () => {
     await userEvent.click(
       screen.getByRole('button', { name: 'Submit Rental Request' }),
     );
+    expect(screen.queryByLabelText('Apartment to rent')).not.toBeInTheDocument();
     await userEvent.type(screen.getByPlaceholderText('John Doe'), 'Jane Doe');
     await userEvent.type(
       screen.getByPlaceholderText('john@example.com'),
@@ -89,6 +91,14 @@ describe('ApartmentDetailPublic', () => {
     expect(
       await screen.findByText('Request submitted successfully.'),
     ).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalled();
+    const request = fetchMock.mock.calls.find(
+      ([url, init]) =>
+        String(url).includes(api.publicRentalRequests) && init?.method === 'POST',
+    );
+    expect(request).toBeTruthy();
+    expect(request?.[1]?.body ? JSON.parse(String(request[1].body)) : null).toMatchObject({
+      apartment_id: 1,
+      name: 'Jane Doe',
+    });
   });
 });

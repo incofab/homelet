@@ -14,7 +14,8 @@ class MediaService
         $disk = config('filesystems.default', 'public');
         $isVideo = str_starts_with((string) $file->getMimeType(), 'video/');
         $extension = $file->getClientOriginalExtension() ?: $file->extension();
-
+        info(['disk' => $disk, 's3' => config('filesystems.disks.s3_public')]);
+        
         $directory = sprintf(
             'media/%s/%s/%s',
             Str::snake(class_basename($model)),
@@ -27,6 +28,10 @@ class MediaService
             Str::uuid()->toString().($extension ? '.'.$extension : ''),
             ['disk' => $disk]
         );
+
+        if(!$path){
+            throw new \Exception('Failed to store media');
+        }
 
         $url = null;
         $storage = Storage::disk($disk);

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Apartment;
 use App\Models\Building;
 use App\Models\Lease;
+use App\Models\MaintenanceRequest;
 use App\Models\Payment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,6 +29,12 @@ class AdminDashboardController extends Controller
         $apartmentsCount = (clone $apartmentsQuery)->count();
         $vacantCount = (clone $apartmentsQuery)->where('status', 'vacant')->count();
         $occupiedCount = (clone $apartmentsQuery)->where('status', 'occupied')->count();
+        $tenantCount = Lease::query()
+            ->whereHas('apartment', function ($query) use ($buildingIds) {
+                $query->whereIn('building_id', $buildingIds);
+            })
+            ->distinct('tenant_id')
+            ->count('tenant_id');
 
         $expiringLeaseCount = Lease::query()
             ->where('status', 'active')
@@ -52,16 +59,33 @@ class AdminDashboardController extends Controller
             })
             ->count();
 
+        $overduePayments = Payment::query()
+            ->where('status', '!=', 'paid')
+            ->where('metadata->due_date', '<', Carbon::today()->toDateString())
+            ->whereHas('lease.apartment', function ($query) use ($buildingIds) {
+                $query->whereIn('building_id', $buildingIds);
+            })
+            ->count();
+
+        $maintenanceRequests = MaintenanceRequest::query()
+            ->whereHas('apartment', function ($query) use ($buildingIds) {
+                $query->whereIn('building_id', $buildingIds);
+            })
+            ->count();
+
         return $this->success('Admin dashboard loaded.', [
             'counts' => [
                 'buildings' => $buildingsCount,
                 'apartments' => $apartmentsCount,
                 'vacant' => $vacantCount,
                 'occupied' => $occupiedCount,
+                'tenants' => $tenantCount,
             ],
             'expiring_leases_next_90_days' => $expiringLeaseCount,
             'total_income_paid' => $totalIncomePaid,
             'pending_payments' => $pendingPayments,
+            'overdue_payments' => $overduePayments,
+            'maintenance_requests' => $maintenanceRequests,
         ]);
     }
 }

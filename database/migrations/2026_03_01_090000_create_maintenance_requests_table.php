@@ -14,11 +14,13 @@ return new class extends Migration
             $table->foreignId('tenant_id')->constrained('users')->cascadeOnDelete();
             $table->string('title');
             $table->text('description');
+            $table->string('priority')->default('low');
             $table->string('status')->default('open'); // , ['open', 'in_progress', 'resolved'])->default('open');
             $table->timestamps();
 
             $table->index(['apartment_id', 'status']);
             $table->index(['tenant_id', 'status']);
+            $table->index(['priority', 'status']);
         });
     }
 

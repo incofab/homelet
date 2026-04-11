@@ -64,9 +64,20 @@ class Building extends Model
         return $this->hasMany(Apartment::class);
     }
 
+    public function expenseCategories()
+    {
+        return $this->hasMany(ExpenseCategory::class);
+    }
+
+    public function expenses()
+    {
+        return $this->hasMany(Expense::class);
+    }
+
     public function media()
     {
-        return $this->morphMany(Media::class, 'model');
+        return $this->morphMany(Media::class, 'model')
+            ->orderBy('id');
     }
 
     public function reviews()

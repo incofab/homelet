@@ -1,6 +1,6 @@
-import { screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoginPage } from '../../../../app/pages/public/LoginPage';
 import { apiSuccess, mockFetch, renderWithRoute } from '../../../testUtils';
 import { api, routes } from '../../../../app/lib/urls';
@@ -17,6 +17,15 @@ vi.mock('react-router', async () => {
 });
 
 describe('LoginPage', () => {
+  beforeEach(() => {
+    mockNavigate.mockReset();
+    window.localStorage.clear();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
   it('signs in and routes tenants to their dashboard', async () => {
     mockFetch([
       {
@@ -50,5 +59,44 @@ describe('LoginPage', () => {
 
     expect(window.localStorage.getItem('tenanta_token')).toBe('tenant-token');
     expect(mockNavigate).toHaveBeenCalledWith(routes.tenantRoot);
+  });
+
+  it('preserves a building registration redirect after login', async () => {
+    mockFetch([
+      {
+        match: (url, init) =>
+          url.includes(api.authLogin) && init?.method === 'POST',
+        response: () =>
+          apiSuccess({
+            user: {
+              id: 1,
+              name: 'Jane Tenant',
+              email: 'jane@example.com',
+              role: 'user',
+            },
+            dashboard: 'tenant',
+            token: 'tenant-token',
+          }),
+      },
+    ]);
+
+    renderWithRoute(<LoginPage />, {
+      route: `${routes.login}?redirect=${encodeURIComponent(
+        routes.registerBuilding,
+      )}`,
+      path: routes.login,
+    });
+
+    await userEvent.type(
+      screen.getByPlaceholderText('you@example.com or 08012345678'),
+      '08012345678',
+    );
+    await userEvent.type(
+      screen.getByPlaceholderText('Enter your password'),
+      'secret',
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Sign In' }));
+
+    expect(mockNavigate).toHaveBeenCalledWith(routes.registerBuilding);
   });
 });

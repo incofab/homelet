@@ -18,15 +18,19 @@ import { HomeDashboard } from './pages/user/HomeDashboard';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { BuildingsList } from './pages/admin/BuildingsList';
 import { BuildingDetail } from './pages/admin/BuildingDetail';
+import { EditBuilding } from './pages/admin/EditBuilding';
 import { RegisterBuildingRequest } from './pages/admin/RegisterBuildingRequest';
 import { ApartmentsList } from './pages/admin/ApartmentsList';
 import { ApartmentDetail } from './pages/admin/ApartmentDetail';
 import { CreateApartment } from './pages/admin/CreateApartment';
 import { EditApartment } from './pages/admin/EditApartment';
 import { TenantsList } from './pages/admin/TenantsList';
+import { TenantDetail } from './pages/admin/TenantDetail';
 import { UsersList } from './pages/admin/UsersList';
 import { PaymentsList } from './pages/admin/PaymentsList';
+import { ExpensesList } from './pages/admin/ExpensesList';
 import { MaintenanceList } from './pages/admin/MaintenanceList';
+import { MaintenanceRequestDetail } from './pages/admin/MaintenanceRequestDetail';
 import { RentalRequestsList } from './pages/admin/RentalRequestsList';
 import { BuildingRegistrationRequestsList } from './pages/admin/BuildingRegistrationRequestsList';
 import { BuildingRegistrationRequestDetail } from './pages/admin/BuildingRegistrationRequestDetail';
@@ -36,6 +40,7 @@ import { ChatAdmin } from './pages/admin/ChatAdmin';
 import { TenantDashboard } from './pages/tenant/TenantDashboard';
 import { TenantPayments } from './pages/tenant/TenantPayments';
 import { TenantMaintenance } from './pages/tenant/TenantMaintenance';
+import { TenantMaintenanceRequestDetail } from './pages/tenant/TenantMaintenanceRequestDetail';
 import { ChatTenant } from './pages/tenant/ChatTenant';
 
 export const router = createBrowserRouter([
@@ -75,6 +80,8 @@ export const router = createBrowserRouter([
             Component: BuildingRegistrationRequestDetail,
           },
           { path: routePaths.adminBuilding, Component: BuildingDetail },
+          { path: routePaths.adminBuildingEdit, Component: EditBuilding },
+          { path: routePaths.adminBuildingTenants, Component: TenantsList },
           { path: routePaths.adminBuildingApartments, Component: ApartmentsList },
           {
             path: routePaths.adminBuildingApartmentsNew,
@@ -83,9 +90,12 @@ export const router = createBrowserRouter([
           { path: routePaths.adminApartment, Component: ApartmentDetail },
           { path: routePaths.adminApartmentEdit, Component: EditApartment },
           { path: routePaths.adminTenants, Component: TenantsList },
+          { path: routePaths.adminTenant, Component: TenantDetail },
           { path: routePaths.adminUsers, Component: UsersList },
           { path: routePaths.adminPayments, Component: PaymentsList },
+          { path: routePaths.adminExpenses, Component: ExpensesList },
           { path: routePaths.adminMaintenance, Component: MaintenanceList },
+          { path: routePaths.adminMaintenanceRequest, Component: MaintenanceRequestDetail },
           { path: routePaths.adminRentalRequests, Component: RentalRequestsList },
           { path: routePaths.adminChat, Component: ChatAdmin },
         ],
@@ -97,6 +107,7 @@ export const router = createBrowserRouter([
           { index: true, Component: TenantDashboard },
           { path: routePaths.tenantPayments, Component: TenantPayments },
           { path: routePaths.tenantMaintenance, Component: TenantMaintenance },
+          { path: routePaths.tenantMaintenanceRequest, Component: TenantMaintenanceRequestDetail },
           { path: routePaths.tenantChat, Component: ChatTenant },
         ],
       },

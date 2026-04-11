@@ -2,6 +2,7 @@
 
 use App\Models\Apartment;
 use App\Models\Building;
+use App\Models\Lease;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -99,6 +100,42 @@ test('tenant can view only their leased apartment', function () {
     Sanctum::actingAs($otherTenant);
     $blockedResponse = $this->getJson("/api/apartments/{$apartment->id}");
     $blockedResponse->assertStatus(403);
+});
+
+test('apartment show includes current tenant lease details for managers', function () {
+    $owner = User::factory()->create();
+    $tenant = User::factory()->create([
+        'name' => 'Jane Tenant',
+        'email' => 'jane@example.com',
+        'phone' => '08012345678',
+    ]);
+
+    $building = Building::factory()->create(['owner_id' => $owner->id]);
+    $apartment = Apartment::factory()->create([
+        'building_id' => $building->id,
+        'status' => 'occupied',
+    ]);
+
+    Lease::factory()->create([
+        'apartment_id' => $apartment->id,
+        'tenant_id' => $tenant->id,
+        'status' => 'active',
+        'start_date' => '2026-01-01',
+        'end_date' => '2027-01-01',
+    ]);
+
+    Sanctum::actingAs($owner);
+    $response = $this->getJson("/api/apartments/{$apartment->id}");
+
+    $response->assertOk()
+        ->assertJsonPath('data.apartment.building.id', $building->id)
+        ->assertJsonPath('data.apartment.current_tenant.name', 'Jane Tenant')
+        ->assertJsonPath('data.apartment.current_tenant.email', 'jane@example.com')
+        ->assertJsonPath('data.apartment.current_tenant.phone', '08012345678')
+        ->assertJsonPath('data.apartment.current_tenant.lease_start', '2026-01-01')
+        ->assertJsonPath('data.apartment.current_tenant.lease_end', '2027-01-01')
+        ->assertJsonPath('data.apartment.current_tenant.lease_status', 'active')
+        ->assertJsonPath('data.apartment.tenant.name', 'Jane Tenant');
 });
 
 test('cannot delete apartment with active lease', function () {

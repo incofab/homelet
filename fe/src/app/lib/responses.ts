@@ -1,4 +1,13 @@
-import type { Building, BuildingRegistrationRequest, Tenant, UserProfile } from "./models";
+import type {
+  Building,
+  BuildingRegistrationRequest,
+  Lease,
+  MaintenanceRequest,
+  Payment,
+  RentalRequest,
+  Tenant,
+  UserProfile,
+} from "./models";
 
 export interface DashboardContext {
   primary_dashboard: "admin" | "tenant" | "home";
@@ -49,16 +58,30 @@ export interface BuildingRegistrationApproveResponse {
   owner?: UserProfile & { email?: string };
 }
 
+export interface RentalRequestWorkflowResponse {
+  rental_request: RentalRequest;
+  tenant?: UserProfile & { email?: string | null; phone?: string | null };
+  lease?: Lease;
+  payment?: Payment | null;
+}
+
+export interface MaintenanceRequestResponse {
+  maintenance_request: MaintenanceRequest;
+}
+
 export interface AdminDashboardResponse {
   counts: {
     buildings: number;
     apartments: number;
     vacant: number;
     occupied: number;
+    tenants: number;
   };
   expiring_leases_next_90_days: number;
   total_income_paid: number;
   pending_payments: number;
+  overdue_payments: number;
+  maintenance_requests: number;
 }
 
 export interface TenantDashboardResponse {

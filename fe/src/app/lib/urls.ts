@@ -18,6 +18,9 @@ export const routes = {
   adminBuildingRequest: (id: string | number) =>
     `/admin/building-requests/${id}`,
   adminBuilding: (id: string | number) => `/admin/buildings/${id}`,
+  adminBuildingEdit: (id: string | number) => `/admin/buildings/${id}/edit`,
+  adminBuildingTenants: (buildingId: string | number) =>
+    `/admin/buildings/${buildingId}/tenants`,
   adminBuildingApartments: (buildingId: string | number) =>
     `/admin/buildings/${buildingId}/apartments`,
   adminBuildingApartmentsNew: (buildingId: string | number) =>
@@ -25,9 +28,12 @@ export const routes = {
   adminApartment: (id: string | number) => `/admin/apartments/${id}`,
   adminApartmentEdit: (id: string | number) => `/admin/apartments/${id}/edit`,
   adminTenants: '/admin/tenants',
+  adminTenant: (id: string | number) => `/admin/tenants/${id}`,
   adminUsers: '/admin/users',
   adminPayments: '/admin/payments',
+  adminExpenses: '/admin/expenses',
   adminMaintenance: '/admin/maintenance',
+  adminMaintenanceRequest: (id: string | number) => `/admin/maintenance/${id}`,
   adminRentalRequests: '/admin/rental-requests',
   adminChat: '/admin/chat',
 
@@ -35,10 +41,12 @@ export const routes = {
   tenantRoot: '/tenant',
   tenantPayments: '/tenant/payments',
   tenantMaintenance: '/tenant/maintenance',
+  tenantMaintenanceRequest: (id: string | number) => `/tenant/maintenance/${id}`,
   tenantChat: '/tenant/chat',
 };
 
 export type DashboardRouteKey = "admin" | "tenant" | "home";
+export const authRedirectParam = "redirect";
 
 export const routeForDashboard = (dashboard?: DashboardRouteKey) => {
   switch (dashboard) {
@@ -50,6 +58,28 @@ export const routeForDashboard = (dashboard?: DashboardRouteKey) => {
     default:
       return routes.adminRoot;
   }
+};
+
+export const withRedirect = (baseRoute: string, redirectTo: string) => {
+  const params = new URLSearchParams({
+    [authRedirectParam]: redirectTo,
+  });
+
+  return `${baseRoute}?${params.toString()}`;
+};
+
+export const getRequestedRedirect = (search: string) => {
+  const redirectTo = new URLSearchParams(search).get(authRedirectParam);
+
+  if (!redirectTo || !redirectTo.startsWith("/")) {
+    return null;
+  }
+
+  return redirectTo;
+};
+
+export const getRedirectTarget = (search: string, fallback: string) => {
+  return getRequestedRedirect(search) ?? fallback;
 };
 
 export const routePaths = {
@@ -65,18 +95,24 @@ export const routePaths = {
   adminBuildingRequestNew: 'building-requests/new',
   adminBuildingRequest: 'building-requests/:id',
   adminBuilding: 'buildings/:id',
+  adminBuildingEdit: 'buildings/:id/edit',
+  adminBuildingTenants: 'buildings/:buildingId/tenants',
   adminBuildingApartments: 'buildings/:buildingId/apartments',
   adminBuildingApartmentsNew: 'buildings/:buildingId/apartments/new',
   adminApartment: 'apartments/:id',
   adminApartmentEdit: 'apartments/:id/edit',
   adminTenants: 'tenants',
+  adminTenant: 'tenants/:id',
   adminUsers: 'users',
   adminPayments: 'payments',
+  adminExpenses: 'expenses',
   adminMaintenance: 'maintenance',
+  adminMaintenanceRequest: 'maintenance/:id',
   adminRentalRequests: 'rental-requests',
   adminChat: 'chat',
   tenantPayments: 'payments',
   tenantMaintenance: 'maintenance',
+  tenantMaintenanceRequest: 'maintenance/:id',
   tenantChat: 'chat',
 };
 
@@ -88,7 +124,6 @@ export const api = {
   publicBuilding: (id: string | number) => `/public/buildings/${id}`,
   publicBuildingsForSale: '/public/buildings-for-sale',
   publicRentalRequests: '/public/rental-requests',
-  publicBuildingRegistrationRequests: '/public/building-registration-requests',
   buildingRegistrationRequests: '/building-registration-requests',
 
   // Auth API
@@ -104,8 +139,13 @@ export const api = {
   // Buildings API
   buildings: '/buildings',
   building: (id: string | number) => `/buildings/${id}`,
+  buildingTenants: (buildingId: string | number) =>
+    `/buildings/${buildingId}/tenants`,
   buildingApartments: (buildingId: string | number) =>
     `/buildings/${buildingId}/apartments`,
+  buildingMedia: (id: string | number) => `/buildings/${id}/media`,
+  buildingMediaItem: (id: string | number, mediaId: string | number) =>
+    `/buildings/${id}/media/${mediaId}`,
 
   // Apartments API
   apartment: (id: string | number) => `/apartments/${id}`,
@@ -114,21 +154,34 @@ export const api = {
   apartmentAssignTenant: (id: string | number) =>
     `/apartments/${id}/assign-tenant`,
   apartmentMedia: (id: string | number) => `/apartments/${id}/media`,
+  apartmentMediaItem: (id: string | number, mediaId: string | number) =>
+    `/apartments/${id}/media/${mediaId}`,
   apartmentReviews: (id: string | number) => `/apartments/${id}/reviews`,
 
   // Tenants & payments API
   tenants: '/tenants',
+  tenant: (id: string | number) => `/tenants/${id}`,
   users: '/users',
   userImpersonate: (id: string | number) => `/users/${id}/impersonate`,
+  leaseExtend: (id: string | number) => `/leases/${id}/extend`,
+  leaseRenew: (id: string | number) => `/leases/${id}/renew`,
   payments: '/payments',
+  expenses: '/expenses',
+  buildingExpenseCategories: (id: string | number) => `/buildings/${id}/expense-categories`,
+  buildingExpenseCategory: (buildingId: string | number, categoryId: string | number) =>
+    `/buildings/${buildingId}/expense-categories/${categoryId}`,
   tenantPayments: '/tenant/payments',
 
   // Maintenance API
   maintenanceRequests: '/maintenance-requests',
+  maintenanceRequest: (id: string | number) => `/maintenance-requests/${id}`,
+  maintenanceRequestMedia: (id: string | number) => `/maintenance-requests/${id}/media`,
 
   // Rental requests API
   rentalRequests: '/rental-requests',
   rentalRequest: (id: string | number) => `/rental-requests/${id}`,
+  rentalRequestApprove: (id: string | number) => `/rental-requests/${id}/approve`,
+  rentalRequestReject: (id: string | number) => `/rental-requests/${id}/reject`,
 
   // Building registration admin API
   adminBuildingRegistrationRequests: '/admin/building-registration-requests',

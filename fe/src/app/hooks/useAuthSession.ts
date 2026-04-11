@@ -45,8 +45,7 @@ export function useAuthSession() {
     } finally {
       setAuthToken(impersonation.originalToken);
       clearImpersonationState();
-      // navigate(routes.adminRoot);
-      window.location.href = routes.adminRoot;
+      navigate(routes.adminUsers, { replace: true });
       setStoppingImpersonation(false);
     }
 

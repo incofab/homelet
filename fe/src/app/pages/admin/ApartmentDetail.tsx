@@ -12,6 +12,7 @@ import { PaginatedData, extractRecord } from '../../lib/paginatedData';
 import { useCallback } from 'react';
 import type { ApartmentDetail, Media } from '../../lib/models';
 import { AssignTenantForm } from './AssignTenantForm';
+import { AdminMediaManager } from '../../components/AdminMediaManager';
 
 export function ApartmentDetail() {
   const { id } = useParams();
@@ -142,6 +143,19 @@ export function ApartmentDetail() {
                 )}
               </div>
             </div>
+
+            <div className="mt-6 pt-6 border-t border-border">
+              <AdminMediaManager
+                title="Apartment Images"
+                emptyLabel="No apartment images uploaded yet."
+                items={mediaQuery.data?.items ?? []}
+                uploadPath={api.apartmentMedia(id ?? '')}
+                deletePath={(mediaId) => api.apartmentMediaItem(id ?? '', mediaId)}
+                onChanged={async () => {
+                  await mediaQuery.refetch();
+                }}
+              />
+            </div>
           </Card>
         </div>
 
@@ -179,6 +193,13 @@ export function ApartmentDetail() {
                   </p>
                   <p className="text-lg">{tenant?.name ?? '—'}</p>
                 </div>
+                {tenant?.id ? (
+                  <Link to={routes.adminTenant(tenant.id)}>
+                    <Button variant="secondary" size="sm">
+                      View Tenant Details
+                    </Button>
+                  </Link>
+                ) : null}
                 <div className="pt-4 border-t border-border space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Email</span>

@@ -2,10 +2,7 @@ import { Outlet, Link, useLocation } from 'react-router';
 import {
   Building2,
   LayoutDashboard,
-  Users,
   UserRound,
-  DollarSign,
-  Wrench,
   FileText,
   MessageSquare,
   Menu,
@@ -13,6 +10,8 @@ import {
   LogOut,
   ClipboardList,
   KeyRound,
+  ReceiptText,
+  Wrench,
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { api, routes } from '../lib/urls';
@@ -25,6 +24,68 @@ type MeResponse = {
   dashboard_context?: DashboardContext;
 };
 
+const formatRoleLabel = (role?: string) => {
+  const normalized = role?.trim().toLowerCase() ?? 'user';
+
+  switch (normalized) {
+    case 'admin':
+      return 'Platform Admin';
+    case 'landlord':
+      return 'Landlord';
+    case 'manager':
+      return 'Manager';
+    case 'tenant':
+      return 'Tenant';
+    default:
+      return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+  }
+};
+
+const sidebarThemeForRole = (role?: string) => {
+  switch (role?.trim().toLowerCase()) {
+    case 'admin':
+      return {
+        shell: 'bg-slate-950 text-slate-50 border-slate-800',
+        mobile: 'bg-slate-950 text-slate-50',
+        muted: 'text-slate-300',
+        hover: 'hover:bg-slate-800/80',
+        active: 'bg-amber-400 text-slate-950',
+        badge: 'bg-amber-400/15 text-amber-200 ring-1 ring-amber-300/20',
+        brand: 'text-amber-300',
+      };
+    case 'landlord':
+      return {
+        shell: 'bg-emerald-950 text-emerald-50 border-emerald-900',
+        mobile: 'bg-emerald-950 text-emerald-50',
+        muted: 'text-emerald-200/75',
+        hover: 'hover:bg-emerald-900/70',
+        active: 'bg-emerald-300 text-emerald-950',
+        badge: 'bg-emerald-300/15 text-emerald-100 ring-1 ring-emerald-200/20',
+        brand: 'text-emerald-200',
+      };
+    case 'manager':
+      return {
+        shell: 'bg-sky-950 text-sky-50 border-sky-900',
+        mobile: 'bg-sky-950 text-sky-50',
+        muted: 'text-sky-200/75',
+        hover: 'hover:bg-sky-900/70',
+        active: 'bg-sky-300 text-sky-950',
+        badge: 'bg-sky-300/15 text-sky-100 ring-1 ring-sky-200/20',
+        brand: 'text-sky-200',
+      };
+    default:
+      return {
+        shell: 'bg-zinc-900 text-zinc-50 border-zinc-800',
+        mobile: 'bg-zinc-900 text-zinc-50',
+        muted: 'text-zinc-300',
+        hover: 'hover:bg-zinc-800/80',
+        active: 'bg-rose-300 text-rose-950',
+        badge: 'bg-rose-300/15 text-rose-100 ring-1 ring-rose-200/20',
+        brand: 'text-rose-200',
+      };
+  }
+};
+
 export function AdminLayout() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -33,7 +94,13 @@ export function AdminLayout() {
   const meQuery = useApiQuery<MeResponse, MeResponse>(api.authMe, {
     select: selectProfile,
   });
-  const isPlatformAdmin = meQuery.data?.user?.role === 'admin';
+  const currentRole = meQuery.data?.user?.role;
+  const roleLabel = formatRoleLabel(currentRole);
+  const sidebarTheme = sidebarThemeForRole(currentRole);
+  const isPlatformAdmin = currentRole === 'admin';
+  const isLandlordOrManager = ['landlord', 'manager'].includes(
+    currentRole?.trim().toLowerCase() ?? ''
+  );
   const canSwitchToTenantDashboard = Boolean(meQuery.data?.dashboard_context?.has_active_lease);
   const navigation = useMemo(() => {
     const items = [
@@ -44,15 +111,25 @@ export function AdminLayout() {
         href: routes.adminBuildingRequests,
         icon: ClipboardList,
       },
-      { name: 'Tenants', href: routes.adminTenants, icon: Users },
-      { name: 'Payments', href: routes.adminPayments, icon: DollarSign },
-      { name: 'Maintenance', href: routes.adminMaintenance, icon: Wrench },
       { name: 'Rental Requests', href: routes.adminRentalRequests, icon: FileText },
       { name: 'Chat', href: routes.adminChat, icon: MessageSquare },
     ];
 
+    if (isLandlordOrManager) {
+      items.splice(3, 0, {
+        name: 'Expenses',
+        href: routes.adminExpenses,
+        icon: ReceiptText,
+      });
+      items.splice(5, 0, {
+        name: 'Maintenance',
+        href: routes.adminMaintenance,
+        icon: Wrench,
+      });
+    }
+
     if (isPlatformAdmin) {
-      items.splice(4, 0, { name: 'Users', href: routes.adminUsers, icon: UserRound });
+      items.splice(2, 0, { name: 'Users', href: routes.adminUsers, icon: UserRound });
     }
 
     if (canSwitchToTenantDashboard) {
@@ -60,17 +137,22 @@ export function AdminLayout() {
     }
 
     return items;
-  }, [canSwitchToTenantDashboard, isPlatformAdmin]);
+  }, [canSwitchToTenantDashboard, isLandlordOrManager, isPlatformAdmin]);
 
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 bg-card border-b border-border z-40">
+      <div
+        className={`lg:hidden fixed top-0 left-0 right-0 z-40 border-b ${sidebarTheme.mobile} ${sidebarTheme.shell}`}
+      >
         <div className="flex items-center justify-between px-4 py-3">
-          <h1 className="text-xl text-primary">Tenanta</h1>
+          <div>
+            <h1 className={`text-xl ${sidebarTheme.brand}`}>Tenanta</h1>
+            <p className={`text-xs ${sidebarTheme.muted}`}>{roleLabel}</p>
+          </div>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 hover:bg-muted rounded-lg"
+            className={`rounded-lg p-2 transition-colors ${sidebarTheme.hover}`}
           >
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -79,8 +161,15 @@ export function AdminLayout() {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-30 bg-card pt-16">
+        <div className={`lg:hidden fixed inset-0 z-30 pt-16 ${sidebarTheme.mobile}`}>
           <nav className="px-4 py-6 space-y-2">
+            <div className="mb-4 px-4">
+              <p
+                className={`inline-flex rounded-full px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] ${sidebarTheme.badge}`}
+              >
+                {roleLabel}
+              </p>
+            </div>
             {navigation.map((item) => {
               const Icon = item.icon;
               const isActive =
@@ -94,8 +183,8 @@ export function AdminLayout() {
                   onClick={() => setMobileMenuOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-muted'
+                      ? sidebarTheme.active
+                      : sidebarTheme.hover
                   }`}
                 >
                   <Icon size={20} />
@@ -109,7 +198,7 @@ export function AdminLayout() {
                 setMobileMenuOpen(false);
                 logout();
               }}
-              className="flex w-full items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-muted text-left"
+              className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left transition-colors ${sidebarTheme.hover}`}
             >
               <LogOut size={20} />
               <span>{loggingOut ? 'Logging out...' : 'Logout'}</span>
@@ -119,10 +208,18 @@ export function AdminLayout() {
       )}
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:block fixed left-0 top-0 bottom-0 w-64 bg-card border-r border-border">
+      <aside
+        data-testid="admin-sidebar"
+        className={`hidden lg:block fixed left-0 top-0 bottom-0 w-64 border-r ${sidebarTheme.shell}`}
+      >
         <div className="p-6">
-          <h1 className="text-2xl text-primary">Tenanta</h1>
-          <p className="text-sm text-muted-foreground mt-1">Dashboard</p>
+          <h1 className={`text-2xl ${sidebarTheme.brand}`}>Tenanta</h1>
+          <p className={`mt-1 text-sm ${sidebarTheme.muted}`}>Dashboard</p>
+          <p
+            className={`mt-4 inline-flex rounded-full px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] ${sidebarTheme.badge}`}
+          >
+            {roleLabel}
+          </p>
         </div>
         <nav className="px-3 space-y-1">
           {navigation.map((item) => {
@@ -137,8 +234,8 @@ export function AdminLayout() {
                 to={item.href}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                   isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'hover:bg-muted'
+                    ? sidebarTheme.active
+                    : sidebarTheme.hover
                 }`}
               >
                 <Icon size={20} />
@@ -149,7 +246,7 @@ export function AdminLayout() {
           <button
             type="button"
             onClick={logout}
-            className="mt-4 flex w-full items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-muted text-left"
+            className={`mt-4 flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left transition-colors ${sidebarTheme.hover}`}
           >
             <LogOut size={20} />
             <span>{loggingOut ? 'Logging out...' : 'Logout'}</span>

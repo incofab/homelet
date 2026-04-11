@@ -182,13 +182,15 @@ leases:
 - rent_amount
 - start_date
 - end_date
-- status (active, expired, terminated)
+- status (active, renewed, expired, terminated)
 - created_at
 - updated_at
 
 ## 8.3 Endpoints
 
 POST /api/apartments/{id}/assign-tenant
+PUT /api/leases/{id}/extend
+POST /api/leases/{id}/renew
 GET /api/tenants
 GET /api/tenants/{id}
 GET /api/tenant/dashboard
@@ -197,6 +199,20 @@ When tenant assigned:
 
 - Apartment status automatically becomes occupied
 - Lease created automatically
+
+Lease extension:
+
+- Allowed only for an active lease
+- Updates the existing lease end date
+- Supports either explicit `new_end_date` or `duration_in_months`
+
+Lease renewal:
+
+- Allowed for active or expired leases
+- Closes the previous lease as `renewed` or `expired`
+- Creates a brand new active lease for the next term
+- Supports carrying over the current rent or setting a new rent amount
+- Can optionally create the first payment for the renewed lease
 
 ---
 
@@ -241,6 +257,49 @@ GET /api/tenant/payments
   end_date - 90 days = today
   status = active
 - Dispatch email job
+
+---
+
+# 11. EXPENSE MODULE
+
+## 11.1 Expense Categories
+
+- Categories are defined per building.
+- Platform admin, landlord, and manager can define categories for buildings they manage.
+- Categories are optional when recording an expense.
+
+## 11.2 Expenses Table
+
+- id
+- building_id
+- expense_category_id (nullable)
+- recorded_by
+- title
+- vendor_name (nullable)
+- amount
+- expense_date
+- payment_method (nullable: cash, bank_transfer, card, cheque, other)
+- reference (nullable)
+- description (nullable)
+- notes (nullable)
+- created_at
+- updated_at
+
+## 11.3 Endpoints
+
+GET /api/expenses
+POST /api/expenses
+GET /api/buildings/{building}/expense-categories
+POST /api/buildings/{building}/expense-categories
+PUT /api/buildings/{building}/expense-categories/{expenseCategory}
+DELETE /api/buildings/{building}/expense-categories/{expenseCategory}
+
+## 11.4 Behavior
+
+- Expenses are scoped to a building.
+- Only platform admins, landlords, and managers for a building can record expenses for it.
+- Expense categories can only be used with expenses from the same building.
+- Landlord and manager dashboards should expose expenses as an operational workflow.
 
 Use:
 
@@ -392,10 +451,11 @@ notifications:
 # 16. BUSINESS RULES
 
 1. Only one active lease per apartment
-2. Lease must auto-expire
-3. Payment must belong to active lease
-4. Apartment cannot be deleted if occupied
-5. Only owner can delete building
+2. Lease renewals must create a new lease record after the previous lease is closed
+3. Lease must auto-expire
+4. Payment must belong to active lease
+5. Apartment cannot be deleted if occupied
+6. Only owner can delete building
 
 ---
 

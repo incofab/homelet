@@ -5,7 +5,12 @@ import { StatusBadge } from '../../components/StatusBadge';
 import { Button } from '../../components/Button';
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { useApiQuery } from '../../hooks/useApiQuery';
-import { formatDate, formatMoney, formatStatusLabel } from '../../lib/format';
+import {
+  formatDate,
+  formatDaysDuration,
+  formatMoney,
+  formatStatusLabel,
+} from '../../lib/format';
 import { env } from '../../lib/env';
 import { api, routes } from '../../lib/urls';
 import { PaginatedData, extractRecord } from '../../lib/paginatedData';
@@ -118,7 +123,7 @@ export function TenantDashboard() {
                   Days Remaining
                 </p>
                 <p className="text-xl text-success">
-                  {dashboardQuery.data?.days_to_expiry ?? '—'}
+                  {formatDaysDuration(dashboardQuery.data?.days_to_expiry)}
                 </p>
               </div>
             </div>

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Review\StoreReviewRequest;
 use App\Models\Apartment;
 use App\Models\Building;
-use App\Models\Lease;
+use App\Services\ReviewService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -25,23 +25,12 @@ class ReviewController extends Controller
         ]);
     }
 
-    public function storeBuilding(StoreReviewRequest $request, Building $building): JsonResponse
-    {
-        $user = $request->user();
-
-        $verified = Lease::query()
-            ->where('tenant_id', $user->id)
-            ->whereHas('apartment', function ($query) use ($building) {
-                $query->where('building_id', $building->id);
-            })
-            ->exists();
-
-        $review = $building->reviews()->create([
-            'user_id' => $user->id,
-            'rating' => $request->validated('rating'),
-            'comment' => $request->validated('comment'),
-            'verified' => $verified,
-        ]);
+    public function storeBuilding(
+        StoreReviewRequest $request,
+        Building $building,
+        ReviewService $reviewService
+    ): JsonResponse {
+        $review = $reviewService->createForBuilding($request->user(), $building, $request->validated());
 
         return $this->success('Building review created.', [
             'review' => $review->load('user:id,name'),
@@ -61,21 +50,12 @@ class ReviewController extends Controller
         ]);
     }
 
-    public function storeApartment(StoreReviewRequest $request, Apartment $apartment): JsonResponse
-    {
-        $user = $request->user();
-
-        $verified = Lease::query()
-            ->where('tenant_id', $user->id)
-            ->where('apartment_id', $apartment->id)
-            ->exists();
-
-        $review = $apartment->reviews()->create([
-            'user_id' => $user->id,
-            'rating' => $request->validated('rating'),
-            'comment' => $request->validated('comment'),
-            'verified' => $verified,
-        ]);
+    public function storeApartment(
+        StoreReviewRequest $request,
+        Apartment $apartment,
+        ReviewService $reviewService
+    ): JsonResponse {
+        $review = $reviewService->createForApartment($request->user(), $apartment, $request->validated());
 
         return $this->success('Apartment review created.', [
             'review' => $review->load('user:id,name'),

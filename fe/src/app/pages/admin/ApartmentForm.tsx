@@ -45,7 +45,7 @@ const DEFAULT_VALUES: ApartmentFormValues = {
   description: '',
   amenities: '',
   status: 'vacant',
-  isPublic: false,
+  isPublic: true,
 };
 
 export function ApartmentForm({

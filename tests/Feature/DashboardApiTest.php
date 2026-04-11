@@ -3,6 +3,7 @@
 use App\Models\Apartment;
 use App\Models\Building;
 use App\Models\Lease;
+use App\Models\MaintenanceRequest;
 use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -49,6 +50,14 @@ test('admin dashboard returns scoped counts and sums', function () {
         'tenant_id' => $tenant->id,
         'status' => 'pending',
         'amount' => 50_000,
+        'metadata' => [
+            'due_date' => Carbon::today()->subDay()->toDateString(),
+        ],
+    ]);
+
+    MaintenanceRequest::factory()->create([
+        'apartment_id' => $occupiedApartment->id,
+        'tenant_id' => $tenant->id,
     ]);
 
     $otherBuilding = Building::factory()->create();
@@ -79,9 +88,12 @@ test('admin dashboard returns scoped counts and sums', function () {
         ->assertJsonPath('data.counts.apartments', 3)
         ->assertJsonPath('data.counts.vacant', 1)
         ->assertJsonPath('data.counts.occupied', 2)
+        ->assertJsonPath('data.counts.tenants', 2)
         ->assertJsonPath('data.expiring_leases_next_90_days', 2)
         ->assertJsonPath('data.total_income_paid', 600000)
-        ->assertJsonPath('data.pending_payments', 1);
+        ->assertJsonPath('data.pending_payments', 1)
+        ->assertJsonPath('data.overdue_payments', 1)
+        ->assertJsonPath('data.maintenance_requests', 1);
 });
 
 test('tenant dashboard returns lease details and payment summary', function () {

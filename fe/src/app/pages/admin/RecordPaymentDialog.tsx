@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { LoaderCircle, Plus } from "lucide-react";
 import { Button } from "../../components/Button";
@@ -37,9 +37,14 @@ export function RecordPaymentDialog({ onSuccess }: RecordPaymentDialogProps) {
     message?: string;
   }>({ type: "idle" });
 
+  const selectTenants = useCallback(
+    (data: unknown) => PaginatedData.from<Tenant>(data, "tenants").items,
+    []
+  );
+
   const tenantsQuery = useApiQuery<unknown, Tenant[]>(api.tenants, {
     enabled: open,
-    select: (data) => PaginatedData.from<Tenant>(data, "tenants").items,
+    select: selectTenants,
   });
 
   const tenantOptions = useMemo(

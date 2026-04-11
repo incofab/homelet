@@ -142,12 +142,15 @@ Create migrations/models:
 **Goal:** Public can request to rent a vacant unit.
 
 - `rental_requests`
-  - `id`, `apartment_id`, `name`, `email`, `phone`, `message`, `status` (`new|contacted|closed`)
+  - `id`, `apartment_id`, `tenant_id` nullable, `lease_id` nullable, `name`, `email`, `phone`, `message`
+  - workflow fields: `status` (`new|contacted|approved|rejected`), `approved_by`, `approved_at`, `rejected_by`, `rejected_at`, `rejection_reason`
 
 **Acceptance**
 
 - Public endpoint creates rental request.
-- Admin can list and update status.
+- Admin can list requests scoped to accessible buildings.
+- Approving a request creates or reuses the tenant, creates the lease, and can optionally record the first payment.
+- Rejecting a request marks it rejected and sends email/SMS notifications when contact details are available.
 
 ---
 
@@ -180,6 +183,26 @@ Create migrations/models:
 
 - Tenant can create request.
 - Admin/manager can update status.
+
+---
+
+### Task 1.9 — Expense tracking schema and workflows
+
+**Goal:** Let landlords and managers track building expenses with optional custom categories.
+
+- Create `expense_categories`
+  - `id`, `building_id`, `name`, `color` nullable, `description` nullable
+- Create `expenses`
+  - `id`, `building_id`, `expense_category_id` nullable, `recorded_by`, `title`, `vendor_name` nullable, `amount`, `expense_date`, `payment_method` nullable, `reference` nullable, `description` nullable, `notes` nullable
+- Add building-scoped APIs for expense category management and expense recording/listing.
+- Add admin-area frontend page for expenses with category creation and expense recording.
+
+**Acceptance**
+
+- Platform admin, landlord, and manager can manage categories for allowed buildings.
+- Landlord and manager can record expenses with or without a category.
+- Expense lists are scoped to accessible buildings.
+- Frontend can list expenses, create categories, and record expenses against the real API.
 
 ## Suggestions
 

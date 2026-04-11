@@ -10,6 +10,8 @@ import { useCallback, useMemo, useState } from "react";
 import { api } from "../../lib/urls";
 import { PaginatedData } from "../../lib/paginatedData";
 import type { RentalRequest } from "../../lib/models";
+import { ApproveRentalRequestDialog } from "./ApproveRentalRequestDialog";
+import { RejectRentalRequestDialog } from "./RejectRentalRequestDialog";
 
 export function RentalRequestsList() {
   const selectRequests = useCallback(
@@ -20,6 +22,8 @@ export function RentalRequestsList() {
     select: selectRequests,
   });
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [approveRequest, setApproveRequest] = useState<RentalRequest | null>(null);
+  const [rejectRequest, setRejectRequest] = useState<RentalRequest | null>(null);
   const requests = requestsQuery.data?.items ?? [];
 
   const summary = useMemo(() => {
@@ -133,7 +137,7 @@ export function RentalRequestsList() {
                           variant="destructive"
                           size="sm"
                           disabled={updatingId === request.id}
-                          onClick={() => updateStatus(request.id, "rejected")}
+                          onClick={() => setRejectRequest(request)}
                         >
                           Reject
                         </Button>
@@ -144,6 +148,13 @@ export function RentalRequestsList() {
                         >
                           Contact
                         </Button>
+                        <Button
+                          size="sm"
+                          disabled={updatingId === request.id}
+                          onClick={() => setApproveRequest(request)}
+                        >
+                          Approve
+                        </Button>
                       </div>
                     )}
                     {status === "contacted" && (
@@ -152,14 +163,14 @@ export function RentalRequestsList() {
                           variant="destructive"
                           size="sm"
                           disabled={updatingId === request.id}
-                          onClick={() => updateStatus(request.id, "rejected")}
+                          onClick={() => setRejectRequest(request)}
                         >
                           Reject
                         </Button>
                         <Button
                           size="sm"
                           disabled={updatingId === request.id}
-                          onClick={() => updateStatus(request.id, "approved")}
+                          onClick={() => setApproveRequest(request)}
                         >
                           Approve
                         </Button>
@@ -172,6 +183,28 @@ export function RentalRequestsList() {
           })
         )}
       </div>
+
+      {approveRequest ? (
+        <ApproveRentalRequestDialog
+          request={approveRequest}
+          open={Boolean(approveRequest)}
+          onOpenChange={(open) => {
+            if (!open) setApproveRequest(null);
+          }}
+          onSuccess={requestsQuery.refetch}
+        />
+      ) : null}
+
+      {rejectRequest ? (
+        <RejectRentalRequestDialog
+          request={rejectRequest}
+          open={Boolean(rejectRequest)}
+          onOpenChange={(open) => {
+            if (!open) setRejectRequest(null);
+          }}
+          onSuccess={requestsQuery.refetch}
+        />
+      ) : null}
     </div>
   );
 }

@@ -102,4 +102,16 @@ we are building a property management system for tenants and landlords
 - You can safely assume that this project is still in development phase, So you can make changes to the project structure and code as you see fit. You can easily update an existing migration file if you need to add more columns or fields to the database.
 - Always prioritise reusability, maintainability and scalability of the code. For Do Not Repeat Yourself (DRY) principle, always try to avoid code duplication.
 
+## Project Skills
+
+Project-local Codex skills live under `.codex/skills`. Use them whenever the task matches their purpose.
+
+- `.codex/skills/tenanta-backend-api`: Use for Laravel backend/API work in this repo, including routes, controllers, requests, policies, models, services, migrations, jobs, mails, and PHPUnit feature tests.
+- `.codex/skills/tenanta-frontend-react`: Use for React/Vite frontend work in this repo, including admin, tenant, and public pages, API integration, shared hooks, models, route wiring, and Vitest coverage.
+- `.codex/skills/tenanta-fullstack-feature`: Use for end-to-end feature delivery that spans backend, frontend, docs, and tests.
+- `.codex/skills/tenanta-docs-sync`: Use whenever implementation changes require updates to `docs/api.md`, `docs/tasks.md`, `docs/prd.md`, or repo workflow guidance.
+- `.codex/skills/tenanta-controller-refactor`: Use when controllers contain business logic that should move into `app/Services` or `app/Support`.
+
+When a task spans multiple layers, prefer `tenanta-fullstack-feature` first, then load the backend/frontend/doc-specific skills as needed.
+
 # Task

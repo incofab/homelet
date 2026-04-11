@@ -39,15 +39,7 @@ describe("ImpersonationBanner", () => {
               </>
             }
           />
-          <Route
-            path="/admin"
-            element={
-              <>
-                <ImpersonationBanner />
-                <div>Admin dashboard</div>
-              </>
-            }
-          />
+          <Route path="/admin/users" element={<div>Users list</div>} />
         </Routes>
       </MemoryRouter>
     );
@@ -58,6 +50,6 @@ describe("ImpersonationBanner", () => {
 
     expect(window.localStorage.getItem("tenanta_token")).toBe("admin-token");
     expect(window.localStorage.getItem("tenanta_impersonation")).toBeNull();
-    expect(await screen.findByText("Admin dashboard")).toBeInTheDocument();
+    expect(await screen.findByText("Users list")).toBeInTheDocument();
   });
 });

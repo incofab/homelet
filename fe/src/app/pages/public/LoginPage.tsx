@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Home } from 'lucide-react';
@@ -7,17 +7,26 @@ import type { FormEvent } from 'react';
 import { apiPost, setAuthToken } from '../../lib/api';
 import { env } from '../../lib/env';
 import { clearImpersonationState } from '../../lib/impersonation';
-import { api, routeForDashboard, routes } from '../../lib/urls';
+import {
+  api,
+  getRedirectTarget,
+  getRequestedRedirect,
+  routeForDashboard,
+  routes,
+  withRedirect,
+} from '../../lib/urls';
 import type { AuthResponse } from '../../lib/responses';
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [formState, setFormState] = useState({ identifier: '', password: '' });
   const [status, setStatus] = useState<{
     type: 'idle' | 'error';
     message?: string;
   }>({ type: 'idle' });
   const [submitting, setSubmitting] = useState(false);
+  const requestedRedirect = getRequestedRedirect(location.search);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -28,7 +37,7 @@ export function LoginPage() {
       const data = await apiPost<AuthResponse>(api.authLogin, formState);
       clearImpersonationState();
       setAuthToken(data.token);
-      navigate(routeForDashboard(data.dashboard));
+      navigate(getRedirectTarget(location.search, routeForDashboard(data.dashboard)));
     } catch (error) {
       setStatus({
         type: 'error',
@@ -103,7 +112,14 @@ export function LoginPage() {
             <span className="text-muted-foreground">
               Don't have an account?{' '}
             </span>
-            <Link to={routes.register} className="text-primary hover:underline">
+            <Link
+              to={
+                requestedRedirect
+                  ? withRedirect(routes.register, requestedRedirect)
+                  : routes.register
+              }
+              className="text-primary hover:underline"
+            >
               Sign up
             </Link>
           </div>

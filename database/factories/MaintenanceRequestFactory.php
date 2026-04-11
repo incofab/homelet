@@ -18,6 +18,7 @@ class MaintenanceRequestFactory extends Factory
             'tenant_id' => User::factory(),
             'title' => $this->faker->sentence,
             'description' => $this->faker->paragraph,
+            'priority' => $this->faker->randomElement(['low', 'medium', 'high']),
             'status' => $this->faker->randomElement(['open', 'in_progress', 'resolved']),
         ];
     }

@@ -15,7 +15,7 @@ class UpdateRentalRequestRequest extends ApiRequest
     public function rules(): array
     {
         return [
-            'status' => ['required', Rule::in(['new', 'contacted', 'closed'])],
+            'status' => ['required', Rule::in(['new', 'contacted'])],
         ];
     }
 }

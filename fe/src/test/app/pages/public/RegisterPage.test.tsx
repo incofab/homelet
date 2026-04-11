@@ -1,6 +1,6 @@
-import { screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RegisterPage } from '../../../../app/pages/public/RegisterPage';
 import { apiSuccess, mockFetch, renderWithRoute } from '../../../testUtils';
 import { api, routes } from '../../../../app/lib/urls';
@@ -17,6 +17,15 @@ vi.mock('react-router', async () => {
 });
 
 describe('RegisterPage', () => {
+  beforeEach(() => {
+    mockNavigate.mockReset();
+    window.localStorage.clear();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
   it('registers a user and routes a new user to the home dashboard', async () => {
     mockFetch([
       {
@@ -62,5 +71,53 @@ describe('RegisterPage', () => {
 
     expect(window.localStorage.getItem('tenanta_token')).toBe('user-token');
     expect(mockNavigate).toHaveBeenCalledWith(routes.homeDashboard);
+  });
+
+  it('preserves a building registration redirect after signup', async () => {
+    mockFetch([
+      {
+        match: (url, init) =>
+          url.includes(api.authRegister) && init?.method === 'POST',
+        response: () =>
+          apiSuccess({
+            user: {
+              id: 3,
+              name: 'Owner User',
+              email: 'owner@example.com',
+              role: 'user',
+            },
+            dashboard: 'home',
+            token: 'owner-token',
+          }),
+      },
+    ]);
+
+    renderWithRoute(<RegisterPage />, {
+      route: `${routes.register}?redirect=${encodeURIComponent(
+        routes.registerBuilding,
+      )}`,
+      path: routes.register,
+    });
+
+    await userEvent.type(screen.getByPlaceholderText('Jane Doe'), 'Owner User');
+    await userEvent.type(
+      screen.getByPlaceholderText('1234567890'),
+      '08012345678',
+    );
+    await userEvent.type(
+      screen.getByPlaceholderText('you@example.com'),
+      'owner@example.com',
+    );
+    await userEvent.type(
+      screen.getByPlaceholderText('Create a password'),
+      'secret123',
+    );
+    await userEvent.type(
+      screen.getByPlaceholderText('Confirm your password'),
+      'secret123',
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Sign Up' }));
+
+    expect(mockNavigate).toHaveBeenCalledWith(routes.registerBuilding);
   });
 });

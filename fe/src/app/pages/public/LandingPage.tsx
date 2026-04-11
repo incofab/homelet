@@ -10,7 +10,7 @@ import { env } from '../../lib/env';
 import { formatMoney } from '../../lib/format';
 import { PaginatedData } from '../../lib/paginatedData';
 import { useApiQuery } from '../../hooks/useApiQuery';
-import { api, routeForDashboard, routes } from '../../lib/urls';
+import { api, routeForDashboard, routes, withRedirect } from '../../lib/urls';
 import type { PublicBuilding, UserProfile } from '../../lib/models';
 import type { DashboardContext } from '../../lib/responses';
 
@@ -32,6 +32,9 @@ export function LandingPage() {
   });
   const dashboardRoute = routeForDashboard(userQuery.data?.dashboard);
   const shouldShowPublicAuthActions = !authToken;
+  const registerBuildingRoute = authToken
+    ? routes.registerBuilding
+    : withRedirect(routes.register, routes.registerBuilding);
 
   const publicBuildings = useMemo(() => {
     const list = PaginatedData.from<PublicBuilding>(
@@ -67,7 +70,7 @@ export function LandingPage() {
             <span className="text-2xl">{env.appName}</span>
           </div>
           <div className="flex items-center gap-4">
-            <Link to={routes.registerBuilding}>
+            <Link to={registerBuildingRoute}>
               <Button
                 variant="ghost"
                 className="text-primary-foreground hover:bg-primary-foreground/10"

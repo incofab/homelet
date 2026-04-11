@@ -1,21 +1,22 @@
-import { Plus, Upload } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "../../components/Card";
-import { StatusBadge } from "../../components/StatusBadge";
 import { Button } from "../../components/Button";
 import { Input } from "../../components/Input";
 import { useCallback, useState } from "react";
 import type { FormEvent } from "react";
 import { useApiQuery } from "../../hooks/useApiQuery";
 import { apiPost } from "../../lib/api";
-import { formatDate, formatStatusLabel } from "../../lib/format";
-import { api } from "../../lib/urls";
+import { api, routes } from "../../lib/urls";
 import { PaginatedData, extractRecord } from "../../lib/paginatedData";
 import type { MaintenanceRequest } from "../../lib/models";
-import type { TenantDashboardResponse } from "../../lib/responses";
+import type { MaintenanceRequestResponse, TenantDashboardResponse } from "../../lib/responses";
+import { ImageUploadDropzone } from "../../components/ImageUploadDropzone";
+import { MaintenanceRequestSummaryCard } from "../../components/MaintenanceRequestSummaryCard";
 
 export function TenantMaintenance() {
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [formState, setFormState] = useState({ title: "", priority: "medium", description: "" });
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [formStatus, setFormStatus] = useState<{ type: "idle" | "error" | "success"; message?: string }>(
     { type: "idle" }
   );
@@ -40,7 +41,19 @@ export function TenantMaintenance() {
     dashboardQuery.data?.active_lease?.apartment_id ?? dashboardQuery.data?.active_lease?.apartment?.id;
 
   const maintenanceHistory = requestsQuery.data?.items ?? [];
-  const activeRequests = maintenanceHistory.filter((req) => req.status?.toLowerCase?.() !== "completed");
+  const activeRequests = maintenanceHistory.filter((req) => {
+    const status = req.status?.toLowerCase?.() ?? "";
+    return status !== "completed" && status !== "resolved";
+  });
+
+  const uploadSelectedMedia = async (maintenanceRequestId: number, files: File[]) => {
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("collection", "images");
+      await apiPost(api.maintenanceRequestMedia(maintenanceRequestId), formData);
+    }
+  };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -52,13 +65,26 @@ export function TenantMaintenance() {
     setFormStatus({ type: "idle" });
 
     try {
-      await apiPost(api.maintenanceRequests, {
+      const data = await apiPost<MaintenanceRequestResponse>(api.maintenanceRequests, {
         apartment_id: activeApartmentId,
         title: formState.title,
         description: formState.description,
+        priority: formState.priority,
       });
-      setFormStatus({ type: "success", message: "Maintenance request submitted." });
+
+      let successMessage = "Maintenance request submitted.";
+
+      if (selectedFiles.length > 0) {
+        try {
+          await uploadSelectedMedia(data.maintenance_request.id, selectedFiles);
+        } catch {
+          successMessage = "Maintenance request submitted, but one or more images could not be uploaded.";
+        }
+      }
+
+      setFormStatus({ type: "success", message: successMessage });
       setFormState({ title: "", priority: "medium", description: "" });
+      setSelectedFiles([]);
       setShowRequestForm(false);
       await requestsQuery.refetch();
     } catch (error) {
@@ -101,8 +127,9 @@ export function TenantMaintenance() {
               />
 
               <div>
-                <label className="block text-sm mb-2">Priority Level</label>
+                <label className="block text-sm mb-2" htmlFor="maintenance-priority">Priority Level</label>
                 <select
+                  id="maintenance-priority"
                   className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   value={formState.priority}
                   onChange={(event) => setFormState((prev) => ({ ...prev, priority: event.target.value }))}
@@ -127,11 +154,18 @@ export function TenantMaintenance() {
 
               <div>
                 <label className="block text-sm mb-2">Upload Photos (Optional)</label>
-                <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
-                  <Upload size={40} className="mx-auto mb-3 text-muted-foreground" />
-                  <p className="text-muted-foreground">Click to upload or drag and drop</p>
-                  <p className="text-sm text-muted-foreground mt-1">PNG, JPG up to 10MB each</p>
-                </div>
+                <ImageUploadDropzone
+                  inputLabel="Maintenance request images"
+                  title="Click to upload or drag and drop"
+                  helperText="PNG, JPG, or WEBP up to 10MB each"
+                  buttonLabel="Choose images"
+                  multiple
+                  disabled={submitting}
+                  selectedFiles={selectedFiles}
+                  onFilesSelected={(files) => {
+                    setSelectedFiles((current) => [...current, ...files]);
+                  }}
+                />
               </div>
 
               {formStatus.type === "error" && (
@@ -166,26 +200,11 @@ export function TenantMaintenance() {
           {activeRequests.length > 0 ? (
             <div className="space-y-4">
               {activeRequests.map((request) => (
-                <div key={request.id} className="p-4 border border-border rounded-lg">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h4 className="text-lg mb-1">{request.title ?? "Maintenance request"}</h4>
-                      <p className="text-sm text-muted-foreground">Submitted: {request.created_at ? formatDate(request.created_at) : "—"}</p>
-                    </div>
-                    <StatusBadge status={formatStatusLabel(request.status)} type="maintenance" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2 py-1 rounded ${
-                      request.priority?.toLowerCase?.() === "high"
-                        ? "bg-destructive/10 text-destructive"
-                        : request.priority?.toLowerCase?.() === "medium"
-                          ? "bg-warning/10 text-warning"
-                          : "bg-muted text-muted-foreground"
-                    }`}>
-                      {(request.priority ?? "Low")} Priority
-                    </span>
-                  </div>
-                </div>
+                <MaintenanceRequestSummaryCard
+                  key={request.id}
+                  request={request}
+                  to={routes.tenantMaintenanceRequest(request.id)}
+                />
               ))}
             </div>
           ) : (
@@ -207,13 +226,11 @@ export function TenantMaintenance() {
               <p className="text-muted-foreground">No maintenance history yet.</p>
             ) : (
               maintenanceHistory.map((request) => (
-                <div key={request.id} className="flex items-center justify-between pb-3 border-b border-border last:border-0">
-                  <div className="flex-1">
-                    <p className="mb-1">{request.title ?? "Maintenance request"}</p>
-                    <p className="text-sm text-muted-foreground">{request.created_at ? formatDate(request.created_at) : "—"}</p>
-                  </div>
-                  <StatusBadge status={formatStatusLabel(request.status)} type="maintenance" />
-                </div>
+                <MaintenanceRequestSummaryCard
+                  key={request.id}
+                  request={request}
+                  to={routes.tenantMaintenanceRequest(request.id)}
+                />
               ))
             )}
           </div>

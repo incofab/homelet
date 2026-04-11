@@ -55,47 +55,19 @@ test('authenticated user can submit request and admin can approve', function () 
     ]);
 });
 
-test('public request creates user and building on approval', function () {
-    Mail::fake();
-
-    $admin = assignPlatformAdmin(User::factory()->create());
-
+test('guest cannot submit a building registration request', function () {
     $payload = [
         'name' => 'Skyline Towers',
         'address_line1' => '55 Broad St',
-        'address_line2' => null,
         'city' => 'Lagos',
         'state' => 'Lagos',
         'country' => 'NG',
         'description' => 'Luxury building',
-        'owner_name' => 'Public Owner',
-        'owner_email' => 'public.owner@example.com',
-        'owner_phone' => '1234567890',
-        'owner_password' => 'secret123',
-        'owner_password_confirmation' => 'secret123',
     ];
 
-    $createResponse = $this->postJson('/api/public/building-registration-requests', $payload);
+    $response = $this->postJson('/api/building-registration-requests', $payload);
 
-    $createResponse->assertStatus(201)
-        ->assertJsonPath('data.request.status', 'pending');
-
-    $requestId = $createResponse->json('data.request.id');
-
-    Sanctum::actingAs($admin);
-    $approveResponse = $this->postJson("/api/admin/building-registration-requests/{$requestId}/approve");
-
-    $approveResponse->assertStatus(200)
-        ->assertJsonPath('data.request.status', 'approved');
-
-    $owner = User::where('email', 'public.owner@example.com')->first();
-
-    expect($owner)->not->toBeNull();
-
-    $this->assertDatabaseHas('buildings', [
-        'owner_id' => $owner->id,
-        'name' => 'Skyline Towers',
-    ]);
+    $response->assertStatus(401);
 });
 
 test('non admin cannot approve registration request', function () {

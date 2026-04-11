@@ -1,6 +1,6 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BuildingDetail } from '../../../../app/pages/admin/BuildingDetail';
 import { apiSuccess, mockFetch, renderWithRoute } from '../../../testUtils';
 import { api, routePaths, routes } from '../../../../app/lib/urls';
@@ -26,6 +26,10 @@ const apartmentsPayload = [
 ];
 
 describe('BuildingDetail', () => {
+  beforeEach(() => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+  });
+
   it('renders building details and lets users add a tenant', async () => {
     const fetchMock = mockFetch([
       {
@@ -33,8 +37,40 @@ describe('BuildingDetail', () => {
         response: () => apiSuccess(apartmentsPayload),
       },
       {
-        match: (url) => url.includes(api.building(1)),
+        match: (url) => String(url).endsWith(api.building(1)),
         response: () => apiSuccess(buildingPayload),
+      },
+      {
+        match: (url) => String(url).endsWith(api.buildingMedia(1)),
+        response: () =>
+          apiSuccess([
+            {
+              id: 21,
+              url: 'https://example.com/cover.jpg',
+            },
+            {
+              id: 22,
+              url: 'https://example.com/gallery.jpg',
+            },
+          ]),
+      },
+      {
+        match: (url, init) =>
+          String(url).endsWith(api.buildingMediaItem(1, 21)) &&
+          init?.method === 'DELETE',
+        response: () => apiSuccess(null),
+      },
+      {
+        match: (url, init) =>
+          String(url).endsWith(api.buildingMedia(1)) &&
+          init?.method === 'POST',
+        response: () =>
+          apiSuccess({
+            media: {
+              id: 23,
+              url: 'https://example.com/new-upload.jpg',
+            },
+          }, 201),
       },
       {
         match: (url, init) =>
@@ -60,8 +96,53 @@ describe('BuildingDetail', () => {
     });
 
     expect(await screen.findByText('Skyline Tower')).toBeInTheDocument();
+    expect(screen.getByAltText('Skyline Tower')).toHaveAttribute(
+      'src',
+      'https://example.com/cover.jpg',
+    );
     expect(screen.getByText('A1')).toBeInTheDocument();
     expect(screen.getByText('No managers assigned.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Edit building' })).toHaveAttribute(
+      'href',
+      routes.adminBuildingEdit(1),
+    );
+    expect(screen.getByRole('link', { name: 'View Tenants' })).toHaveAttribute(
+      'href',
+      routes.adminBuildingTenants(1),
+    );
+    expect(screen.getByRole('button', { name: 'Add Image' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Delete' })).toHaveLength(2);
+
+    const uploadInput = screen.getByLabelText('Building Images upload');
+    const file = new File(['image'], 'building-upload.jpg', {
+      type: 'image/jpeg',
+    });
+    await userEvent.upload(uploadInput, file);
+    await waitFor(() => {
+      const uploadRequest = fetchMock.mock.calls.find(
+        ([url, init]) =>
+          String(url).endsWith(api.buildingMedia(1)) &&
+          init?.method === 'POST',
+      );
+
+      expect(uploadRequest).toBeTruthy();
+      expect(uploadRequest?.[1]?.body).toBeInstanceOf(FormData);
+      expect((uploadRequest?.[1]?.body as FormData).get('file')).toBe(file);
+    });
+
+    await userEvent.click(screen.getAllByRole('button', { name: 'Delete' })[0]);
+    expect(window.confirm).toHaveBeenCalledWith(
+      expect.stringContaining('"action": "delete_image"'),
+    );
+    await waitFor(() => {
+      const deleteRequest = fetchMock.mock.calls.find(
+        ([url, init]) =>
+          String(url).endsWith(api.buildingMediaItem(1, 21)) &&
+          init?.method === 'DELETE',
+      );
+
+      expect(deleteRequest).toBeTruthy();
+    });
 
     await userEvent.click(screen.getByRole('button', { name: 'Add Tenant' }));
     await userEvent.type(

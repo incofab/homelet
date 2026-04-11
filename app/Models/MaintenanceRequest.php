@@ -14,6 +14,7 @@ class MaintenanceRequest extends Model
         'tenant_id',
         'title',
         'description',
+        'priority',
         'status',
     ];
 

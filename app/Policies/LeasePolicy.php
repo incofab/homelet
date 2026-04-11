@@ -25,4 +25,16 @@ class LeasePolicy
 
         return $user->canManageBuilding($building);
     }
+
+    public function extend(User $user, Lease $lease): bool
+    {
+        $building = $lease->apartment?->building;
+
+        return $building ? $user->canManageBuilding($building) : false;
+    }
+
+    public function renew(User $user, Lease $lease): bool
+    {
+        return $this->extend($user, $lease);
+    }
 }

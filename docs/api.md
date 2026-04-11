@@ -375,6 +375,11 @@ Submit a building registration request (authenticated users).
 
 Authorization:
 - Authenticated user.
+- Guests must sign up or log in before accessing the building registration request form.
+
+Behavior:
+- The request is always created with `pending` status.
+- Owner contact details are copied from the authenticated user profile at submission time.
 
 Request body:
 ```json
@@ -404,42 +409,6 @@ Response:
 }
 ```
 Model references: `BuildingRegistrationRequest`.
-
-### POST `/api/public/building-registration-requests`
-Submit a building registration request (public).
-
-Request body:
-```json
-{
-  "name": "Sunrise Apartments",
-  "address_line1": "12 Main St",
-  "address_line2": "Suite 4",
-  "city": "Lagos",
-  "state": "Lagos",
-  "country": "NG",
-  "description": "Modern apartments",
-  "for_sale": false,
-  "sale_price": null,
-  "owner_name": "Jane Doe",
-  "owner_email": "jane@example.com",
-  "owner_phone": "1234567890",
-  "owner_password": "secret",
-  "owner_password_confirmation": "secret"
-}
-```
-Model references: `BuildingRegistrationRequestCreateRequest`.
-
-Response:
-```json
-{
-  "success": true,
-  "message": "Building registration request submitted.",
-  "data": {
-    "request": "BuildingRegistrationRequest"
-  },
-  "errors": null
-}
-```
 Model references: `BuildingRegistrationRequest`.
 
 ### GET `/api/admin/building-registration-requests`
@@ -480,6 +449,11 @@ Model references: `BuildingRegistrationRequest`.
 ### POST `/api/admin/building-registration-requests/{buildingRegistrationRequest}/approve`
 Approve a building registration request (admin only).
 
+Behavior:
+- Only `pending` requests can be approved.
+- Reuses the linked user when present; otherwise resolves or creates the owner from the stored owner phone/email.
+- Creates the building and marks the request as `approved` in the same workflow.
+
 Response:
 ```json
 {
@@ -497,6 +471,10 @@ Model references: `BuildingRegistrationRequest`, `Building`, `User`.
 
 ### POST `/api/admin/building-registration-requests/{buildingRegistrationRequest}/reject`
 Reject a building registration request (admin only).
+
+Behavior:
+- Only `pending` requests can be rejected.
+- Stores the rejection reason and timestamps the rejection.
 
 Request body:
 ```json
@@ -522,6 +500,11 @@ Model references: `BuildingRegistrationRequest`.
 
 ### POST `/api/buildings/{building}/managers`
 Assign a building role to a user (by email). If the user does not exist, it is created.
+
+Behavior:
+- The building owner can assign `manager` and `caretaker`.
+- Platform admin can also assign `landlord`.
+- If the email does not exist yet, the API creates the user with a generated password before attaching the role.
 
 Authorization:
 - Platform admin can assign `landlord`, `manager`, or `caretaker`.
@@ -639,13 +622,41 @@ Authorization:
 
 Request: none
 
+Notes:
+- Includes the apartment `building` and `media` relations.
+- Includes `current_tenant` and `tenant` when a lease exists, with `id`, `lease_id`, `rent_amount`, `name`, `email`, `phone`, `lease_start`, `lease_end`, and `lease_status`.
+
 Response:
 ```json
 {
   "success": true,
   "message": "Apartment loaded.",
   "data": {
-    "apartment": "Apartment"
+    "apartment": {
+      "...": "Apartment",
+      "current_tenant": {
+        "id": 34,
+        "lease_id": 91,
+        "rent_amount": 1200000,
+        "name": "Jane Tenant",
+        "email": "jane@example.com",
+        "phone": "08012345678",
+        "lease_start": "2026-01-01",
+        "lease_end": "2027-01-01",
+        "lease_status": "active"
+      },
+      "tenant": {
+        "id": 34,
+        "lease_id": 91,
+        "rent_amount": 1200000,
+        "name": "Jane Tenant",
+        "email": "jane@example.com",
+        "phone": "08012345678",
+        "lease_start": "2026-01-01",
+        "lease_end": "2027-01-01",
+        "lease_status": "active"
+      }
+    }
   },
   "errors": null
 }
@@ -774,6 +785,7 @@ Authorization:
 Behavior:
 - Creates the user if missing. New accounts still receive the default platform `user` role.
 - Creates active lease with `end_date = start_date + 1 year`.
+- Can optionally record an initial manual payment in the same transaction.
 - Sets apartment status to `occupied`.
 - Entire operation is transactional.
 - Rejects mismatched phone/email combinations that point to different users.
@@ -785,7 +797,13 @@ Request body:
   "tenant_phone": "08012345678",
   "tenant_name": "Tenant Name",
   "start_date": "2026-03-01",
-  "rent_amount": 1200000
+  "rent_amount": 1200000,
+  "record_payment": true,
+  "payment_amount": 600000,
+  "payment_date": "2026-03-01",
+  "payment_due_date": "2026-03-05",
+  "payment_status": "paid",
+  "payment_reference": "PAY-001"
 }
 ```
 Model references: `AssignTenantRequest`.
@@ -795,6 +813,9 @@ Notes:
 - `tenant_email` is optional.
 - `tenant_name` is required when the phone/email do not match an existing user.
 - `rent_amount` is the annual rent amount and defaults to apartment `yearly_price` when omitted.
+- Set `record_payment` to `true` to create a manual payment immediately after the lease is created.
+- When `record_payment` is `true`, `payment_amount` and `payment_date` are required.
+- `payment_due_date`, `payment_status`, and `payment_reference` are optional.
 
 Response:
 ```json
@@ -804,12 +825,121 @@ Response:
   "data": {
     "tenant": "User",
     "lease": "Lease",
+    "payment": "Payment|null",
     "apartment": "Apartment"
   },
   "errors": null
 }
 ```
-Model references: `User`, `Lease`, `Apartment`.
+Model references: `User`, `Lease`, `Payment`, `Apartment`.
+
+## Lease Lifecycle
+
+### PUT `/api/leases/{lease}/extend`
+Extend an active lease by changing the existing lease `end_date`.
+
+Authorization:
+- Platform admin always has access.
+- Landlords and managers can extend leases for apartments in buildings they manage.
+
+Behavior:
+- Only leases with `status=active` can be extended.
+- Updates the same lease record. No new lease is created.
+- Accepts either `new_end_date` or `duration_in_months`.
+
+Request body:
+```json
+{
+  "duration_in_months": 6
+}
+```
+or
+```json
+{
+  "new_end_date": "2027-06-30"
+}
+```
+Model references: `ExtendLeaseRequest`.
+
+Validation notes:
+- Provide either `new_end_date` or `duration_in_months`, not both.
+- `new_end_date` must be after the current lease `end_date`.
+- `duration_in_months` must be at least `1`.
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Lease extended.",
+  "data": {
+    "lease": "Lease",
+    "apartment": "Apartment"
+  },
+  "errors": null
+}
+```
+Model references: `Lease`, `Apartment`.
+
+### POST `/api/leases/{lease}/renew`
+Renew an active or expired lease by closing the current lease and creating a brand new active lease.
+
+Authorization:
+- Platform admin always has access.
+- Landlords and managers can renew leases for apartments in buildings they manage.
+
+Behavior:
+- Accepts leases with `status=active` or `status=expired`.
+- Defaults `start_date` to the day after the current lease `end_date`.
+- Accepts either `end_date` or `duration_in_months` for the new lease period.
+- Marks the previous lease as `renewed` when it was active, otherwise keeps it `expired`.
+- Creates a new active lease for the same apartment and tenant.
+- Can optionally record the first manual payment for the renewed lease in the same transaction.
+
+Request body:
+```json
+{
+  "start_date": "2027-01-01",
+  "new_rent_amount": 1350000,
+  "duration_in_months": 12,
+  "record_payment": true,
+  "payment_amount": 675000,
+  "payment_date": "2027-01-01",
+  "payment_due_date": "2027-01-05",
+  "payment_status": "paid",
+  "payment_reference": "RENEW-001"
+}
+```
+or
+```json
+{
+  "end_date": "2027-12-31"
+}
+```
+Model references: `RenewLeaseRequest`.
+
+Validation notes:
+- Provide either `end_date` or `duration_in_months`, not both.
+- Only the most recent lease by `end_date` for the tenant in that building can be renewed.
+- `start_date` must be after the current lease `end_date`.
+- `end_date` must be after the renewal `start_date`.
+- `new_rent_amount` defaults to the current lease rent when omitted.
+- When `record_payment` is `true`, `payment_amount` and `payment_date` are required.
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Lease renewed.",
+  "data": {
+    "previous_lease": "Lease",
+    "lease": "Lease",
+    "payment": "Payment|null",
+    "apartment": "Apartment"
+  },
+  "errors": null
+}
+```
+Model references: `Lease`, `Payment`, `Apartment`.
 
 ## Tenants
 
@@ -827,12 +957,83 @@ Response:
   "success": true,
   "message": "Tenants loaded.",
   "data": {
-    "tenants": [
-      {
-        "tenant": "User",
-        "active_lease": "LeaseSummary"
-      }
-    ]
+    "tenants": {
+      "data": [
+        {
+          "id": 14,
+          "name": "Jane Doe",
+          "email": "jane@example.com",
+          "phone": "08012345678",
+          "current_lease": {
+            "id": 5,
+            "status": "active",
+            "start_date": "2026-01-01",
+            "end_date": "2026-12-31",
+            "next_due_date": "2026-12-31",
+            "days_remaining": 266,
+            "days_exceeded": null,
+            "is_overdue": false,
+            "apartment": {
+              "id": 8,
+              "unit_code": "A1",
+              "building": {
+                "id": 3,
+                "name": "Sunrise Apartments"
+              }
+            }
+          },
+          "active_lease": {
+            "id": 5,
+            "status": "active",
+            "end_date": "2026-12-31"
+          }
+        }
+      ]
+    }
+  },
+  "errors": null
+}
+```
+Notes:
+- `current_lease` is the tenant's latest lease in scope, whether active or expired.
+- `next_due_date` currently maps to the lease end date.
+- `days_remaining` is returned when the lease has not passed its due date.
+- `days_exceeded` is returned when the lease due date has already passed.
+
+### GET `/api/buildings/{building}/tenants`
+List only the tenants attached to a specific building.
+
+Authorization:
+- Platform admin, landlord, manager, or caretaker with access to the building.
+
+Request: none
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Building tenants loaded.",
+  "data": {
+    "building": {
+      "id": 3,
+      "name": "Sunrise Apartments"
+    },
+    "tenants": {
+      "data": [
+        {
+          "id": 14,
+          "name": "Jane Doe",
+          "current_lease": {
+            "id": 5,
+            "status": "expired",
+            "next_due_date": "2026-03-31",
+            "days_remaining": null,
+            "days_exceeded": 9,
+            "is_overdue": true
+          }
+        }
+      ]
+    }
   },
   "errors": null
 }
@@ -857,12 +1058,22 @@ Response:
   "data": {
     "tenant": "User",
     "leases": "Lease[]",
-    "payments": "Payment[]"
+    "payments": "Payment[]",
+    "balance": {
+      "total_lease_rent": 1200000,
+      "total_paid": 400000,
+      "outstanding_balance": 800000
+    }
   },
   "errors": null
 }
 ```
 Model references: `User`, `Lease[]`, `Payment[]`.
+
+Notes:
+- Lease history can include `active`, `expired`, `renewed`, or `terminated` records.
+- Lease history is ordered by `end_date` descending.
+- `balance.outstanding_balance` is derived from total lease rent minus payments with `paid` status.
 
 ## Payments
 
@@ -872,6 +1083,10 @@ Record a payment.
 Authorization:
 - Tenant can submit `online` payments for their own lease.
 - Platform admin, landlord, and manager can submit `manual` payments.
+
+Behavior:
+- The recorded payment is always attached to the lease tenant.
+- The assign-tenant flow reuses the same payment recording rules when `record_payment=true`.
 
 Request body:
 ```json
@@ -982,6 +1197,207 @@ Response:
 ```
 Model references: `PaymentSummary[]`.
 
+## Expenses
+
+### GET `/api/expenses`
+List expenses visible to the authenticated operator.
+
+Authorization:
+- Platform admin sees all expenses.
+- Landlords and managers see expenses for their buildings.
+
+Query parameters:
+- `building_id` optional integer filter.
+- `category_id` optional integer filter.
+
+Request: none
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Expenses loaded.",
+  "data": {
+    "expenses": [
+      {
+        "id": 8,
+        "building_id": 2,
+        "expense_category_id": 4,
+        "recorded_by": 6,
+        "title": "Generator service",
+        "vendor_name": "PowerFix Ltd",
+        "amount": 120000,
+        "expense_date": "2026-04-10",
+        "payment_method": "bank_transfer",
+        "reference": "EXP-100",
+        "description": "Quarterly generator servicing",
+        "notes": "Paid same day",
+        "building": {
+          "id": 2,
+          "name": "Sunrise Apartments"
+        },
+        "category": {
+          "id": 4,
+          "building_id": 2,
+          "name": "Repairs",
+          "color": "#2563EB"
+        },
+        "recorder": {
+          "id": 6,
+          "name": "John Manager"
+        }
+      }
+    ]
+  },
+  "errors": null
+}
+```
+Model references: `Expense[]`.
+
+### POST `/api/expenses`
+Record an expense for a building.
+
+Authorization:
+- Platform admin, landlord, or manager for the selected building.
+
+Validation notes:
+- `expense_category_id` is optional.
+- When provided, the category must belong to the selected building.
+- `payment_method` can be `cash`, `bank_transfer`, `card`, `cheque`, or `other`.
+
+Request body:
+```json
+{
+  "building_id": 2,
+  "expense_category_id": 4,
+  "title": "Generator service",
+  "vendor_name": "PowerFix Ltd",
+  "amount": 120000,
+  "expense_date": "2026-04-10",
+  "payment_method": "bank_transfer",
+  "reference": "EXP-100",
+  "description": "Quarterly generator servicing",
+  "notes": "Paid same day"
+}
+```
+Model references: `ExpenseCreateRequest`.
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Expense recorded.",
+  "data": {
+    "expense": "Expense"
+  },
+  "errors": null
+}
+```
+Model references: `Expense`.
+
+### GET `/api/buildings/{building}/expense-categories`
+List expense categories for a building.
+
+Authorization:
+- Platform admin, landlord, or manager for the building.
+
+Request: none
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Expense categories loaded.",
+  "data": {
+    "categories": [
+      {
+        "id": 4,
+        "building_id": 2,
+        "name": "Repairs",
+        "color": "#2563EB",
+        "description": "Repairs and servicing"
+      }
+    ]
+  },
+  "errors": null
+}
+```
+Model references: `ExpenseCategory[]`.
+
+### POST `/api/buildings/{building}/expense-categories`
+Create an expense category for a building.
+
+Authorization:
+- Platform admin, landlord, or manager for the building.
+
+Request body:
+```json
+{
+  "name": "Repairs",
+  "color": "#2563EB",
+  "description": "Repairs and servicing"
+}
+```
+Model references: `ExpenseCategoryCreateRequest`.
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Expense category created.",
+  "data": {
+    "category": "ExpenseCategory"
+  },
+  "errors": null
+}
+```
+Model references: `ExpenseCategory`.
+
+### PUT `/api/buildings/{building}/expense-categories/{expenseCategory}`
+Update an expense category for a building.
+
+Authorization:
+- Platform admin, landlord, or manager for the building.
+
+Request body:
+```json
+{
+  "name": "Utility Bills"
+}
+```
+Model references: `ExpenseCategoryUpdateRequest`.
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Expense category updated.",
+  "data": {
+    "category": "ExpenseCategory"
+  },
+  "errors": null
+}
+```
+Model references: `ExpenseCategory`.
+
+### DELETE `/api/buildings/{building}/expense-categories/{expenseCategory}`
+Delete an expense category for a building.
+
+Authorization:
+- Platform admin, landlord, or manager for the building.
+
+Request: none
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Expense category deleted.",
+  "data": null,
+  "errors": null
+}
+```
+
 ## Public Listings + Rental Requests
 
 Public routes are throttled via `throttle:60,1`.
@@ -1078,7 +1494,7 @@ Response:
 ```json
 {
   "success": true,
-  "message": "Rental request created.",
+  "message": "Rental request submitted.",
   "data": {
     "rental_request": "RentalRequest"
   },
@@ -1086,6 +1502,10 @@ Response:
 }
 ```
 Model references: `RentalRequest`.
+Notes:
+- `apartment_id` is the selected available apartment the applicant wants to rent.
+- `email` is normalized to lowercase.
+- `phone` is normalized to digits-only when supplied.
 
 Alias:
 - POST `/api/public/request-interest`
@@ -1113,7 +1533,7 @@ Response:
 Model references: `RentalRequestSummary[]`.
 
 ### PUT `/api/rental-requests/{rentalRequest}`
-Update rental request status.
+Update a rental request before a final decision.
 
 Authorization:
 - Platform admin, landlord, or manager.
@@ -1125,12 +1545,93 @@ Request body:
 }
 ```
 Model references: `RentalRequestUpdateRequest`.
+Rules:
+- Only `new` and `contacted` are valid values here.
+- Use the dedicated approve/reject endpoints for final actions.
 
 Response:
 ```json
 {
   "success": true,
   "message": "Rental request updated.",
+  "data": {
+    "rental_request": "RentalRequest"
+  },
+  "errors": null
+}
+```
+Model references: `RentalRequest`.
+
+### POST `/api/rental-requests/{rentalRequest}/approve`
+Approve a rental request, create or reuse the tenant account, create a lease, and optionally record the first payment.
+
+Authorization:
+- Platform admin, landlord, or manager.
+
+Request body:
+```json
+{
+  "apartment_id": 12,
+  "start_date": "2026-04-01",
+  "rent_amount": 1200000,
+  "record_payment": true,
+  "payment_amount": 600000,
+  "payment_date": "2026-04-01",
+  "payment_due_date": "2026-04-05",
+  "payment_status": "paid",
+  "payment_reference": "RR-001"
+}
+```
+Model references: `RentalRequestApproveRequest`.
+Behavior notes:
+- Approval is allowed only while the request is `new` or `contacted`.
+- `apartment_id` is optional. When supplied, the manager assigns the request to that apartment for lease creation; otherwise the originally requested apartment is used.
+- The selected approval apartment must be in the same building as the originally requested apartment and must belong to a building the operator can manage.
+- The applicant is matched to an existing user by email/phone when possible; otherwise a tenant user is created.
+- A new active lease is created for the apartment and the apartment is marked `occupied`.
+- When `record_payment` is true, a manual payment is created against the new lease.
+- The tenancy agreement email job is dispatched after lease creation.
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Rental request approved.",
+  "data": {
+    "rental_request": "RentalRequest",
+    "tenant": "User",
+    "lease": "Lease",
+    "payment": "Payment|null"
+  },
+  "errors": null
+}
+```
+Model references: `RentalRequest`, `User`, `Lease`, `Payment`.
+
+### POST `/api/rental-requests/{rentalRequest}/reject`
+Reject a rental request and notify the applicant.
+
+Authorization:
+- Platform admin, landlord, or manager.
+
+Request body:
+```json
+{
+  "rejection_reason": "The apartment is no longer available."
+}
+```
+Model references: `RentalRequestRejectRequest`.
+Behavior notes:
+- Rejection is allowed only while the request is `new` or `contacted`.
+- The request status is updated to `rejected`.
+- A rejection email is sent when the request has an email address.
+- An SMS notification is sent when the request has a phone number.
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Rental request rejected.",
   "data": {
     "rental_request": "RentalRequest"
   },
@@ -1162,6 +1663,8 @@ Model references: `ConversationCreateRequest`.
 Notes:
 - Either `building_id` or `apartment_id` is required.
 - The authenticated user is auto-added as a participant.
+- `participant_ids` is optional for tenants.
+- When a tenant omits `participant_ids`, the API automatically adds the building staff participants for that apartment/building conversation.
 
 Response:
 ```json
@@ -1169,12 +1672,12 @@ Response:
   "success": true,
   "message": "Conversation created.",
   "data": {
-    "conversation": "Conversation"
+    "conversation": "ConversationSummary"
   },
   "errors": null
 }
 ```
-Model references: `Conversation`.
+Model references: `ConversationSummary`.
 
 ### GET `/api/conversations`
 List conversations the user participates in.
@@ -1193,6 +1696,14 @@ Response:
 }
 ```
 Model references: `ConversationSummary[]`.
+
+Each `ConversationSummary` item includes chat-ready display metadata:
+- `title`: conversation name relative to the current user.
+- `subtitle`: apartment/building context such as `A-12 · Sunset Towers`.
+- `counterpart`: the other participant(s), including `name`, `names`, and `count`.
+- `participants`: participant list with `is_current_user`.
+- `last_message`: latest message preview with `sender` and `is_mine`.
+- `unread_count`: number of unread incoming messages for the current user.
 
 ### GET `/api/conversations/{conversation}/messages`
 List all messages for a conversation.
@@ -1214,6 +1725,11 @@ Response:
 }
 ```
 Model references: `Message[]`.
+
+Each `Message` item includes:
+- `sender`: `{ id, name, role }`
+- `is_mine`: whether the message was sent by the authenticated user
+- `read_at`: ISO-8601 timestamp when the message was marked as read, or `null`
 
 ### POST `/api/conversations/{conversation}/messages`
 Send a message to a conversation.
@@ -1276,10 +1792,14 @@ Request body:
 {
   "apartment_id": 1,
   "title": "Leaking pipe",
-  "description": "Pipe under sink is leaking."
+  "description": "Pipe under sink is leaking.",
+  "priority": "high"
 }
 ```
 Model references: `MaintenanceRequestCreateRequest`.
+
+Notes:
+- `priority` is optional and must be one of `low`, `medium`, or `high`. It defaults to `low` when omitted.
 
 Response:
 ```json
@@ -1317,6 +1837,28 @@ Response:
 ```
 Model references: `MaintenanceRequestSummary[]`.
 
+### GET `/api/maintenance-requests/{maintenanceRequest}`
+Show a maintenance request.
+
+Authorization:
+- Tenant owner of the request.
+- Platform admin, landlord, manager, or caretaker for the building.
+
+Request: none
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Maintenance request loaded.",
+  "data": {
+    "maintenance_request": "MaintenanceRequest"
+  },
+  "errors": null
+}
+```
+Model references: `MaintenanceRequest`.
+
 ### PUT `/api/maintenance-requests/{maintenanceRequest}`
 Update maintenance request status.
 
@@ -1330,6 +1872,8 @@ Request body:
 }
 ```
 Model references: `MaintenanceRequestUpdateRequest`.
+Rules:
+- `status` must be one of `open`, `in_progress`, or `resolved`.
 
 Response:
 ```json
@@ -1372,6 +1916,8 @@ Response:
 }
 ```
 Model references: `Media[]`.
+Behavior notes:
+- Building media is returned in upload order, oldest first. The first uploaded image is the building cover/banner.
 
 ### POST `/api/buildings/{building}/media`
 Upload building media (images/videos).
@@ -1398,6 +1944,24 @@ Response:
 }
 ```
 Model references: `Media`.
+
+### DELETE `/api/buildings/{building}/media/{media}`
+Delete a building media item.
+
+Authorization:
+- Platform admin, landlord, or manager for the building.
+
+Request: none
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Building media deleted.",
+  "data": null,
+  "errors": null
+}
+```
 
 ### GET `/api/apartments/{apartment}/media`
 List media for an apartment.
@@ -1446,6 +2010,24 @@ Response:
 }
 ```
 Model references: `Media`.
+
+### DELETE `/api/apartments/{apartment}/media/{media}`
+Delete an apartment media item.
+
+Authorization:
+- Platform admin, landlord, or manager for the building.
+
+Request: none
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Apartment media deleted.",
+  "data": null,
+  "errors": null
+}
+```
 
 ### GET `/api/maintenance-requests/{maintenanceRequest}/media`
 List media for a maintenance request.
@@ -1575,6 +2157,9 @@ Create a building review.
 Authorization:
 - Authenticated user.
 
+Behavior:
+- The response `review.verified` flag is `true` only when the reviewer has a lease in that building.
+
 Request body:
 ```json
 {
@@ -1624,6 +2209,9 @@ Create an apartment review.
 Authorization:
 - Authenticated user.
 
+Behavior:
+- The response `review.verified` flag is `true` only when the reviewer has a lease for that apartment.
+
 Request body:
 ```json
 {
@@ -1669,6 +2257,10 @@ Response:
 }
 ```
 Model references: `AdminDashboardMetrics`.
+
+Notes:
+- `metrics.counts` includes `buildings`, `apartments`, `vacant`, `occupied`, and `tenants`.
+- `metrics` also includes `expiring_leases_next_90_days`, `total_income_paid`, `pending_payments`, `overdue_payments`, and `maintenance_requests`.
 
 ### GET `/api/dashboard/tenant`
 Tenant dashboard metrics.

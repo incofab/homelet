@@ -4,6 +4,7 @@ use App\Models\Apartment;
 use App\Models\Building;
 use App\Models\Lease;
 use App\Models\MaintenanceRequest;
+use App\Models\Media;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -27,12 +28,55 @@ test('tenant can create maintenance request for their apartment', function () {
         'apartment_id' => $apartment->id,
         'title' => 'Leaking pipe',
         'description' => 'Pipe under sink is leaking.',
+        'priority' => 'high',
     ]);
 
     $response->assertStatus(201)
-        ->assertJsonPath('data.maintenance_request.status', 'open');
+        ->assertJsonPath('data.maintenance_request.status', 'open')
+        ->assertJsonPath('data.maintenance_request.priority', 'high');
 
-    expect(MaintenanceRequest::where('tenant_id', $tenant->id)->count())->toBe(1);
+    expect(MaintenanceRequest::where('tenant_id', $tenant->id)->count())->toBe(1)
+        ->and(MaintenanceRequest::where('tenant_id', $tenant->id)->first()?->priority)->toBe('high');
+});
+
+test('tenant can show own maintenance request with media and relations', function () {
+    $tenant = User::factory()->create();
+
+    $building = Building::factory()->create(['name' => 'Skyline']);
+    $apartment = Apartment::factory()->create([
+        'building_id' => $building->id,
+        'unit_code' => 'B2',
+    ]);
+
+    Lease::factory()->create([
+        'apartment_id' => $apartment->id,
+        'tenant_id' => $tenant->id,
+        'status' => 'active',
+    ]);
+
+    $request = MaintenanceRequest::factory()->create([
+        'apartment_id' => $apartment->id,
+        'tenant_id' => $tenant->id,
+        'title' => 'Leaky faucet',
+        'priority' => 'medium',
+    ]);
+
+    Media::factory()->create([
+        'model_type' => MaintenanceRequest::class,
+        'model_id' => $request->id,
+        'collection' => 'images',
+        'created_by' => $tenant->id,
+    ]);
+
+    Sanctum::actingAs($tenant);
+    $response = $this->getJson("/api/maintenance-requests/{$request->id}");
+
+    $response->assertStatus(200)
+        ->assertJsonPath('data.maintenance_request.title', 'Leaky faucet')
+        ->assertJsonPath('data.maintenance_request.priority', 'medium')
+        ->assertJsonPath('data.maintenance_request.apartment.unit_code', 'B2')
+        ->assertJsonPath('data.maintenance_request.apartment.building.name', 'Skyline')
+        ->assertJsonCount(1, 'data.maintenance_request.media');
 });
 
 test('tenant cannot create maintenance request for other apartment', function () {

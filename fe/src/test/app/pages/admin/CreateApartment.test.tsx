@@ -41,7 +41,6 @@ describe('CreateApartment', () => {
       screen.getByLabelText('Status'),
       'maintenance',
     );
-    await userEvent.click(screen.getByRole('checkbox'));
     await userEvent.type(
       screen.getByPlaceholderText('Describe the apartment features...'),
       'Nice unit',

@@ -24,8 +24,9 @@ import { formatMoney, formatStatusLabel } from '../../lib/format';
 import { api, routes } from '../../lib/urls';
 import { PaginatedData, extractRecord } from '../../lib/paginatedData';
 import { useCallback, useMemo, useState } from 'react';
-import type { ApartmentSummary, Building } from '../../lib/models';
+import type { ApartmentSummary, Building, Media } from '../../lib/models';
 import { AssignTenantForm } from './AssignTenantForm';
+import { AdminMediaManager } from '../../components/AdminMediaManager';
 
 export function BuildingDetail() {
   const { id } = useParams();
@@ -35,6 +36,10 @@ export function BuildingDetail() {
   );
   const selectApartments = useCallback(
     (data: unknown) => PaginatedData.from<ApartmentSummary>(data, 'apartments'),
+    [],
+  );
+  const selectMedia = useCallback(
+    (data: unknown) => PaginatedData.from<Media>(data, 'media'),
     [],
   );
   const buildingQuery = useApiQuery<unknown, Building>(
@@ -53,9 +58,18 @@ export function BuildingDetail() {
       select: selectApartments,
     },
   );
+  const mediaQuery = useApiQuery<unknown, PaginatedData<Media>>(
+    id ? api.buildingMedia(id) : null,
+    {
+      enabled: Boolean(id),
+      deps: [id],
+      select: selectMedia,
+    },
+  );
 
   const building = buildingQuery.data;
   const apartments = apartmentsQuery.data?.items ?? [];
+  const media = mediaQuery.data?.items ?? building?.media ?? [];
   const vacantApartments = useMemo(
     () =>
       apartments.filter(
@@ -80,7 +94,7 @@ export function BuildingDetail() {
   ]
     .filter(Boolean)
     .join(', ');
-  const image = building?.media?.[0]?.url ?? env.placeholderImage;
+  const image = media[0]?.url ?? env.placeholderImage;
 
   return (
     <div className="space-y-6">
@@ -113,9 +127,14 @@ export function BuildingDetail() {
                   <span>{location || 'Location unavailable'}</span>
                 </div>
               </div>
-              <Button variant="ghost" size="sm">
-                <Edit size={18} />
-              </Button>
+              <Link
+                to={id ? routes.adminBuildingEdit(id) : routes.adminBuildings}
+                aria-label="Edit building"
+              >
+                <Button variant="ghost" size="sm">
+                  <Edit size={18} />
+                </Button>
+              </Link>
             </div>
             <p className="text-muted-foreground mb-4">
               {building?.description || 'No description provided.'}
@@ -147,6 +166,29 @@ export function BuildingDetail() {
           </Card>
 
           {/* Apartments */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Building Images</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AdminMediaManager
+                title="Building Images"
+                emptyLabel="No building images uploaded yet."
+                items={media}
+                uploadPath={api.buildingMedia(id ?? '')}
+                deletePath={(mediaId) =>
+                  api.buildingMediaItem(id ?? '', mediaId)
+                }
+                onChanged={async () => {
+                  await Promise.all([
+                    buildingQuery.refetch(),
+                    mediaQuery.refetch(),
+                  ]);
+                }}
+              />
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -250,13 +292,25 @@ export function BuildingDetail() {
           {/* Actions */}
           <Card>
             <CardContent className="space-y-3">
-              <Link to={routes.adminBuildingApartmentsNew(id ?? '')}>
+              <Link
+                to={routes.adminBuildingApartmentsNew(id ?? '')}
+                className="my-2 block"
+              >
                 <Button className="w-full">
                   <Plus size={18} className="mr-2" />
                   Add Apartment
                 </Button>
               </Link>
-              <Button variant="secondary" className="w-full">
+              <Link
+                to={routes.adminBuildingTenants(id ?? '')}
+                className="my-2 block"
+              >
+                <Button variant="secondary" className="w-full">
+                  <Users size={18} className="mr-2" />
+                  View Tenants
+                </Button>
+              </Link>
+              <Button variant="secondary" className="w-full my-2">
                 <DollarSign size={18} className="mr-2" />
                 {building?.for_sale
                   ? `For Sale (${formatMoney(building.sale_price ?? 0)})`

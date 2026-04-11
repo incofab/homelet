@@ -119,20 +119,50 @@ export interface ApartmentDetail {
   sqft?: number;
   square_feet?: number;
   current_tenant?: {
+    id?: number;
     name?: string;
     email?: string;
     phone?: string;
+    lease_id?: number;
     lease_start?: string;
     lease_end?: string;
     lease_status?: string;
+    rent_amount?: number;
   };
   tenant?: {
+    id?: number;
     name?: string;
     email?: string;
     phone?: string;
+    lease_id?: number;
     lease_start?: string;
     lease_end?: string;
     lease_status?: string;
+    rent_amount?: number;
+  };
+}
+
+export interface Lease {
+  id: number;
+  apartment_id: number;
+  tenant_id: number;
+  rent_amount?: number;
+  start_date?: string;
+  end_date?: string;
+  status: string;
+  apartment?: {
+    id?: number;
+    unit_code?: string;
+    building?: {
+      id?: number;
+      name?: string;
+    };
+  };
+  tenant?: {
+    id?: number;
+    name?: string;
+    email?: string;
+    phone?: string;
   };
 }
 
@@ -149,6 +179,38 @@ export interface Payment {
   apartment?: { unit_code?: string };
 }
 
+export interface TenantBalanceSummary {
+  total_lease_rent: number;
+  total_paid: number;
+  outstanding_balance: number;
+}
+
+export interface ExpenseCategory {
+  id: number;
+  building_id: number;
+  name: string;
+  color?: string | null;
+  description?: string | null;
+}
+
+export interface Expense {
+  id: number;
+  building_id: number;
+  expense_category_id?: number | null;
+  recorded_by: number;
+  title: string;
+  vendor_name?: string | null;
+  amount: number;
+  expense_date: string;
+  payment_method?: string | null;
+  reference?: string | null;
+  description?: string | null;
+  notes?: string | null;
+  building?: { id?: number; name?: string };
+  category?: ExpenseCategory | null;
+  recorder?: { id?: number; name?: string };
+}
+
 export interface MaintenanceRequest {
   id: number;
   title?: string;
@@ -156,8 +218,9 @@ export interface MaintenanceRequest {
   status: string;
   priority?: string;
   created_at?: string;
-  apartment?: { unit_code?: string; building?: { name?: string } };
-  tenant?: { name?: string };
+  media?: Media[];
+  apartment?: { id?: number; unit_code?: string; building?: { id?: number; name?: string } };
+  tenant?: { id?: number; name?: string; email?: string | null; phone?: string | null };
 }
 
 export interface RentalRequest {
@@ -168,24 +231,58 @@ export interface RentalRequest {
   status: string;
   message?: string;
   created_at?: string;
-  apartment?: { unit_code?: string; building?: { name?: string } };
+  approved_at?: string | null;
+  rejected_at?: string | null;
+  rejection_reason?: string | null;
+  apartment?: {
+    id?: number;
+    unit_code?: string;
+    yearly_price?: number;
+    building?: { id?: number; name?: string };
+  };
+  tenant?: { id?: number; name?: string; email?: string | null; phone?: string | null };
+  lease?: { id?: number; start_date?: string; end_date?: string; status?: string };
 }
 
 export interface Conversation {
   id: number;
+  building_id?: number | null;
+  apartment_id?: number | null;
+  title?: string;
+  subtitle?: string;
   unread_count?: number;
-  apartment?: { unit_code?: string; building?: { name?: string } };
-  participants?: { id: number; name?: string; role?: string }[];
-  last_message?: { body?: string; created_at?: string };
+  apartment?: {
+    id?: number;
+    unit_code?: string;
+    building?: { id?: number; name?: string } | null;
+  } | null;
+  participants?: {
+    id: number;
+    name?: string;
+    role?: string;
+    is_current_user?: boolean;
+  }[];
+  counterpart?: {
+    id?: number | null;
+    name?: string;
+    names?: string[];
+    count?: number;
+  };
+  last_message?: {
+    body?: string;
+    created_at?: string;
+    is_mine?: boolean;
+    sender?: { id?: number; name?: string } | null;
+  };
 }
 
 export interface Message {
   id: number;
   body: string;
   created_at?: string;
-  sender?: { id?: number; name?: string; role?: string };
-  sender_role?: string;
-  sender_type?: string;
+  read_at?: string | null;
+  is_mine?: boolean;
+  sender?: { id?: number; name?: string; role?: string } | null;
 }
 
 export interface Media {
@@ -205,13 +302,40 @@ export interface Review {
 export interface Tenant {
   id: number;
   name: string;
-  email: string;
+  email?: string | null;
   phone?: string;
+  current_lease?: {
+    id: number;
+    status: string;
+    start_date?: string;
+    end_date?: string;
+    next_due_date?: string | null;
+    days_remaining?: number | null;
+    days_exceeded?: number | null;
+    is_overdue?: boolean;
+    rent_amount?: number;
+    apartment?: {
+      id?: number;
+      unit_code?: string;
+      building?: {
+        id?: number;
+        name?: string;
+      } | null;
+    } | null;
+  } | null;
   active_lease?: {
     id: number;
     status: string;
     end_date?: string;
-  };
+    rent_amount?: number;
+  } | null;
+}
+
+export interface TenantDetail {
+  id: number;
+  name: string;
+  email?: string;
+  phone?: string;
 }
 
 export interface PublicApartment {

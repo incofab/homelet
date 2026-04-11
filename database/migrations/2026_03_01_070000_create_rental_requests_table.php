@@ -11,11 +11,18 @@ return new class extends Migration
         Schema::create('rental_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('apartment_id')->constrained('apartments')->cascadeOnDelete();
+            $table->foreignId('tenant_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('lease_id')->nullable()->constrained('leases')->nullOnDelete();
             $table->string('name');
             $table->string('email');
             $table->string('phone')->nullable();
             $table->text('message')->nullable();
-            $table->string('status')->default('new'); // , ['new', 'contacted', 'closed'])->default('new');
+            $table->string('status')->default('new');
+            $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('approved_at')->nullable();
+            $table->foreignId('rejected_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('rejected_at')->nullable();
+            $table->text('rejection_reason')->nullable();
             $table->timestamps();
 
             $table->index(['apartment_id', 'status']);

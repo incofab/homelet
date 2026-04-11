@@ -16,7 +16,7 @@ class StoreConversationRequest extends ApiRequest
         return [
             'building_id' => ['nullable', 'integer', 'exists:buildings,id'],
             'apartment_id' => ['nullable', 'integer', 'exists:apartments,id'],
-            'participant_ids' => ['required', 'array', 'min:1'],
+            'participant_ids' => ['nullable', 'array', 'min:1'],
             'participant_ids.*' => ['integer', 'exists:users,id'],
         ];
     }

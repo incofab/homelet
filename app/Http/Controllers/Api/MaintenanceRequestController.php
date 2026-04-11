@@ -22,7 +22,7 @@ class MaintenanceRequestController extends Controller
         if ($user->activeLease()->exists()) {
             $requests = paginateFromRequest(MaintenanceRequest::query()
                 ->where('tenant_id', $user->id)
-                ->with('media')
+                ->with(['apartment.building', 'media', 'tenant'])
                 ->latest('id'));
 
             return $this->success('Maintenance requests loaded.', [
@@ -40,7 +40,7 @@ class MaintenanceRequestController extends Controller
             ->whereHas('apartment', function ($query) use ($buildingIds) {
                 $query->whereIn('building_id', $buildingIds);
             })
-            ->with('media')
+            ->with(['apartment.building', 'media', 'tenant'])
             ->latest('id'));
 
         return $this->success('Maintenance requests loaded.', [
@@ -59,12 +59,22 @@ class MaintenanceRequestController extends Controller
             'tenant_id' => $request->user('sanctum')->id,
             'title' => $request->string('title')->toString(),
             'description' => $request->string('description')->toString(),
+            'priority' => $request->string('priority', 'low')->toString(),
             'status' => 'open',
         ]);
 
         return $this->success('Maintenance request created.', [
-            'maintenance_request' => $maintenanceRequest->load('media'),
+            'maintenance_request' => $maintenanceRequest->load(['apartment.building', 'media', 'tenant']),
         ], 201);
+    }
+
+    public function show(MaintenanceRequest $maintenanceRequest): JsonResponse
+    {
+        $this->authorize('view', $maintenanceRequest);
+
+        return $this->success('Maintenance request loaded.', [
+            'maintenance_request' => $maintenanceRequest->load(['apartment.building', 'media', 'tenant']),
+        ]);
     }
 
     public function update(UpdateMaintenanceRequest $request, MaintenanceRequest $maintenanceRequest): JsonResponse
@@ -74,7 +84,7 @@ class MaintenanceRequestController extends Controller
         $maintenanceRequest->update($request->validated());
 
         return $this->success('Maintenance request updated.', [
-            'maintenance_request' => $maintenanceRequest->refresh()->load('media'),
+            'maintenance_request' => $maintenanceRequest->refresh()->load(['apartment.building', 'media', 'tenant']),
         ]);
     }
 }

@@ -7,6 +7,7 @@ use App\Http\Requests\Payment\StorePaymentRequest;
 use App\Models\Building;
 use App\Models\Lease;
 use App\Models\Payment;
+use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -53,16 +54,14 @@ class PaymentController extends Controller
         ]);
     }
 
-    public function store(StorePaymentRequest $request): JsonResponse
+    public function store(StorePaymentRequest $request, PaymentService $paymentService): JsonResponse
     {
         $lease = Lease::query()->findOrFail($request->integer('lease_id'));
         $paymentMethod = $request->string('payment_method')->toString();
 
         $this->authorize('create', [Payment::class, $lease, $paymentMethod]);
 
-        $payment = Payment::query()->create([
-            'lease_id' => $lease->id,
-            'tenant_id' => $lease->tenant_id,
+        $payment = $paymentService->record($lease, [
             'amount' => $request->integer('amount'),
             'payment_method' => $paymentMethod,
             'transaction_reference' => $request->input('transaction_reference'),

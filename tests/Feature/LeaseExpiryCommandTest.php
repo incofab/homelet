@@ -13,9 +13,10 @@ uses(RefreshDatabase::class);
 
 test('expire command marks lease expired and vacates apartment when no other active lease', function () {
     Carbon::setTestNow(Carbon::parse('2026-03-10'));
+    config(['queue.default' => 'sync']);
     Mail::fake();
 
-    $tenant = User::factory()->create();
+    $tenant = User::factory()->create(['email' => 'tenant@example.com']);
     $apartment = Apartment::factory()->create(['status' => 'occupied']);
 
     $lease = Lease::factory()->create([
@@ -38,10 +39,11 @@ test('expire command marks lease expired and vacates apartment when no other act
 
 test('expire command keeps apartment occupied when another active lease exists', function () {
     Carbon::setTestNow(Carbon::parse('2026-03-10'));
+    config(['queue.default' => 'sync']);
     Mail::fake();
 
-    $tenant = User::factory()->create();
-    $otherTenant = User::factory()->create();
+    $tenant = User::factory()->create(['email' => 'tenant@example.com']);
+    $otherTenant = User::factory()->create(['email' => 'other-tenant@example.com']);
     $apartment = Apartment::factory()->create(['status' => 'occupied']);
 
     $expiredLease = Lease::factory()->create([

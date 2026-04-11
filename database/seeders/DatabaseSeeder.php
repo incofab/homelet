@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
         $this->call(RbacSeeder::class);
 
         $user = User::factory()->create([
-            'name' => 'Test User',
+            'name' => 'Admin User',
             'email' => 'admin@email.com',
             'phone' => '2348000000000',
             'password' => Hash::make('password'),

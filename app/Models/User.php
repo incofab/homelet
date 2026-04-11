@@ -93,7 +93,35 @@ class User extends Authenticatable
 
     public function getRoleAttribute(): string
     {
-        return $this->hasRole(self::ROLE_ADMIN) ? self::ROLE_ADMIN : self::ROLE_USER;
+        if ($this->isPlatformAdmin()) {
+            return self::ROLE_ADMIN;
+        }
+
+        if (Building::query()->where('owner_id', $this->id)->exists()) {
+            return Building::ROLE_LANDLORD;
+        }
+
+        $buildingRole = $this->buildings()
+            ->select('building_users.role')
+            ->whereIn('building_users.role', [
+                Building::ROLE_MANAGER,
+                Building::ROLE_CARETAKER,
+            ])
+            ->orderByRaw(
+                "case building_users.role when ? then 0 when ? then 1 else 2 end",
+                [Building::ROLE_MANAGER, Building::ROLE_CARETAKER]
+            )
+            ->value('building_users.role');
+
+        if (is_string($buildingRole) && $buildingRole !== '') {
+            return $buildingRole;
+        }
+
+        if ($this->shouldUseTenantDashboard()) {
+            return self::DASHBOARD_TENANT;
+        }
+
+        return self::ROLE_USER;
     }
 
     public function getDashboardAttribute(): string
@@ -128,6 +156,11 @@ class User extends Authenticatable
             ->latestOfMany();
     }
 
+    public function latestLease()
+    {
+        return $this->hasOne(Lease::class, 'tenant_id')->latestOfMany();
+    }
+
     public function payments()
     {
         return $this->hasMany(Payment::class, 'tenant_id');
@@ -147,6 +180,11 @@ class User extends Authenticatable
     public function maintenanceRequests()
     {
         return $this->hasMany(MaintenanceRequest::class, 'tenant_id');
+    }
+
+    public function recordedExpenses()
+    {
+        return $this->hasMany(Expense::class, 'recorded_by');
     }
 
     public function media()

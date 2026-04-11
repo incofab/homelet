@@ -16,7 +16,7 @@ test('renewal reminder email is sent exactly 90 days before end date', function 
 
     Mail::fake();
 
-    $tenant = User::factory()->create();
+    $tenant = User::factory()->create(['email' => 'tenant@example.com']);
 
     Lease::factory()->create([
         'tenant_id' => $tenant->id,
@@ -25,7 +25,7 @@ test('renewal reminder email is sent exactly 90 days before end date', function 
     ]);
 
     Lease::factory()->create([
-        'tenant_id' => User::factory()->create()->id,
+        'tenant_id' => User::factory()->create(['email' => 'early-tenant@example.com'])->id,
         'status' => 'active',
         'end_date' => Carbon::today()->addDays(89)->toDateString(),
     ]);
@@ -46,7 +46,7 @@ test('no reminder is sent when lease is not active', function () {
     Mail::fake();
 
     Lease::factory()->create([
-        'tenant_id' => User::factory()->create()->id,
+        'tenant_id' => User::factory()->create(['email' => 'expired-tenant@example.com'])->id,
         'status' => 'expired',
         'end_date' => Carbon::today()->addDays(90)->toDateString(),
     ]);

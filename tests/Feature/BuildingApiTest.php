@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\Building;
+use App\Models\Apartment;
+use App\Models\Lease;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -100,6 +102,19 @@ test('manager can view and update but cannot delete', function () {
     $showResponse = $this->withToken(tokenFor($manager))
         ->getJson("/api/buildings/{$building->id}");
     $showResponse->assertStatus(200);
+
+    $tenant = User::factory()->create();
+    $apartment = Apartment::factory()->create(['building_id' => $building->id]);
+    Lease::factory()->create([
+        'apartment_id' => $apartment->id,
+        'tenant_id' => $tenant->id,
+        'status' => 'active',
+    ]);
+
+    $tenantResponse = $this->withToken(tokenFor($manager))
+        ->getJson("/api/buildings/{$building->id}/tenants");
+    $tenantResponse->assertStatus(200)
+        ->assertJsonCount(1, 'data.tenants.data');
 
     $updateResponse = $this->withToken(tokenFor($manager))
         ->putJson(

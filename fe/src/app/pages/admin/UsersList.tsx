@@ -91,8 +91,7 @@ export function UsersList() {
           data.impersonation?.impersonated_user?.name ?? user.name,
       });
       setAuthToken(data.token);
-      // navigate(routeForDashboard(data.dashboard));
-      window.location.href = routeForDashboard(data.dashboard);
+      navigate(routeForDashboard(data.dashboard));
     } catch (error) {
       setActionError(
         (error as Error).message || 'Unable to impersonate this user.',

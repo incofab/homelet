@@ -54,6 +54,33 @@ test('tenant cannot create conversation outside their leased apartment', functio
     $response->assertStatus(403);
 });
 
+test('tenant can create conversation for leased apartment without specifying participants', function () {
+    $owner = User::factory()->create();
+    $tenant = User::factory()->create();
+
+    $building = Building::factory()->create(['owner_id' => $owner->id]);
+    $apartment = Apartment::factory()->create(['building_id' => $building->id]);
+
+    Lease::factory()->create([
+        'apartment_id' => $apartment->id,
+        'tenant_id' => $tenant->id,
+        'status' => 'active',
+    ]);
+
+    Sanctum::actingAs($tenant);
+    $response = $this->postJson('/api/conversations', [
+        'apartment_id' => $apartment->id,
+    ]);
+
+    $response->assertCreated();
+
+    $conversation = Conversation::first();
+
+    expect($conversation)->not->toBeNull();
+    expect($conversation->participants()->where('users.id', $tenant->id)->exists())->toBeTrue();
+    expect($conversation->participants()->where('users.id', $owner->id)->exists())->toBeTrue();
+});
+
 test('tenant to tenant conversation is blocked', function () {
     $tenantA = User::factory()->create();
     $tenantB = User::factory()->create();
@@ -134,12 +161,57 @@ test('participants can list conversations and send messages', function () {
 
     Sanctum::actingAs($tenant);
     $listResponse = $this->getJson('/api/conversations');
-    $listResponse->assertStatus(200)->assertJsonCount(1, 'data.conversations.data');
+    $listResponse
+        ->assertStatus(200)
+        ->assertJsonCount(1, 'data.conversations.data')
+        ->assertJsonPath('data.conversations.data.0.title', $admin->name)
+        ->assertJsonPath('data.conversations.data.0.counterpart.name', $admin->name);
 
     $messageResponse = $this->postJson("/api/conversations/{$conversation->id}/messages", [
         'body' => 'Hello there',
     ]);
-    $messageResponse->assertStatus(201);
+    $messageResponse
+        ->assertStatus(201)
+        ->assertJsonPath('data.message.sender.name', $tenant->name)
+        ->assertJsonPath('data.message.is_mine', true);
 
     expect(Message::where('conversation_id', $conversation->id)->count())->toBe(1);
+});
+
+test('messages endpoint returns sender details and ownership', function () {
+    $owner = User::factory()->create();
+    $tenant = User::factory()->create();
+
+    $building = Building::factory()->create(['owner_id' => $owner->id]);
+    $apartment = Apartment::factory()->create(['building_id' => $building->id]);
+
+    Lease::factory()->create([
+        'apartment_id' => $apartment->id,
+        'tenant_id' => $tenant->id,
+        'status' => 'active',
+    ]);
+
+    $conversation = Conversation::factory()->create([
+        'building_id' => $building->id,
+        'apartment_id' => $apartment->id,
+        'created_by' => $owner->id,
+    ]);
+
+    $conversation->participants()->sync([$owner->id, $tenant->id]);
+
+    Message::factory()->create([
+        'conversation_id' => $conversation->id,
+        'sender_id' => $owner->id,
+        'body' => 'Welcome to the building',
+    ]);
+
+    Sanctum::actingAs($tenant);
+
+    $response = $this->getJson("/api/conversations/{$conversation->id}/messages");
+
+    $response
+        ->assertOk()
+        ->assertJsonPath('data.messages.data.0.sender.name', $owner->name)
+        ->assertJsonPath('data.messages.data.0.is_mine', false)
+        ->assertJsonPath('data.messages.data.0.body', 'Welcome to the building');
 });
