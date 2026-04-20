@@ -79,7 +79,7 @@ export function TenantDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-1">
             <ImageWithFallback
-              src={env.placeholderImage}
+              src={env.apartmentPlaceholderImage}
               alt={leaseApartment}
               className="w-full h-48 object-cover rounded-lg"
             />

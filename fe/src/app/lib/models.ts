@@ -108,6 +108,7 @@ export interface ApartmentDetail {
   building_id?: number;
   type?: string;
   yearly_price?: number;
+  floor?: string;
   status?: string;
   is_public?: boolean;
   description?: string;
@@ -219,8 +220,17 @@ export interface MaintenanceRequest {
   priority?: string;
   created_at?: string;
   media?: Media[];
-  apartment?: { id?: number; unit_code?: string; building?: { id?: number; name?: string } };
-  tenant?: { id?: number; name?: string; email?: string | null; phone?: string | null };
+  apartment?: {
+    id?: number;
+    unit_code?: string;
+    building?: { id?: number; name?: string };
+  };
+  tenant?: {
+    id?: number;
+    name?: string;
+    email?: string | null;
+    phone?: string | null;
+  };
 }
 
 export interface RentalRequest {
@@ -240,8 +250,18 @@ export interface RentalRequest {
     yearly_price?: number;
     building?: { id?: number; name?: string };
   };
-  tenant?: { id?: number; name?: string; email?: string | null; phone?: string | null };
-  lease?: { id?: number; start_date?: string; end_date?: string; status?: string };
+  tenant?: {
+    id?: number;
+    name?: string;
+    email?: string | null;
+    phone?: string | null;
+  };
+  lease?: {
+    id?: number;
+    start_date?: string;
+    end_date?: string;
+    status?: string;
+  };
 }
 
 export interface Conversation {

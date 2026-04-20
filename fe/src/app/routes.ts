@@ -12,6 +12,7 @@ import { ApartmentDetailPublic } from './pages/public/ApartmentDetailPublic';
 import { LoginPage } from './pages/public/LoginPage';
 import { RegisterPage } from './pages/public/RegisterPage';
 import { RegisterBuildingPublic } from './pages/public/RegisterBuildingPublic';
+import { RentRequestPublic } from './pages/public/RentRequestPublic';
 import { HomeDashboard } from './pages/user/HomeDashboard';
 
 // Admin pages
@@ -53,11 +54,18 @@ export const router = createBrowserRouter([
         children: [
           { index: true, Component: LandingPage },
           { path: routePaths.buildingPublic, Component: BuildingDetailPublic },
-          { path: routePaths.apartmentPublic, Component: ApartmentDetailPublic },
+          {
+            path: routePaths.apartmentPublic,
+            Component: ApartmentDetailPublic,
+          },
+          { path: routePaths.rentRequest, Component: RentRequestPublic },
           { path: routePaths.homeDashboard, Component: HomeDashboard },
           { path: routePaths.login, Component: LoginPage },
           { path: routePaths.register, Component: RegisterPage },
-          { path: routePaths.registerBuilding, Component: RegisterBuildingPublic },
+          {
+            path: routePaths.registerBuilding,
+            Component: RegisterBuildingPublic,
+          },
         ],
       },
       {
@@ -82,7 +90,10 @@ export const router = createBrowserRouter([
           { path: routePaths.adminBuilding, Component: BuildingDetail },
           { path: routePaths.adminBuildingEdit, Component: EditBuilding },
           { path: routePaths.adminBuildingTenants, Component: TenantsList },
-          { path: routePaths.adminBuildingApartments, Component: ApartmentsList },
+          {
+            path: routePaths.adminBuildingApartments,
+            Component: ApartmentsList,
+          },
           {
             path: routePaths.adminBuildingApartmentsNew,
             Component: CreateApartment,
@@ -95,8 +106,14 @@ export const router = createBrowserRouter([
           { path: routePaths.adminPayments, Component: PaymentsList },
           { path: routePaths.adminExpenses, Component: ExpensesList },
           { path: routePaths.adminMaintenance, Component: MaintenanceList },
-          { path: routePaths.adminMaintenanceRequest, Component: MaintenanceRequestDetail },
-          { path: routePaths.adminRentalRequests, Component: RentalRequestsList },
+          {
+            path: routePaths.adminMaintenanceRequest,
+            Component: MaintenanceRequestDetail,
+          },
+          {
+            path: routePaths.adminRentalRequests,
+            Component: RentalRequestsList,
+          },
           { path: routePaths.adminChat, Component: ChatAdmin },
         ],
       },
@@ -107,7 +124,10 @@ export const router = createBrowserRouter([
           { index: true, Component: TenantDashboard },
           { path: routePaths.tenantPayments, Component: TenantPayments },
           { path: routePaths.tenantMaintenance, Component: TenantMaintenance },
-          { path: routePaths.tenantMaintenanceRequest, Component: TenantMaintenanceRequestDetail },
+          {
+            path: routePaths.tenantMaintenanceRequest,
+            Component: TenantMaintenanceRequestDetail,
+          },
           { path: routePaths.tenantChat, Component: ChatTenant },
         ],
       },

@@ -24,9 +24,21 @@ import { api, routes } from '../../lib/urls';
 import { extractRecord } from '../../lib/paginatedData';
 import type { PublicApartment } from '../../lib/models';
 
-export function ApartmentDetailPublic() {
+type ApartmentDetailPublicProps = {
+  requestMode?: boolean;
+};
+
+type RequestApartmentResponse = {
+  apartment?: PublicApartment;
+  can_request?: boolean;
+  unavailable_message?: string | null;
+};
+
+export function ApartmentDetailPublic({
+  requestMode = false,
+}: ApartmentDetailPublicProps) {
   const { id } = useParams();
-  const [showRentalForm, setShowRentalForm] = useState(false);
+  const [showRentalForm, setShowRentalForm] = useState(requestMode);
   const [formState, setFormState] = useState({
     name: '',
     email: '',
@@ -39,26 +51,40 @@ export function ApartmentDetailPublic() {
   }>({ type: 'idle' });
   const [submitting, setSubmitting] = useState(false);
 
-  const selectApartment = useCallback(
-    (data: unknown) => extractRecord<PublicApartment>(data, 'apartment'),
-    [],
-  );
-  const apartmentQuery = useApiQuery<unknown, PublicApartment>(
-    id ? api.publicApartment(id) : null,
+  const selectApartment = useCallback((data: unknown) => {
+    const response = data as RequestApartmentResponse;
+    return {
+      apartment: extractRecord<PublicApartment>(data, 'apartment'),
+      can_request: response?.can_request,
+      unavailable_message: response?.unavailable_message,
+    };
+  }, []);
+  const apartmentQuery = useApiQuery<unknown, RequestApartmentResponse>(
+    id
+      ? requestMode
+        ? api.publicRentRequestApartment(id)
+        : api.publicApartment(id)
+      : null,
     {
       enabled: Boolean(id),
-      deps: [id],
+      deps: [id, requestMode],
       select: selectApartment,
     },
   );
 
-  const apartment = apartmentQuery.data;
+  const apartment = apartmentQuery.data?.apartment;
+  const canRequest = requestMode
+    ? apartmentQuery.data?.can_request === true
+    : apartment?.status?.toLowerCase?.() === 'vacant';
+  const unavailableMessage =
+    apartmentQuery.data?.unavailable_message ??
+    'This apartment is no longer available for rental requests. Please contact the landlord or manager for another option.';
 
   const images = useMemo(() => {
     if (apartment?.media && apartment.media.length > 0) {
       return apartment.media.map((item) => item.url);
     }
-    return [env.placeholderImage];
+    return [env.apartmentPlaceholderImage];
   }, [apartment?.media]);
 
   const title = apartment?.building?.name
@@ -77,9 +103,7 @@ export function ApartmentDetailPublic() {
   const beds = apartment?.beds ?? apartment?.bedrooms ?? null;
   const baths = apartment?.baths ?? apartment?.bathrooms ?? null;
   const sqft = apartment?.sqft ?? apartment?.square_feet ?? null;
-  const yearlyPrice = apartment?.yearly_price
-    ? apartment.yearly_price
-    : null;
+  const yearlyPrice = apartment?.yearly_price ? apartment.yearly_price : null;
 
   const handleInputChange =
     (field: string) =>
@@ -103,7 +127,8 @@ export function ApartmentDetailPublic() {
       });
       setFormStatus({
         type: 'success',
-        message: 'Request submitted successfully.',
+        message:
+          'Request submitted successfully. The landlord or manager will contact you soon.',
       });
       setFormState({ name: '', email: '', phone: '', message: '' });
       setShowRentalForm(false);
@@ -125,7 +150,7 @@ export function ApartmentDetailPublic() {
           <Link to={routes.root}>
             <Button variant="ghost">
               <ArrowLeft size={20} className="mr-2" />
-              Back to Listings
+              {requestMode ? 'Back to Home' : 'Back to Listings'}
             </Button>
           </Link>
           <Link to={routes.login}>
@@ -144,7 +169,9 @@ export function ApartmentDetailPublic() {
         ) : apartmentQuery.error || !apartment ? (
           <Card>
             <p className="text-destructive">
-              Unable to load apartment details.
+              {requestMode
+                ? 'We could not find this rental request link. Please ask the landlord or manager to confirm the link.'
+                : 'Unable to load apartment details.'}
             </p>
           </Card>
         ) : (
@@ -289,7 +316,19 @@ export function ApartmentDetailPublic() {
                     : 'Price unavailable'}
                 </div>
 
-                {!showRentalForm ? (
+                {!canRequest ? (
+                  <div className="space-y-3">
+                    <h3 className="text-xl">Apartment unavailable</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {unavailableMessage}
+                    </p>
+                    <Link to={routes.root}>
+                      <Button variant="secondary" className="w-full">
+                        View Other Apartments
+                      </Button>
+                    </Link>
+                  </div>
+                ) : !showRentalForm ? (
                   <>
                     <Button
                       className="w-full mb-3"

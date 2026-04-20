@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { Button } from "./Button";
-import { getImpersonationState } from "../lib/impersonation";
+import {
+  getImpersonationState,
+  IMPERSONATION_CHANGED_EVENT,
+} from "../lib/impersonation";
 import { useAuthSession } from "../hooks/useAuthSession";
 
 export function ImpersonationBanner() {
@@ -13,9 +16,11 @@ export function ImpersonationBanner() {
     };
 
     syncState();
+    window.addEventListener(IMPERSONATION_CHANGED_EVENT, syncState);
     window.addEventListener("storage", syncState);
 
     return () => {
+      window.removeEventListener(IMPERSONATION_CHANGED_EVENT, syncState);
       window.removeEventListener("storage", syncState);
     };
   }, []);

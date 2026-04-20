@@ -13,9 +13,9 @@ use App\Http\Controllers\Api\Dashboard\AdminDashboardController;
 use App\Http\Controllers\Api\Dashboard\TenantDashboardController;
 use App\Http\Controllers\Api\ExpenseCategoryController;
 use App\Http\Controllers\Api\ExpenseController;
+use App\Http\Controllers\Api\LeaseController;
 use App\Http\Controllers\Api\MaintenanceRequestController;
 use App\Http\Controllers\Api\MaintenanceRequestMediaController;
-use App\Http\Controllers\Api\LeaseController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProfileMediaController;
 use App\Http\Controllers\Api\PublicApartmentController;
@@ -114,6 +114,7 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('public/buildings', [PublicBuildingController::class, 'index']);
     Route::get('public/buildings/{building}', [PublicBuildingController::class, 'show']);
     Route::get('public/buildings-for-sale', [PublicBuildingForSaleController::class, 'index']);
+    Route::get('public/rent-request-apartments/{apartment}', [PublicRentalRequestController::class, 'showApartment']);
     Route::post('public/rental-requests', [PublicRentalRequestController::class, 'store']);
     Route::post('public/request-interest', [PublicRentalRequestController::class, 'store']);
 });

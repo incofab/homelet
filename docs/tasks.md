@@ -102,6 +102,8 @@ Create migrations/models:
 **Acceptance**
 
 - Apartments CRUD works under building scope.
+- Landlords/managers can create multiple apartments at once with basic unit details and fill optional details later.
+- Landlords/managers can duplicate an apartment from the UI and edit the copied unit number, price, and listing details before saving.
 - Status updates obey rules (e.g., occupied requires active lease).
 
 ---
@@ -148,6 +150,7 @@ Create migrations/models:
 **Acceptance**
 
 - Public endpoint creates rental request.
+- Public `/rent/request/{apartment_id}` links let landlords and managers send a specific apartment request form to intending tenants, including a friendly unavailable state when the unit is no longer vacant.
 - Admin can list requests scoped to accessible buildings.
 - Approving a request creates or reuses the tenant, creates the lease, and can optionally record the first payment.
 - Rejecting a request marks it rejected and sends email/SMS notifications when contact details are available.

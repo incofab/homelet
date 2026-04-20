@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { describe, expect, it } from "vitest";
 import { ImpersonationBanner } from "../../../app/components/ImpersonationBanner";
+import { setImpersonationState } from "../../../app/lib/impersonation";
 import { apiSuccess, mockFetch } from "../../testUtils";
 import { api } from "../../../app/lib/urls";
 
@@ -51,5 +52,27 @@ describe("ImpersonationBanner", () => {
     expect(window.localStorage.getItem("tenanta_token")).toBe("admin-token");
     expect(window.localStorage.getItem("tenanta_impersonation")).toBeNull();
     expect(await screen.findByText("Users list")).toBeInTheDocument();
+  });
+
+  it("appears when impersonation starts in the current tab", async () => {
+    window.localStorage.clear();
+
+    render(
+      <MemoryRouter>
+        <ImpersonationBanner />
+      </MemoryRouter>
+    );
+
+    expect(screen.queryByText(/You are impersonating/i)).not.toBeInTheDocument();
+
+    setImpersonationState({
+      originalToken: "admin-token",
+      impersonatorId: 1,
+      impersonatorName: "Admin",
+      impersonatedUserId: 4,
+      impersonatedUserName: "Landlord",
+    });
+
+    expect(await screen.findByText("You are impersonating Landlord")).toBeInTheDocument();
   });
 });

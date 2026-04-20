@@ -1,5 +1,8 @@
 <?php
 
+use App\Contracts\SendsSms;
+use App\Jobs\SendTenancyAgreementEmail;
+use App\Mail\RentalRequestRejectedMail;
 use App\Models\Apartment;
 use App\Models\Building;
 use App\Models\Lease;
@@ -10,14 +13,11 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Sanctum\Sanctum;
-use App\Contracts\SendsSms;
-use App\Jobs\SendTenancyAgreementEmail;
-use App\Mail\RentalRequestRejectedMail;
 
 uses(RefreshDatabase::class);
 
 test('public can create rental request', function () {
-    $apartment = Apartment::factory()->create();
+    $apartment = Apartment::factory()->create(['status' => 'vacant']);
 
     $response = $this->postJson('/api/public/rental-requests', [
         'apartment_id' => $apartment->id,
@@ -35,7 +35,7 @@ test('public can create rental request', function () {
 });
 
 test('public can create rental request via request-interest alias', function () {
-    $apartment = Apartment::factory()->create();
+    $apartment = Apartment::factory()->create(['status' => 'vacant']);
 
     $response = $this->postJson('/api/public/request-interest', [
         'apartment_id' => $apartment->id,
@@ -50,6 +50,43 @@ test('public can create rental request via request-interest alias', function () 
     $request = RentalRequest::where('email', 'alias@example.com')->first();
     expect($request)->not->toBeNull();
     expect($request->status)->toBe('new');
+});
+
+test('public rental request link can load private apartment and flag unavailable unit', function () {
+    $vacantApartment = Apartment::factory()->create([
+        'is_public' => false,
+        'status' => 'vacant',
+    ]);
+    $occupiedApartment = Apartment::factory()->create([
+        'is_public' => false,
+        'status' => 'occupied',
+    ]);
+
+    $this->getJson("/api/public/rent-request-apartments/{$vacantApartment->id}")
+        ->assertOk()
+        ->assertJsonPath('data.apartment.id', $vacantApartment->id)
+        ->assertJsonPath('data.can_request', true)
+        ->assertJsonPath('data.unavailable_message', null);
+
+    $this->getJson("/api/public/rent-request-apartments/{$occupiedApartment->id}")
+        ->assertOk()
+        ->assertJsonPath('data.apartment.id', $occupiedApartment->id)
+        ->assertJsonPath('data.can_request', false)
+        ->assertJsonPath('data.unavailable_message', 'This apartment is no longer available for rental requests. Please contact the landlord or manager for another option.');
+});
+
+test('public cannot create rental request for unavailable apartment', function () {
+    $apartment = Apartment::factory()->create(['status' => 'occupied']);
+
+    $this->postJson('/api/public/rental-requests', [
+        'apartment_id' => $apartment->id,
+        'name' => 'Prospective Tenant',
+        'email' => 'lead@example.com',
+        'phone' => '1234567890',
+    ])->assertStatus(422)
+        ->assertJsonValidationErrors(['apartment_id']);
+
+    expect(RentalRequest::query()->where('email', 'lead@example.com')->exists())->toBeFalse();
 });
 
 test('admin can list rental requests scoped to building', function () {

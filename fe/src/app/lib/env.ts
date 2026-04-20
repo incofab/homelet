@@ -23,6 +23,14 @@ export const env = {
     import.meta.env.VITE_PLACEHOLDER_IMAGE,
     'https://images.unsplash.com/photo-1560185007-5f0bb1866cab?auto=format&fit=crop&w=1200&q=80',
   ),
+  buildingPlaceholderImage: getEnvValue(
+    import.meta.env.VITE_BUILDING_PLACEHOLDER_IMAGE,
+    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80',
+  ),
+  apartmentPlaceholderImage: getEnvValue(
+    import.meta.env.VITE_APARTMENT_PLACEHOLDER_IMAGE,
+    'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80',
+  ),
   authTokenKey: getEnvValue(
     import.meta.env.VITE_AUTH_TOKEN_KEY,
     'tenanta_token',

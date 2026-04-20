@@ -557,14 +557,14 @@ Response:
 ## Apartments
 
 ### POST `/api/buildings/{building}/apartments`
-Create an apartment in a building.
+Create one or more apartments in a building.
 
-Use `status` and `is_public` to control availability and whether the unit appears in public listings at creation time.
+Use `status` and `is_public` to control availability and whether the unit appears in public listings at creation time. For quick setup, omit optional descriptive fields and update the apartments later with `PUT /api/apartments/{apartment}`.
 
 Authorization:
 - Platform admin, landlord, or manager.
 
-Request body:
+Single-apartment request body:
 ```json
 {
   "unit_code": "A1",
@@ -577,6 +577,32 @@ Request body:
   "amenities": ["wifi", "parking"]
 }
 ```
+
+Bulk request body:
+```json
+{
+  "apartments": [
+    {
+      "unit_code": "A1",
+      "yearly_price": 1200000
+    },
+    {
+      "unit_code": "A2",
+      "type": "two_bedroom",
+      "yearly_price": 1500000,
+      "floor": "2",
+      "status": "vacant",
+      "is_public": true
+    }
+  ]
+}
+```
+
+Notes:
+- `apartments` accepts 1 to 50 items.
+- Each bulk item requires only `unit_code` and `yearly_price`.
+- `type` defaults to `custom`, `status` defaults to `vacant`, and `is_public` defaults to `true` when omitted.
+
 Model references: `ApartmentCreateRequest`.
 
 Response:
@@ -585,12 +611,16 @@ Response:
   "success": true,
   "message": "Apartment created.",
   "data": {
-    "apartment": "Apartment"
+    "apartment": "Apartment",
+    "apartments": ["Apartment"],
+    "created_count": 1
   },
   "errors": null
 }
 ```
-Model references: `Apartment`.
+For bulk creates, `message` is `Apartments created.`, `apartment` is the first created apartment, `apartments` contains every created apartment, and `created_count` is the number created.
+
+Model references: `Apartment`, `Apartment[]`.
 
 ### GET `/api/buildings/{building}/apartments`
 List apartments for a building.
@@ -1475,6 +1505,31 @@ Response:
 ```
 Model references: `BuildingSummary[]`.
 
+### GET `/api/public/rent-request-apartments/{apartment}`
+Load apartment details for a landlord/manager-shared rental request link.
+
+Request: none
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Rental request apartment loaded.",
+  "data": {
+    "apartment": "ApartmentSummary",
+    "can_request": true,
+    "unavailable_message": null
+  },
+  "errors": null
+}
+```
+Model references: `ApartmentSummary`, `BuildingSummary`.
+Notes:
+- This endpoint powers the public frontend route `/rent/request/{apartment_id}`.
+- It can load a specific apartment by id even when the apartment is not in the public listing.
+- `can_request` is `true` only when the apartment status is `vacant`.
+- When the apartment is occupied or under maintenance, `can_request` is `false` and `unavailable_message` contains a friendly message for the intending tenant.
+
 ### POST `/api/public/rental-requests`
 Create a rental request.
 
@@ -1504,6 +1559,7 @@ Response:
 Model references: `RentalRequest`.
 Notes:
 - `apartment_id` is the selected available apartment the applicant wants to rent.
+- The apartment must still be `vacant`; unavailable apartments return a validation error.
 - `email` is normalized to lowercase.
 - `phone` is normalized to digits-only when supplied.
 

@@ -41,7 +41,7 @@ export function BuildingDetailPublic() {
   ]
     .filter(Boolean)
     .join(', ');
-  const image = building?.media?.[0]?.url ?? env.placeholderImage;
+  const image = building?.media?.[0]?.url ?? env.buildingPlaceholderImage;
   const apartments = building?.apartments ?? [];
 
   return (

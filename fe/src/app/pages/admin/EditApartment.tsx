@@ -45,7 +45,18 @@ export function EditApartment() {
       errorMessage={status.type === 'error' ? status.message : undefined}
       initialValues={{
         unit: apartment?.unit_code ?? '',
-        yearlyRent: apartment?.yearly_price ? String(apartment.yearly_price) : '',
+        type:
+          apartment?.type === 'one_room' ||
+          apartment?.type === 'self_contain' ||
+          apartment?.type === 'one_bedroom' ||
+          apartment?.type === 'two_bedroom' ||
+          apartment?.type === 'three_bedroom'
+            ? apartment.type
+            : 'custom',
+        yearlyRent: apartment?.yearly_price
+          ? String(apartment.yearly_price)
+          : '',
+        floor: apartment?.floor ?? '',
         description: apartment?.description ?? '',
         amenities: (apartment?.amenities ?? []).join('\n'),
         status:

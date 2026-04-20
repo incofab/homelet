@@ -1,45 +1,63 @@
-import { useCallback, useMemo, useState } from "react";
-import type { FormEvent } from "react";
-import { LoaderCircle, Plus } from "lucide-react";
-import { Button } from "../../components/Button";
+import { useCallback, useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
+import { LoaderCircle, Plus } from 'lucide-react';
+import { Button } from '../../components/Button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "../../components/ui/dialog";
-import { useApiQuery } from "../../hooks/useApiQuery";
-import { apiPost } from "../../lib/api";
-import type { Tenant } from "../../lib/models";
-import { PaginatedData } from "../../lib/paginatedData";
-import { api } from "../../lib/urls";
+} from '../../components/ui/dialog';
+import { useApiQuery } from '../../hooks/useApiQuery';
+import { apiPost } from '../../lib/api';
+import type { Tenant } from '../../lib/models';
+import { PaginatedData } from '../../lib/paginatedData';
+import { api } from '../../lib/urls';
 
 type RecordPaymentDialogProps = {
   onSuccess?: () => Promise<void> | void;
+  triggerLabel?: string;
+  triggerVariant?: 'primary' | 'secondary' | 'ghost' | 'destructive';
+  triggerClassName?: string;
+  triggerDisabled?: boolean;
+  defaultLeaseId?: string | number | null;
+  defaultAmount?: string | number | null;
 };
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-export function RecordPaymentDialog({ onSuccess }: RecordPaymentDialogProps) {
+export function RecordPaymentDialog({
+  onSuccess,
+  triggerLabel = 'Record Payment',
+  triggerVariant = 'primary',
+  triggerClassName = '',
+  triggerDisabled = false,
+  defaultLeaseId = null,
+  defaultAmount = null,
+}: RecordPaymentDialogProps) {
+  const initialFormState = useCallback(
+    () => ({
+      leaseId: defaultLeaseId ? String(defaultLeaseId) : '',
+      amount: defaultAmount ? String(defaultAmount) : '',
+      paymentDate: today(),
+      dueDate: today(),
+      transactionReference: '',
+      status: 'paid',
+    }),
+    [defaultAmount, defaultLeaseId],
+  );
   const [open, setOpen] = useState(false);
-  const [formState, setFormState] = useState({
-    leaseId: "",
-    amount: "",
-    paymentDate: today(),
-    dueDate: today(),
-    transactionReference: "",
-    status: "paid",
-  });
+  const [formState, setFormState] = useState(initialFormState);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<{
-    type: "idle" | "error" | "success";
+    type: 'idle' | 'error' | 'success';
     message?: string;
-  }>({ type: "idle" });
+  }>({ type: 'idle' });
 
   const selectTenants = useCallback(
-    (data: unknown) => PaginatedData.from<Tenant>(data, "tenants").items,
-    []
+    (data: unknown) => PaginatedData.from<Tenant>(data, 'tenants').items,
+    [],
   );
 
   const tenantsQuery = useApiQuery<unknown, Tenant[]>(api.tenants, {
@@ -49,29 +67,27 @@ export function RecordPaymentDialog({ onSuccess }: RecordPaymentDialogProps) {
 
   const tenantOptions = useMemo(
     () =>
-      (tenantsQuery.data ?? []).filter((tenant) => tenant.active_lease?.id).map((tenant) => ({
-        label: `${tenant.name} (${tenant.email})`,
-        leaseId: String(tenant.active_lease?.id),
-      })),
-    [tenantsQuery.data]
+      (tenantsQuery.data ?? [])
+        .filter((tenant) => tenant.active_lease?.id)
+        .map((tenant) => ({
+          label: `${tenant.name} (${tenant.email})`,
+          leaseId: String(tenant.active_lease?.id),
+        })),
+    [tenantsQuery.data],
   );
 
   const resetState = () => {
-    setFormState({
-      leaseId: "",
-      amount: "",
-      paymentDate: today(),
-      dueDate: today(),
-      transactionReference: "",
-      status: "paid",
-    });
-    setStatus({ type: "idle" });
+    setFormState(initialFormState());
+    setStatus({ type: 'idle' });
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
 
-    if (!nextOpen) {
+    if (nextOpen) {
+      setFormState(initialFormState());
+      setStatus({ type: 'idle' });
+    } else {
       resetState();
     }
   };
@@ -84,13 +100,13 @@ export function RecordPaymentDialog({ onSuccess }: RecordPaymentDialogProps) {
     }
 
     setSubmitting(true);
-    setStatus({ type: "idle" });
+    setStatus({ type: 'idle' });
 
     try {
       await apiPost(api.payments, {
         lease_id: Number(formState.leaseId),
         amount: Number(formState.amount),
-        payment_method: "manual",
+        payment_method: 'manual',
         transaction_reference: formState.transactionReference || null,
         payment_date: formState.paymentDate,
         status: formState.status,
@@ -99,13 +115,13 @@ export function RecordPaymentDialog({ onSuccess }: RecordPaymentDialogProps) {
         },
       });
 
-      setStatus({ type: "success", message: "Payment recorded successfully." });
+      setStatus({ type: 'success', message: 'Payment recorded successfully.' });
       await onSuccess?.();
       handleOpenChange(false);
     } catch (error) {
       setStatus({
-        type: "error",
-        message: (error as Error).message || "Unable to record payment.",
+        type: 'error',
+        message: (error as Error).message || 'Unable to record payment.',
       });
     } finally {
       setSubmitting(false);
@@ -114,9 +130,14 @@ export function RecordPaymentDialog({ onSuccess }: RecordPaymentDialogProps) {
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>
+      <Button
+        variant={triggerVariant}
+        className={triggerClassName}
+        disabled={triggerDisabled}
+        onClick={() => handleOpenChange(true)}
+      >
         <Plus size={20} className="mr-2" />
-        Record Payment
+        {triggerLabel}
       </Button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -130,7 +151,10 @@ export function RecordPaymentDialog({ onSuccess }: RecordPaymentDialogProps) {
 
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
-              <label className="mb-2 block text-sm text-foreground" htmlFor="payment-lease">
+              <label
+                className="mb-2 block text-sm text-foreground"
+                htmlFor="payment-lease"
+              >
                 Tenant Lease
               </label>
               <select
@@ -139,7 +163,10 @@ export function RecordPaymentDialog({ onSuccess }: RecordPaymentDialogProps) {
                 disabled={tenantsQuery.loading || submitting}
                 value={formState.leaseId}
                 onChange={(event) =>
-                  setFormState((prev) => ({ ...prev, leaseId: event.target.value }))
+                  setFormState((prev) => ({
+                    ...prev,
+                    leaseId: event.target.value,
+                  }))
                 }
                 required
               >
@@ -154,7 +181,10 @@ export function RecordPaymentDialog({ onSuccess }: RecordPaymentDialogProps) {
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm text-foreground" htmlFor="payment-amount">
+                <label
+                  className="mb-2 block text-sm text-foreground"
+                  htmlFor="payment-amount"
+                >
                   Amount
                 </label>
                 <input
@@ -164,14 +194,20 @@ export function RecordPaymentDialog({ onSuccess }: RecordPaymentDialogProps) {
                   className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                   value={formState.amount}
                   onChange={(event) =>
-                    setFormState((prev) => ({ ...prev, amount: event.target.value }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      amount: event.target.value,
+                    }))
                   }
                   required
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm text-foreground" htmlFor="payment-status">
+                <label
+                  className="mb-2 block text-sm text-foreground"
+                  htmlFor="payment-status"
+                >
                   Status
                 </label>
                 <select
@@ -179,7 +215,10 @@ export function RecordPaymentDialog({ onSuccess }: RecordPaymentDialogProps) {
                   className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                   value={formState.status}
                   onChange={(event) =>
-                    setFormState((prev) => ({ ...prev, status: event.target.value }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      status: event.target.value,
+                    }))
                   }
                 >
                   <option value="paid">Paid</option>
@@ -191,7 +230,10 @@ export function RecordPaymentDialog({ onSuccess }: RecordPaymentDialogProps) {
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm text-foreground" htmlFor="payment-date">
+                <label
+                  className="mb-2 block text-sm text-foreground"
+                  htmlFor="payment-date"
+                >
                   Payment Date
                 </label>
                 <input
@@ -200,14 +242,20 @@ export function RecordPaymentDialog({ onSuccess }: RecordPaymentDialogProps) {
                   className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                   value={formState.paymentDate}
                   onChange={(event) =>
-                    setFormState((prev) => ({ ...prev, paymentDate: event.target.value }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      paymentDate: event.target.value,
+                    }))
                   }
                   required
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm text-foreground" htmlFor="payment-due-date">
+                <label
+                  className="mb-2 block text-sm text-foreground"
+                  htmlFor="payment-due-date"
+                >
                   Due Date
                 </label>
                 <input
@@ -216,14 +264,20 @@ export function RecordPaymentDialog({ onSuccess }: RecordPaymentDialogProps) {
                   className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                   value={formState.dueDate}
                   onChange={(event) =>
-                    setFormState((prev) => ({ ...prev, dueDate: event.target.value }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      dueDate: event.target.value,
+                    }))
                   }
                 />
               </div>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm text-foreground" htmlFor="payment-reference">
+              <label
+                className="mb-2 block text-sm text-foreground"
+                htmlFor="payment-reference"
+              >
                 Transaction Reference
               </label>
               <input
@@ -242,24 +296,29 @@ export function RecordPaymentDialog({ onSuccess }: RecordPaymentDialogProps) {
             </div>
 
             {tenantsQuery.loading ? (
-              <p className="text-sm text-muted-foreground">Loading tenants...</p>
+              <p className="text-sm text-muted-foreground">
+                Loading tenants...
+              </p>
             ) : null}
             {tenantsQuery.error ? (
               <p className="text-sm text-destructive">{tenantsQuery.error}</p>
             ) : null}
-            {status.type === "error" ? (
+            {status.type === 'error' ? (
               <p className="text-sm text-destructive">{status.message}</p>
             ) : null}
 
             <div className="flex items-center gap-3 pt-2">
-              <Button type="submit" disabled={submitting || tenantsQuery.loading}>
+              <Button
+                type="submit"
+                disabled={submitting || tenantsQuery.loading}
+              >
                 {submitting ? (
                   <>
                     <LoaderCircle size={18} className="mr-2 animate-spin" />
                     Recording...
                   </>
                 ) : (
-                  "Save Payment"
+                  'Save Payment'
                 )}
               </Button>
               <Button

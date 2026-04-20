@@ -20,7 +20,7 @@ type AuthenticatedUser = UserProfile & {
 
 type MeResponse = {
   user?: AuthenticatedUser;
-  dashboard?: "admin" | "tenant" | "home";
+  dashboard?: 'admin' | 'tenant' | 'home';
   dashboard_context?: DashboardContext;
 };
 
@@ -46,7 +46,7 @@ export function LandingPage() {
       const location = [building.address_line1, building.city, building.state]
         .filter(Boolean)
         .join(', ');
-      const image = building.media?.[0]?.url ?? env.placeholderImage;
+      const image = building.media?.[0]?.url ?? env.buildingPlaceholderImage;
       return {
         id: building.id,
         name: building.name,

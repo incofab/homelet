@@ -1,43 +1,49 @@
-import { useParams, Link } from "react-router";
-import { ArrowLeft, Plus, Search } from "lucide-react";
-import { Button } from "../../components/Button";
-import { Card } from "../../components/Card";
-import { StatusBadge } from "../../components/StatusBadge";
-import { EmptyState } from "../../components/EmptyState";
-import { useApiQuery } from "../../hooks/useApiQuery";
-import { formatMoney, formatStatusLabel } from "../../lib/format";
-import { api, routes } from "../../lib/urls";
-import { PaginatedData, extractRecord } from "../../lib/paginatedData";
-import { useCallback } from "react";
-import type { Apartment, Building } from "../../lib/models";
+import { useParams, Link } from 'react-router';
+import { ArrowLeft, Copy, Plus, Search } from 'lucide-react';
+import { Button } from '../../components/Button';
+import { Card } from '../../components/Card';
+import { StatusBadge } from '../../components/StatusBadge';
+import { EmptyState } from '../../components/EmptyState';
+import { useApiQuery } from '../../hooks/useApiQuery';
+import { formatMoney, formatStatusLabel } from '../../lib/format';
+import { api, routes } from '../../lib/urls';
+import { PaginatedData, extractRecord } from '../../lib/paginatedData';
+import { useCallback } from 'react';
+import type { Apartment, Building } from '../../lib/models';
 
 export function ApartmentsList() {
   const { buildingId } = useParams();
   const selectApartments = useCallback(
-    (data: unknown) => PaginatedData.from<Apartment>(data, "apartments"),
-    []
+    (data: unknown) => PaginatedData.from<Apartment>(data, 'apartments'),
+    [],
   );
   const selectBuilding = useCallback(
-    (data: unknown) => extractRecord<Building>(data, "building"),
-    []
+    (data: unknown) => extractRecord<Building>(data, 'building'),
+    [],
   );
-  const apartmentsQuery = useApiQuery<unknown, PaginatedData<Apartment>>(buildingId ? api.buildingApartments(buildingId) : null, {
-    enabled: Boolean(buildingId),
-    deps: [buildingId],
-    select: selectApartments,
-  });
-  const buildingQuery = useApiQuery<unknown, Building>(buildingId ? api.building(buildingId) : null, {
-    enabled: Boolean(buildingId),
-    deps: [buildingId],
-    select: selectBuilding,
-  });
+  const apartmentsQuery = useApiQuery<unknown, PaginatedData<Apartment>>(
+    buildingId ? api.buildingApartments(buildingId) : null,
+    {
+      enabled: Boolean(buildingId),
+      deps: [buildingId],
+      select: selectApartments,
+    },
+  );
+  const buildingQuery = useApiQuery<unknown, Building>(
+    buildingId ? api.building(buildingId) : null,
+    {
+      enabled: Boolean(buildingId),
+      deps: [buildingId],
+      select: selectBuilding,
+    },
+  );
 
   const apartments = apartmentsQuery.data?.items ?? [];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Link to={routes.adminBuilding(buildingId ?? "")}>
+        <Link to={routes.adminBuilding(buildingId ?? '')}>
           <Button variant="ghost" size="sm">
             <ArrowLeft size={20} className="mr-2" />
             Back to Building
@@ -48,9 +54,11 @@ export function ApartmentsList() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl mb-2">Apartments</h1>
-          <p className="text-muted-foreground">{buildingQuery.data?.name ?? "Building"} units</p>
+          <p className="text-muted-foreground">
+            {buildingQuery.data?.name ?? 'Building'} units
+          </p>
         </div>
-        <Link to={routes.adminBuildingApartmentsNew(buildingId ?? "")}>
+        <Link to={routes.adminBuildingApartmentsNew(buildingId ?? '')}>
           <Button>
             <Plus size={20} className="mr-2" />
             Add Apartment
@@ -59,7 +67,10 @@ export function ApartmentsList() {
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
+        <Search
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          size={20}
+        />
         <input
           type="text"
           placeholder="Search apartments..."
@@ -74,7 +85,7 @@ export function ApartmentsList() {
           <EmptyState
             icon={<Plus size={28} className="text-muted-foreground" />}
             title="No apartments yet"
-            description="Add apartments to start leasing units."
+            description="Add your first apartment so you can assign tenants, share rental request links, and record rent payments."
           />
         ) : (
           <div className="overflow-x-auto">
@@ -92,23 +103,48 @@ export function ApartmentsList() {
               </thead>
               <tbody>
                 {apartments.map((apt) => (
-                  <tr key={apt.id} className="border-b border-border last:border-0 hover:bg-muted/50">
-                    <td className="py-3 px-4">{apt.unit_code ?? "Unit"}</td>
+                  <tr
+                    key={apt.id}
+                    className="border-b border-border last:border-0 hover:bg-muted/50"
+                  >
+                    <td className="py-3 px-4">{apt.unit_code ?? 'Unit'}</td>
                     <td className="py-3 px-4 text-muted-foreground">
-                      {apt.beds ?? apt.bedrooms ?? "—"} / {apt.baths ?? apt.bathrooms ?? "—"}
+                      {apt.beds ?? apt.bedrooms ?? '—'} /{' '}
+                      {apt.baths ?? apt.bathrooms ?? '—'}
                     </td>
-                    <td className="py-3 px-4 text-muted-foreground">{apt.sqft ?? apt.square_feet ?? "—"}</td>
-                    <td className="py-3 px-4">
-                      {apt.yearly_price ? `${formatMoney(apt.yearly_price)}/year` : "—"}
-                    </td>
-                    <td className="py-3 px-4 text-muted-foreground">{apt.tenant?.name || "—"}</td>
-                    <td className="py-3 px-4">
-                      <StatusBadge status={formatStatusLabel(apt.status ?? "vacant")} type="apartment" />
+                    <td className="py-3 px-4 text-muted-foreground">
+                      {apt.sqft ?? apt.square_feet ?? '—'}
                     </td>
                     <td className="py-3 px-4">
-                      <Link to={routes.adminApartment(apt.id)}>
-                        <Button variant="ghost" size="sm">View</Button>
-                      </Link>
+                      {apt.yearly_price
+                        ? `${formatMoney(apt.yearly_price)}/year`
+                        : '—'}
+                    </td>
+                    <td className="py-3 px-4 text-muted-foreground">
+                      {apt.tenant?.name || '—'}
+                    </td>
+                    <td className="py-3 px-4">
+                      <StatusBadge
+                        status={formatStatusLabel(apt.status ?? 'vacant')}
+                        type="apartment"
+                      />
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <Link to={routes.adminApartment(apt.id)}>
+                          <Button variant="ghost" size="sm">
+                            View
+                          </Button>
+                        </Link>
+                        <Link
+                          to={`${routes.adminBuildingApartmentsNew(buildingId ?? '')}?duplicateFrom=${apt.id}`}
+                        >
+                          <Button variant="ghost" size="sm">
+                            <Copy size={16} className="mr-2" />
+                            Duplicate
+                          </Button>
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}

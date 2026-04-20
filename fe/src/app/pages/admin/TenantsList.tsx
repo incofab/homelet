@@ -80,7 +80,7 @@ export function TenantsList() {
           <EmptyState
             icon={<Users size={28} className="text-muted-foreground" />}
             title="No tenants yet"
-            description="Tenants will appear here once leases are assigned."
+            description="Add your first tenant from a vacant apartment, or share a rental request link and approve the request when they apply."
           />
         ) : (
           <div className="overflow-x-auto">

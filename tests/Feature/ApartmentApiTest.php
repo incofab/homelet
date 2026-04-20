@@ -46,6 +46,56 @@ test('owner can create and list apartments for a building', function () {
         ->assertJsonPath('data.apartments.data.0.unit_code', 'A1');
 });
 
+test('owner can create multiple apartments with basic details', function () {
+    $owner = User::factory()->create();
+    $building = Building::factory()->create(['owner_id' => $owner->id]);
+
+    Sanctum::actingAs($owner);
+    $response = $this->postJson("/api/buildings/{$building->id}/apartments", [
+        'apartments' => [
+            [
+                'unit_code' => 'A1',
+                'yearly_price' => 1200000,
+            ],
+            [
+                'unit_code' => 'A2',
+                'type' => 'two_bedroom',
+                'yearly_price' => 1500000,
+                'floor' => '2',
+                'status' => 'maintenance',
+                'is_public' => false,
+            ],
+        ],
+    ]);
+
+    $response
+        ->assertStatus(201)
+        ->assertJsonPath('message', 'Apartments created.')
+        ->assertJsonPath('data.created_count', 2)
+        ->assertJsonPath('data.apartment.unit_code', 'A1')
+        ->assertJsonPath('data.apartments.0.type', 'custom')
+        ->assertJsonPath('data.apartments.0.status', 'vacant')
+        ->assertJsonPath('data.apartments.1.unit_code', 'A2')
+        ->assertJsonPath('data.apartments.1.is_public', false);
+
+    $this->assertDatabaseHas('apartments', [
+        'building_id' => $building->id,
+        'unit_code' => 'A1',
+        'type' => 'custom',
+        'status' => 'vacant',
+        'is_public' => true,
+    ]);
+
+    $this->assertDatabaseHas('apartments', [
+        'building_id' => $building->id,
+        'unit_code' => 'A2',
+        'type' => 'two_bedroom',
+        'floor' => '2',
+        'status' => 'maintenance',
+        'is_public' => false,
+    ]);
+});
+
 test('manager can update apartment but tenant cannot', function () {
     $owner = User::factory()->create();
     $manager = User::factory()->create();

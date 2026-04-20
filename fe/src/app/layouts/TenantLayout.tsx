@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from 'react-router';
+import { Outlet, Link, Navigate, useLocation } from 'react-router';
 import {
   LayoutDashboard,
   DollarSign,
@@ -6,9 +6,17 @@ import {
   MessageSquare,
   LogOut,
 } from 'lucide-react';
-import { routes } from '../lib/urls';
+import { api, routeForDashboard, routes, withRedirect } from '../lib/urls';
 import { Button } from '../components/Button';
 import { useAuthSession } from '../hooks/useAuthSession';
+import { useAuthToken } from '../hooks/useAuthToken';
+import { useApiQuery } from '../hooks/useApiQuery';
+import type { DashboardContext } from '../lib/responses';
+
+type MeResponse = {
+  user?: { role?: string };
+  dashboard_context?: DashboardContext;
+};
 
 const navigation = [
   { name: 'Dashboard', href: routes.tenantRoot, icon: LayoutDashboard },
@@ -20,6 +28,50 @@ const navigation = [
 export function TenantLayout() {
   const location = useLocation();
   const { logout, loggingOut } = useAuthSession();
+  const authToken = useAuthToken();
+  const meQuery = useApiQuery<MeResponse>(api.authMe, {
+    enabled: Boolean(authToken),
+    deps: [authToken],
+  });
+  const dashboardContext = meQuery.data?.dashboard_context;
+  const hasTenantAccess =
+    dashboardContext?.available_dashboards.includes('tenant') ||
+    meQuery.data?.user?.role === 'tenant';
+
+  if (!authToken) {
+    return (
+      <Navigate
+        to={withRedirect(routes.login, `${location.pathname}${location.search}`)}
+        replace
+      />
+    );
+  }
+
+  if (meQuery.loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4 text-muted-foreground">
+        Loading dashboard...
+      </div>
+    );
+  }
+
+  if (meQuery.error) {
+    return (
+      <Navigate
+        to={withRedirect(routes.login, `${location.pathname}${location.search}`)}
+        replace
+      />
+    );
+  }
+
+  if (!hasTenantAccess) {
+    return (
+      <Navigate
+        to={routeForDashboard(dashboardContext?.primary_dashboard ?? 'home')}
+        replace
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20 lg:pb-0">

@@ -6,24 +6,36 @@ import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Input } from '../../components/Input';
 
-type ApartmentFormValues = {
-  unit: string;
-  yearlyRent: string;
-  description: string;
-  amenities: string;
-  status: 'vacant' | 'occupied' | 'maintenance';
-  isPublic: boolean;
-};
+type ApartmentType =
+  | 'one_room'
+  | 'self_contain'
+  | 'one_bedroom'
+  | 'two_bedroom'
+  | 'three_bedroom'
+  | 'custom';
+
+type ApartmentStatus = 'vacant' | 'occupied' | 'maintenance';
 
 type ApartmentFormPayload = {
   unit_code: string;
-  type: 'custom';
+  type: ApartmentType;
   yearly_price: number;
   description: string;
   floor: string;
-  status: ApartmentFormValues['status'];
+  status: ApartmentStatus;
   is_public: boolean;
   amenities: string[];
+};
+
+type ApartmentFormValues = {
+  unit: string;
+  type: ApartmentType;
+  yearlyRent: string;
+  floor: string;
+  description: string;
+  amenities: string;
+  status: ApartmentStatus;
+  isPublic: boolean;
 };
 
 type ApartmentFormProps = {
@@ -41,7 +53,9 @@ type ApartmentFormProps = {
 
 const DEFAULT_VALUES: ApartmentFormValues = {
   unit: '',
+  type: 'custom',
   yearlyRent: '',
+  floor: '',
   description: '',
   amenities: '',
   status: 'vacant',
@@ -81,10 +95,10 @@ export function ApartmentForm({
 
     await onSubmit({
       unit_code: formState.unit.trim(),
-      type: 'custom',
+      type: formState.type,
       yearly_price: yearlyPrice,
       description: formState.description.trim(),
-      floor: '',
+      floor: formState.floor.trim(),
       status: formState.status,
       is_public: formState.isPublic,
       amenities,
@@ -120,21 +134,61 @@ export function ApartmentForm({
             }
           />
 
-          <Input
-            label="Yearly Rent"
-            type="number"
-            min="0"
-            placeholder="1200000"
-            required
-            disabled={loading || submitting}
-            value={formState.yearlyRent}
-            onChange={(event) =>
-              setFormState((prev) => ({
-                ...prev,
-                yearlyRent: event.target.value,
-              }))
-            }
-          />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Input
+              label="Yearly Rent"
+              type="number"
+              min="0"
+              placeholder="1200000"
+              required
+              disabled={loading || submitting}
+              value={formState.yearlyRent}
+              onChange={(event) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  yearlyRent: event.target.value,
+                }))
+              }
+            />
+
+            <div>
+              <label
+                className="block text-sm mb-2 text-foreground"
+                htmlFor="apartment-type"
+              >
+                Type
+              </label>
+              <select
+                id="apartment-type"
+                className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                disabled={loading || submitting}
+                value={formState.type}
+                onChange={(event) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    type: event.target.value as ApartmentFormPayload['type'],
+                  }))
+                }
+              >
+                <option value="custom">Custom</option>
+                <option value="one_room">One room</option>
+                <option value="self_contain">Self contain</option>
+                <option value="one_bedroom">One bedroom</option>
+                <option value="two_bedroom">Two bedroom</option>
+                <option value="three_bedroom">Three bedroom</option>
+              </select>
+            </div>
+
+            <Input
+              label="Floor"
+              placeholder="e.g., 2"
+              disabled={loading || submitting}
+              value={formState.floor}
+              onChange={(event) =>
+                setFormState((prev) => ({ ...prev, floor: event.target.value }))
+              }
+            />
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>

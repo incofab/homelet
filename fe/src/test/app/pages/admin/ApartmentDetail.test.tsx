@@ -22,6 +22,12 @@ describe('ApartmentDetail', () => {
   beforeEach(() => {
     window.localStorage.clear();
     vi.spyOn(window, 'confirm').mockReturnValue(true);
+    Object.defineProperty(window.navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: vi.fn().mockResolvedValue(undefined),
+      },
+    });
   });
 
   afterEach(() => {
@@ -82,14 +88,39 @@ describe('ApartmentDetail', () => {
     expect(await screen.findByText('A1')).toBeInTheDocument();
     expect(screen.getByText('Harbor Point')).toBeInTheDocument();
     expect(screen.getByText('No amenities listed.')).toBeInTheDocument();
+    expect(screen.getByText('Next best action')).toBeInTheDocument();
+    expect(screen.getByText('Share rental request link')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'WhatsApp' })).toHaveAttribute(
+      'href',
+      expect.stringContaining('https://wa.me/'),
+    );
+    expect(screen.getByRole('link', { name: 'SMS' })).toHaveAttribute(
+      'href',
+      expect.stringContaining('sms:?&body='),
+    );
+    expect(screen.getByRole('link', { name: 'Email' })).toHaveAttribute(
+      'href',
+      expect.stringContaining('mailto:?subject='),
+    );
     expect(
       screen.getByRole('button', { name: 'Assign Tenant' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Add Image' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Record Payment' }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: 'Add Image' }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'Edit apartment' }),
     ).toHaveAttribute('href', routes.adminApartmentEdit(1));
+
+    await userEvent.click(screen.getByRole('button', { name: 'Copy Link' }));
+    expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith(
+      expect.stringContaining(routes.rentRequest(1)),
+    );
+    expect(screen.getByText('Link copied.')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(window.confirm).toHaveBeenCalledWith(
@@ -129,8 +160,12 @@ describe('ApartmentDetail', () => {
       await screen.findByLabelText('Lease Start Date'),
       '2026-04-01',
     );
-    expect(screen.getByRole('button', { name: 'Change Tenant' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Assign Tenant' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Change Tenant' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Assign Tenant' }),
+    ).toBeInTheDocument();
   });
 
   it('renders current tenant details for occupied apartments', async () => {
@@ -146,12 +181,31 @@ describe('ApartmentDetail', () => {
             ...apartmentPayload,
             status: 'occupied',
             current_tenant: {
+              id: 99,
               name: 'Jane Tenant',
               email: 'jane@example.com',
               phone: '08012345678',
+              lease_id: 77,
               lease_start: '2026-01-01',
               lease_end: '2027-01-01',
               lease_status: 'active',
+              rent_amount: 1200000,
+            },
+          }),
+      },
+      {
+        match: (url) => url.includes(api.tenants),
+        response: () =>
+          apiSuccess({
+            tenants: {
+              data: [
+                {
+                  id: 99,
+                  name: 'Jane Tenant',
+                  email: 'jane@example.com',
+                  active_lease: { id: 77, status: 'active' },
+                },
+              ],
             },
           }),
       },
@@ -167,6 +221,21 @@ describe('ApartmentDetail', () => {
     expect(screen.getAllByText('08012345678').length).toBeGreaterThan(0);
     expect(screen.getByText('1 Jan 2026')).toBeInTheDocument();
     expect(screen.getByText('1 Jan 2027')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Copy Link' })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: 'Assign Tenant' }),
+    ).toBeDisabled();
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Record Payment' }),
+    );
+    expect(
+      await screen.findByRole('option', {
+        name: 'Jane Tenant (jane@example.com)',
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Tenant Lease')).toHaveValue('77');
+    expect(screen.getByLabelText('Amount')).toHaveValue(1200000);
   });
 
   it('does not delete apartment image when confirmation is cancelled', async () => {

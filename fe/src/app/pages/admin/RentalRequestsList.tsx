@@ -1,39 +1,47 @@
-import { Search, Filter } from "lucide-react";
-import { Card } from "../../components/Card";
-import { StatusBadge } from "../../components/StatusBadge";
-import { Button } from "../../components/Button";
-import { EmptyState } from "../../components/EmptyState";
-import { useApiQuery } from "../../hooks/useApiQuery";
-import { apiPut } from "../../lib/api";
-import { formatDate, formatStatusLabel } from "../../lib/format";
-import { useCallback, useMemo, useState } from "react";
-import { api } from "../../lib/urls";
-import { PaginatedData } from "../../lib/paginatedData";
-import type { RentalRequest } from "../../lib/models";
-import { ApproveRentalRequestDialog } from "./ApproveRentalRequestDialog";
-import { RejectRentalRequestDialog } from "./RejectRentalRequestDialog";
+import { Search, Filter } from 'lucide-react';
+import { Card } from '../../components/Card';
+import { StatusBadge } from '../../components/StatusBadge';
+import { Button } from '../../components/Button';
+import { EmptyState } from '../../components/EmptyState';
+import { useApiQuery } from '../../hooks/useApiQuery';
+import { apiPut } from '../../lib/api';
+import { formatDate, formatStatusLabel } from '../../lib/format';
+import { useCallback, useMemo, useState } from 'react';
+import { api } from '../../lib/urls';
+import { PaginatedData } from '../../lib/paginatedData';
+import type { RentalRequest } from '../../lib/models';
+import { ApproveRentalRequestDialog } from './ApproveRentalRequestDialog';
+import { RejectRentalRequestDialog } from './RejectRentalRequestDialog';
 
 export function RentalRequestsList() {
   const selectRequests = useCallback(
-    (data: unknown) => PaginatedData.from<RentalRequest>(data, "rental_requests"),
-    []
+    (data: unknown) =>
+      PaginatedData.from<RentalRequest>(data, 'rental_requests'),
+    [],
   );
-  const requestsQuery = useApiQuery<unknown, PaginatedData<RentalRequest>>(api.rentalRequests, {
-    select: selectRequests,
-  });
+  const requestsQuery = useApiQuery<unknown, PaginatedData<RentalRequest>>(
+    api.rentalRequests,
+    {
+      select: selectRequests,
+    },
+  );
   const [updatingId, setUpdatingId] = useState<number | null>(null);
-  const [approveRequest, setApproveRequest] = useState<RentalRequest | null>(null);
-  const [rejectRequest, setRejectRequest] = useState<RentalRequest | null>(null);
+  const [approveRequest, setApproveRequest] = useState<RentalRequest | null>(
+    null,
+  );
+  const [rejectRequest, setRejectRequest] = useState<RentalRequest | null>(
+    null,
+  );
   const requests = requestsQuery.data?.items ?? [];
 
   const summary = useMemo(() => {
     const counts = { new: 0, contacted: 0, approved: 0, rejected: 0 };
     requests.forEach((request) => {
-      const status = request.status?.toLowerCase?.() ?? "";
-      if (status === "new") counts.new += 1;
-      if (status === "contacted") counts.contacted += 1;
-      if (status === "approved") counts.approved += 1;
-      if (status === "rejected") counts.rejected += 1;
+      const status = request.status?.toLowerCase?.() ?? '';
+      if (status === 'new') counts.new += 1;
+      if (status === 'contacted') counts.contacted += 1;
+      if (status === 'approved') counts.approved += 1;
+      if (status === 'rejected') counts.rejected += 1;
     });
     return counts;
   }, [requests]);
@@ -53,7 +61,9 @@ export function RentalRequestsList() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl mb-2">Rental Requests</h1>
-          <p className="text-muted-foreground">Review and respond to potential tenants</p>
+          <p className="text-muted-foreground">
+            Review and respond to potential tenants
+          </p>
         </div>
         <Button variant="secondary">
           <Filter size={20} className="mr-2" />
@@ -81,7 +91,10 @@ export function RentalRequestsList() {
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
+        <Search
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          size={20}
+        />
         <input
           type="text"
           placeholder="Search rental requests..."
@@ -99,39 +112,58 @@ export function RentalRequestsList() {
             <EmptyState
               icon={<Filter size={28} className="text-muted-foreground" />}
               title="No rental requests"
-              description="Requests will appear here once prospective tenants apply."
+              description="No one has applied yet. Share a rental request link from a vacant apartment to invite the next tenant."
             />
           </Card>
         ) : (
           requests.map((request) => {
-            const status = request.status?.toLowerCase?.() ?? "";
+            const status = request.status?.toLowerCase?.() ?? '';
             return (
               <Card key={request.id}>
                 <div className="space-y-4">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="text-lg mb-1">{request.name ?? "Prospective Tenant"}</h3>
+                      <h3 className="text-lg mb-1">
+                        {request.name ?? 'Prospective Tenant'}
+                      </h3>
                       <div className="text-sm text-muted-foreground space-y-1">
-                        <p>{request.email ?? "—"}</p>
-                        <p>{request.phone ?? "—"}</p>
+                        <p>{request.email ?? '—'}</p>
+                        <p>{request.phone ?? '—'}</p>
                       </div>
                     </div>
-                    <StatusBadge status={formatStatusLabel(request.status)} type="request" />
+                    <StatusBadge
+                      status={formatStatusLabel(request.status)}
+                      type="request"
+                    />
                   </div>
 
                   <div className="py-3 border-y border-border">
-                    <p className="text-sm text-muted-foreground mb-1">Interested In</p>
-                    <p>{request.apartment?.unit_code ?? "Unit"} · {request.apartment?.building?.name ?? "Building"}</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Interested In
+                    </p>
+                    <p>
+                      {request.apartment?.unit_code ?? 'Unit'} ·{' '}
+                      {request.apartment?.building?.name ?? 'Building'}
+                    </p>
                   </div>
 
                   <div>
-                    <p className="text-sm text-muted-foreground mb-2">Message</p>
-                    <p className="text-sm">{request.message ?? "No message provided."}</p>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Message
+                    </p>
+                    <p className="text-sm">
+                      {request.message ?? 'No message provided.'}
+                    </p>
                   </div>
 
                   <div className="flex items-center justify-between pt-2">
-                    <span className="text-sm text-muted-foreground">Submitted: {request.created_at ? formatDate(request.created_at) : "—"}</span>
-                    {status === "new" && (
+                    <span className="text-sm text-muted-foreground">
+                      Submitted:{' '}
+                      {request.created_at
+                        ? formatDate(request.created_at)
+                        : '—'}
+                    </span>
+                    {status === 'new' && (
                       <div className="flex items-center gap-2">
                         <Button
                           variant="destructive"
@@ -144,7 +176,7 @@ export function RentalRequestsList() {
                         <Button
                           size="sm"
                           disabled={updatingId === request.id}
-                          onClick={() => updateStatus(request.id, "contacted")}
+                          onClick={() => updateStatus(request.id, 'contacted')}
                         >
                           Contact
                         </Button>
@@ -157,7 +189,7 @@ export function RentalRequestsList() {
                         </Button>
                       </div>
                     )}
-                    {status === "contacted" && (
+                    {status === 'contacted' && (
                       <div className="flex items-center gap-2">
                         <Button
                           variant="destructive"

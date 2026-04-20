@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router';
-import { ArrowLeft, Edit, Bed, Bath, Maximize } from 'lucide-react';
+import { ArrowLeft, Copy, Edit, Bed, Bath, Maximize } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -9,13 +9,15 @@ import { env } from '../../lib/env';
 import { formatMoney, formatStatusLabel, formatDate } from '../../lib/format';
 import { api, routes } from '../../lib/urls';
 import { PaginatedData, extractRecord } from '../../lib/paginatedData';
-import { useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { ApartmentDetail, Media } from '../../lib/models';
 import { AssignTenantForm } from './AssignTenantForm';
 import { AdminMediaManager } from '../../components/AdminMediaManager';
+import { RecordPaymentDialog } from './RecordPaymentDialog';
 
 export function ApartmentDetail() {
   const { id } = useParams();
+  const [copyStatus, setCopyStatus] = useState('');
   const selectApartment = useCallback(
     (data: unknown) => extractRecord<ApartmentDetail>(data, 'apartment'),
     [],
@@ -46,7 +48,45 @@ export function ApartmentDetail() {
   const buildingId = apartment?.building?.id ?? apartment?.building_id ?? '';
   const images = mediaQuery.data?.items?.length
     ? mediaQuery.data.items.map((item) => item.url)
-    : [env.placeholderImage];
+    : [env.apartmentPlaceholderImage];
+  const rentRequestUrl = useMemo(() => {
+    if (!id || typeof window === 'undefined') return '';
+    return `${window.location.origin}${routes.rentRequest(id)}`;
+  }, [id]);
+  const shareText = useMemo(() => {
+    const unit = apartment?.unit_code
+      ? `Apartment ${apartment.unit_code}`
+      : 'This apartment';
+    const building = apartment?.building?.name
+      ? ` at ${apartment.building.name}`
+      : '';
+
+    return `${unit}${building} is ready for your rental request. Open this link to submit your details: ${rentRequestUrl}`;
+  }, [apartment?.building?.name, apartment?.unit_code, rentRequestUrl]);
+  const shareLinks = useMemo(() => {
+    const encodedText = encodeURIComponent(shareText);
+    const encodedSubject = encodeURIComponent('Rental request link');
+
+    return {
+      whatsapp: `https://wa.me/?text=${encodedText}`,
+      sms: `sms:?&body=${encodedText}`,
+      email: `mailto:?subject=${encodedSubject}&body=${encodedText}`,
+    };
+  }, [shareText]);
+  const isVacant = apartment?.status?.toLowerCase?.() === 'vacant';
+  const activeLeaseId = tenant?.lease_id ?? null;
+  const rentAmount = tenant?.rent_amount ?? apartment?.yearly_price ?? null;
+
+  const copyRentRequestUrl = useCallback(async () => {
+    if (!rentRequestUrl) return;
+
+    try {
+      await window.navigator.clipboard.writeText(rentRequestUrl);
+      setCopyStatus('Link copied.');
+    } catch (error) {
+      setCopyStatus('Copy failed. Select and copy the link manually.');
+    }
+  }, [rentRequestUrl]);
 
   return (
     <div className="space-y-6">
@@ -87,6 +127,16 @@ export function ApartmentDetail() {
                   status={formatStatusLabel(apartment?.status ?? 'vacant')}
                   type="apartment"
                 />
+                {buildingId && id ? (
+                  <Link
+                    to={`${routes.adminBuildingApartmentsNew(buildingId)}?duplicateFrom=${id}`}
+                    aria-label="Duplicate apartment"
+                  >
+                    <Button variant="ghost" size="sm">
+                      <Copy size={18} />
+                    </Button>
+                  </Link>
+                ) : null}
                 <Link
                   to={
                     id ? routes.adminApartmentEdit(id) : routes.adminBuildings
@@ -150,7 +200,9 @@ export function ApartmentDetail() {
                 emptyLabel="No apartment images uploaded yet."
                 items={mediaQuery.data?.items ?? []}
                 uploadPath={api.apartmentMedia(id ?? '')}
-                deletePath={(mediaId) => api.apartmentMediaItem(id ?? '', mediaId)}
+                deletePath={(mediaId) =>
+                  api.apartmentMediaItem(id ?? '', mediaId)
+                }
                 onChanged={async () => {
                   await mediaQuery.refetch();
                 }}
@@ -166,8 +218,89 @@ export function ApartmentDetail() {
                 ? `${formatMoney(apartment.yearly_price)}/year`
                 : '—'}
             </div>
-            {apartment?.status?.toLowerCase?.() === 'vacant' ? (
-              <div className="space-y-4">
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl">Next best action</h2>
+                <p className="text-sm text-muted-foreground">
+                  Choose the fastest path for this apartment.
+                </p>
+              </div>
+
+              <div className="space-y-2 rounded-lg border border-border p-3">
+                <p className="text-sm text-muted-foreground">
+                  Share rental request link
+                </p>
+                <p className="break-all text-sm">{rentRequestUrl || '—'}</p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={copyRentRequestUrl}
+                    disabled={!rentRequestUrl || !isVacant}
+                    className="w-full"
+                  >
+                    <Copy size={16} className="mr-2" />
+                    Copy Link
+                  </Button>
+                  <a
+                    href={shareLinks.whatsapp}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={!isVacant ? 'pointer-events-none' : undefined}
+                    aria-disabled={!isVacant}
+                  >
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      disabled={!isVacant}
+                      className="w-full"
+                    >
+                      WhatsApp
+                    </Button>
+                  </a>
+                  <a
+                    href={shareLinks.sms}
+                    className={!isVacant ? 'pointer-events-none' : undefined}
+                    aria-disabled={!isVacant}
+                  >
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      disabled={!isVacant}
+                      className="w-full"
+                    >
+                      SMS
+                    </Button>
+                  </a>
+                  <a
+                    href={shareLinks.email}
+                    className={!isVacant ? 'pointer-events-none' : undefined}
+                    aria-disabled={!isVacant}
+                  >
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      disabled={!isVacant}
+                      className="w-full"
+                    >
+                      Email
+                    </Button>
+                  </a>
+                </div>
+                {copyStatus ? (
+                  <p className="text-xs text-muted-foreground">{copyStatus}</p>
+                ) : null}
+                {!isVacant ? (
+                  <p className="text-xs text-muted-foreground">
+                    Request sharing is available when the apartment is vacant.
+                  </p>
+                ) : null}
+              </div>
+
+              {isVacant ? (
                 <AssignTenantForm
                   apartments={[
                     {
@@ -184,8 +317,31 @@ export function ApartmentDetail() {
                     await apartmentQuery.refetch();
                   }}
                 />
-              </div>
-            ) : (
+              ) : (
+                <Button className="w-full" disabled>
+                  Assign Tenant
+                </Button>
+              )}
+
+              <RecordPaymentDialog
+                triggerVariant="secondary"
+                triggerClassName="w-full"
+                triggerDisabled={!activeLeaseId}
+                defaultLeaseId={activeLeaseId}
+                defaultAmount={rentAmount}
+                onSuccess={async () => {
+                  await apartmentQuery.refetch();
+                }}
+              />
+              {!activeLeaseId ? (
+                <p className="text-xs text-muted-foreground">
+                  Record payment becomes available after an active tenant lease
+                  exists.
+                </p>
+              ) : null}
+            </div>
+
+            {isVacant ? null : (
               <div className="space-y-4">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">

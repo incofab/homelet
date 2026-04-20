@@ -39,10 +39,14 @@ class ApartmentController extends Controller
     {
         $this->authorize('create', [Apartment::class, $building]);
 
-        $apartment = $building->apartments()->create($request->validated());
+        $apartments = collect($request->apartmentPayloads())
+            ->map(fn (array $payload): Apartment => $building->apartments()->create($payload));
+        $apartment = $apartments->first();
 
-        return $this->success('Apartment created.', [
+        return $this->success($apartments->count() === 1 ? 'Apartment created.' : 'Apartments created.', [
             'apartment' => $apartment,
+            'apartments' => $apartments->values(),
+            'created_count' => $apartments->count(),
         ], 201);
     }
 

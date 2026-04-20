@@ -3,6 +3,8 @@ import { apiRoot, env } from "./env";
 type ApiErrorPayload = Record<string, string[]> | null;
 type ApiActivityListener = (pendingRequests: number) => void;
 
+export const AUTH_TOKEN_CHANGED_EVENT = "tenanta:auth-token-changed";
+
 const apiActivityListeners = new Set<ApiActivityListener>();
 let pendingApiRequests = 0;
 
@@ -54,11 +56,14 @@ export const getAuthToken = () => {
 
 export const setAuthToken = (token: string | null) => {
   if (typeof window === "undefined") return;
+
   if (!token) {
     window.localStorage.removeItem(env.authTokenKey);
-    return;
+  } else {
+    window.localStorage.setItem(env.authTokenKey, token);
   }
-  window.localStorage.setItem(env.authTokenKey, token);
+
+  window.dispatchEvent(new CustomEvent(AUTH_TOKEN_CHANGED_EVENT));
 };
 
 const buildUrl = (path: string) => {

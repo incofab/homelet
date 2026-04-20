@@ -8,6 +8,7 @@ export const routes = {
   registerBuilding: '/register-building',
   buildingPublic: (id: string | number) => `/building/${id}`,
   apartmentPublic: (id: string | number) => `/apartment/${id}`,
+  rentRequest: (apartmentId: string | number) => `/rent/request/${apartmentId}`,
   homeDashboard: '/dashboard',
 
   // Admin routes
@@ -41,20 +42,21 @@ export const routes = {
   tenantRoot: '/tenant',
   tenantPayments: '/tenant/payments',
   tenantMaintenance: '/tenant/maintenance',
-  tenantMaintenanceRequest: (id: string | number) => `/tenant/maintenance/${id}`,
+  tenantMaintenanceRequest: (id: string | number) =>
+    `/tenant/maintenance/${id}`,
   tenantChat: '/tenant/chat',
 };
 
-export type DashboardRouteKey = "admin" | "tenant" | "home";
-export const authRedirectParam = "redirect";
+export type DashboardRouteKey = 'admin' | 'tenant' | 'home';
+export const authRedirectParam = 'redirect';
 
 export const routeForDashboard = (dashboard?: DashboardRouteKey) => {
   switch (dashboard) {
-    case "tenant":
+    case 'tenant':
       return routes.tenantRoot;
-    case "home":
+    case 'home':
       return routes.homeDashboard;
-    case "admin":
+    case 'admin':
     default:
       return routes.adminRoot;
   }
@@ -71,7 +73,7 @@ export const withRedirect = (baseRoute: string, redirectTo: string) => {
 export const getRequestedRedirect = (search: string) => {
   const redirectTo = new URLSearchParams(search).get(authRedirectParam);
 
-  if (!redirectTo || !redirectTo.startsWith("/")) {
+  if (!redirectTo || !redirectTo.startsWith('/')) {
     return null;
   }
 
@@ -86,6 +88,7 @@ export const routePaths = {
   // Router path patterns
   buildingPublic: 'building/:id',
   apartmentPublic: 'apartment/:id',
+  rentRequest: 'rent/request/:id',
   homeDashboard: 'dashboard',
   login: 'login',
   register: 'register',
@@ -120,6 +123,8 @@ export const api = {
   // Public API
   publicApartments: '/public/apartments',
   publicApartment: (id: string | number) => `/public/apartments/${id}`,
+  publicRentRequestApartment: (id: string | number) =>
+    `/public/rent-request-apartments/${id}`,
   publicBuildings: '/public/buildings',
   publicBuilding: (id: string | number) => `/public/buildings/${id}`,
   publicBuildingsForSale: '/public/buildings-for-sale',
@@ -167,20 +172,25 @@ export const api = {
   leaseRenew: (id: string | number) => `/leases/${id}/renew`,
   payments: '/payments',
   expenses: '/expenses',
-  buildingExpenseCategories: (id: string | number) => `/buildings/${id}/expense-categories`,
-  buildingExpenseCategory: (buildingId: string | number, categoryId: string | number) =>
-    `/buildings/${buildingId}/expense-categories/${categoryId}`,
+  buildingExpenseCategories: (id: string | number) =>
+    `/buildings/${id}/expense-categories`,
+  buildingExpenseCategory: (
+    buildingId: string | number,
+    categoryId: string | number,
+  ) => `/buildings/${buildingId}/expense-categories/${categoryId}`,
   tenantPayments: '/tenant/payments',
 
   // Maintenance API
   maintenanceRequests: '/maintenance-requests',
   maintenanceRequest: (id: string | number) => `/maintenance-requests/${id}`,
-  maintenanceRequestMedia: (id: string | number) => `/maintenance-requests/${id}/media`,
+  maintenanceRequestMedia: (id: string | number) =>
+    `/maintenance-requests/${id}/media`,
 
   // Rental requests API
   rentalRequests: '/rental-requests',
   rentalRequest: (id: string | number) => `/rental-requests/${id}`,
-  rentalRequestApprove: (id: string | number) => `/rental-requests/${id}/approve`,
+  rentalRequestApprove: (id: string | number) =>
+    `/rental-requests/${id}/approve`,
   rentalRequestReject: (id: string | number) => `/rental-requests/${id}/reject`,
 
   // Building registration admin API

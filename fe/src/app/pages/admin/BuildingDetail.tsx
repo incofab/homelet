@@ -94,7 +94,7 @@ export function BuildingDetail() {
   ]
     .filter(Boolean)
     .join(', ');
-  const image = media[0]?.url ?? env.placeholderImage;
+  const image = media[0]?.url ?? env.buildingPlaceholderImage;
 
   return (
     <div className="space-y-6">

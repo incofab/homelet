@@ -7,19 +7,19 @@ import type {
   RentalRequest,
   Tenant,
   UserProfile,
-} from "./models";
+} from './models';
 
 export interface DashboardContext {
-  primary_dashboard: "admin" | "tenant" | "home";
+  primary_dashboard: 'admin' | 'tenant' | 'home';
   is_platform_admin: boolean;
   is_building_user: boolean;
   has_active_lease: boolean;
-  available_dashboards: Array<"admin" | "tenant" | "home">;
+  available_dashboards: Array<'admin' | 'tenant' | 'home'>;
 }
 
 export interface AuthResponse {
   token: string;
-  dashboard?: "admin" | "tenant" | "home";
+  dashboard?: 'admin' | 'tenant' | 'home';
   dashboard_context?: DashboardContext;
   impersonation?: {
     impersonator?: {
@@ -46,6 +46,11 @@ export interface CreateApartmentResponse {
     id: number;
     unit_code?: string;
   };
+  apartments?: Array<{
+    id: number;
+    unit_code?: string;
+  }>;
+  created_count?: number;
 }
 
 export interface BuildingRegistrationRequestResponse {
@@ -112,5 +117,5 @@ export interface TenantDashboardResponse {
 
 export interface TenantListItem {
   tenant: Tenant;
-  active_lease?: Tenant["active_lease"];
+  active_lease?: Tenant['active_lease'];
 }

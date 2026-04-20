@@ -69,7 +69,9 @@ describe('ApartmentDetailPublic', () => {
     await userEvent.click(
       screen.getByRole('button', { name: 'Submit Rental Request' }),
     );
-    expect(screen.queryByLabelText('Apartment to rent')).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText('Apartment to rent'),
+    ).not.toBeInTheDocument();
     await userEvent.type(screen.getByPlaceholderText('John Doe'), 'Jane Doe');
     await userEvent.type(
       screen.getByPlaceholderText('john@example.com'),
@@ -89,14 +91,19 @@ describe('ApartmentDetailPublic', () => {
     );
 
     expect(
-      await screen.findByText('Request submitted successfully.'),
+      await screen.findByText(
+        'Request submitted successfully. The landlord or manager will contact you soon.',
+      ),
     ).toBeInTheDocument();
     const request = fetchMock.mock.calls.find(
       ([url, init]) =>
-        String(url).includes(api.publicRentalRequests) && init?.method === 'POST',
+        String(url).includes(api.publicRentalRequests) &&
+        init?.method === 'POST',
     );
     expect(request).toBeTruthy();
-    expect(request?.[1]?.body ? JSON.parse(String(request[1].body)) : null).toMatchObject({
+    expect(
+      request?.[1]?.body ? JSON.parse(String(request[1].body)) : null,
+    ).toMatchObject({
       apartment_id: 1,
       name: 'Jane Doe',
     });

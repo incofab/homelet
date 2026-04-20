@@ -3,6 +3,7 @@
 namespace App\Http\Requests\RentalRequest;
 
 use App\Http\Requests\ApiRequest;
+use Illuminate\Validation\Rule;
 
 class StoreRentalRequestPublicRequest extends ApiRequest
 {
@@ -14,11 +15,22 @@ class StoreRentalRequestPublicRequest extends ApiRequest
     public function rules(): array
     {
         return [
-            'apartment_id' => ['required', 'integer', 'exists:apartments,id'],
+            'apartment_id' => [
+                'required',
+                'integer',
+                Rule::exists('apartments', 'id')->where(fn ($query) => $query->where('status', 'vacant')),
+            ],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
             'message' => ['nullable', 'string'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'apartment_id.exists' => 'This apartment is no longer available.',
         ];
     }
 

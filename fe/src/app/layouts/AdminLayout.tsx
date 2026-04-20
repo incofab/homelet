@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from 'react-router';
+import { Outlet, Link, Navigate, useLocation } from 'react-router';
 import {
   Building2,
   LayoutDashboard,
@@ -14,10 +14,11 @@ import {
   Wrench,
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
-import { api, routes } from '../lib/urls';
+import { api, routeForDashboard, routes, withRedirect } from '../lib/urls';
 import { useApiQuery } from '../hooks/useApiQuery';
 import type { DashboardContext } from '../lib/responses';
 import { useAuthSession } from '../hooks/useAuthSession';
+import { useAuthToken } from '../hooks/useAuthToken';
 
 type MeResponse = {
   user?: { role?: string };
@@ -86,15 +87,32 @@ const sidebarThemeForRole = (role?: string) => {
   }
 };
 
+const hasAdminDashboardAccess = (
+  role?: string,
+  dashboardContext?: DashboardContext,
+) => {
+  if (dashboardContext?.available_dashboards.includes('admin')) {
+    return true;
+  }
+
+  return ['admin', 'landlord', 'manager'].includes(
+    role?.trim().toLowerCase() ?? '',
+  );
+};
+
 export function AdminLayout() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { logout, loggingOut } = useAuthSession();
+  const authToken = useAuthToken();
   const selectProfile = useCallback((data: MeResponse) => data, []);
   const meQuery = useApiQuery<MeResponse, MeResponse>(api.authMe, {
+    enabled: Boolean(authToken),
     select: selectProfile,
+    deps: [authToken],
   });
   const currentRole = meQuery.data?.user?.role;
+  const dashboardContext = meQuery.data?.dashboard_context;
   const roleLabel = formatRoleLabel(currentRole);
   const sidebarTheme = sidebarThemeForRole(currentRole);
   const isPlatformAdmin = currentRole === 'admin';
@@ -138,6 +156,41 @@ export function AdminLayout() {
 
     return items;
   }, [canSwitchToTenantDashboard, isLandlordOrManager, isPlatformAdmin]);
+
+  if (!authToken) {
+    return (
+      <Navigate
+        to={withRedirect(routes.login, `${location.pathname}${location.search}`)}
+        replace
+      />
+    );
+  }
+
+  if (meQuery.loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4 text-muted-foreground">
+        Loading dashboard...
+      </div>
+    );
+  }
+
+  if (meQuery.error) {
+    return (
+      <Navigate
+        to={withRedirect(routes.login, `${location.pathname}${location.search}`)}
+        replace
+      />
+    );
+  }
+
+  if (!hasAdminDashboardAccess(currentRole, dashboardContext)) {
+    return (
+      <Navigate
+        to={routeForDashboard(dashboardContext?.primary_dashboard ?? 'home')}
+        replace
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
