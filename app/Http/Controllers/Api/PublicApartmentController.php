@@ -14,7 +14,11 @@ class PublicApartmentController extends Controller
             Apartment::query()
                 ->where('status', 'vacant')
                 ->where('is_public', true)
-                ->with(['building:id,name,address_line1,address_line2,city,state,country,contact_email,contact_phone', 'media'])
+                ->with([
+                    'building:id,name,address_id,contact_email,contact_phone',
+                    'building.address',
+                    'media',
+                ])
                 ->latest('id')
         );
 
@@ -29,7 +33,8 @@ class PublicApartmentController extends Controller
 
         return $this->success('Public apartment loaded.', [
             'apartment' => $apartment->load([
-                'building:id,name,address_line1,address_line2,city,state,country,contact_email,contact_phone',
+                'building:id,name,address_id,contact_email,contact_phone',
+                'building.address',
                 'media',
                 'reviews.user:id,name',
             ]),

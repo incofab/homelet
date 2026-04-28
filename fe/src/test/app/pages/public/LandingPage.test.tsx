@@ -59,9 +59,12 @@ describe('LandingPage', () => {
 
     renderPage();
 
-    expect(await screen.findByText('Buildings')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Buildings with available apartments'),
+    ).toBeInTheDocument();
     expect(await screen.findByText('Riverside Complex')).toBeInTheDocument();
     expect(await screen.findByText('hello@riverside.test')).toBeInTheDocument();
+    expect(screen.getByText('4 available apartments')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /view details/i })).toHaveAttribute(
       'href',
       routes.buildingPublic(2),
@@ -87,7 +90,7 @@ describe('LandingPage', () => {
     renderPage();
 
     expect(
-      await screen.findByText('No public buildings yet'),
+      await screen.findByText('No available apartments yet'),
     ).toBeInTheDocument();
   });
 

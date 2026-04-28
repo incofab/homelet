@@ -69,7 +69,7 @@ describe('RegisterPage', () => {
     );
     await userEvent.click(screen.getByRole('button', { name: 'Sign Up' }));
 
-    expect(window.localStorage.getItem('tenanta_token')).toBe('user-token');
+    expect(window.localStorage.getItem('homelet_token')).toBe('user-token');
     expect(mockNavigate).toHaveBeenCalledWith(routes.homeDashboard);
   });
 

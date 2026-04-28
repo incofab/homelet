@@ -11,7 +11,7 @@ describe("AdminLayout", () => {
     cleanup();
     vi.restoreAllMocks();
     window.localStorage.clear();
-    window.localStorage.setItem("tenanta_token", "auth-token");
+    window.localStorage.setItem("homelet_token", "auth-token");
   });
 
   it("shows the users navigation item for platform admins only", async () => {
@@ -169,7 +169,7 @@ describe("AdminLayout", () => {
   });
 
   it("refreshes the sidebar role when the active auth token changes", async () => {
-    window.localStorage.setItem("tenanta_token", "admin-token");
+    window.localStorage.setItem("homelet_token", "admin-token");
     mockFetch([
       {
         match: (url, init) =>

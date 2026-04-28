@@ -1,9 +1,9 @@
 ---
-name: tenanta-docs-sync
-description: Use when a Tenanta change affects API behavior, controller behavior, product scope, or task tracking and the repository documentation must be synchronized. This skill is for updating docs/api.md, docs/tasks.md, and docs/prd.md so the documentation reflects the true implementation and current project scope.
+name: homelet-docs-sync
+description: Use when a Homelet change affects API behavior, controller behavior, product scope, or task tracking and the repository documentation must be synchronized. This skill is for updating docs/api.md, docs/tasks.md, and docs/prd.md so the documentation reflects the true implementation and current project scope.
 ---
 
-# Tenanta Docs Sync
+# Homelet Docs Sync
 
 Use this skill whenever code changes would leave the docs stale.
 

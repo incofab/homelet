@@ -21,17 +21,27 @@ export function EditBuilding() {
     [],
   );
 
-  const buildingQuery = useApiQuery<unknown, Building>(id ? api.building(id) : null, {
-    enabled: Boolean(id),
-    deps: [id],
-    select: selectBuilding,
-  });
+  const buildingQuery = useApiQuery<unknown, Building>(
+    id ? api.building(id) : null,
+    {
+      enabled: Boolean(id),
+      deps: [id],
+      select: selectBuilding,
+    },
+  );
 
   const building = buildingQuery.data;
 
   return (
     <BuildingForm
-      backTo={id ? routes.adminBuilding(id) : routes.adminBuildings}
+      breadcrumbs={[
+        { label: 'Buildings', to: routes.adminBuildings },
+        {
+          label: building?.name ?? 'Building',
+          to: id ? routes.adminBuilding(id) : routes.adminBuildings,
+        },
+        { label: 'Edit' },
+      ]}
       cancelTo={id ? routes.adminBuilding(id) : routes.adminBuildings}
       heading="Edit Building"
       subheading="Update this building's profile and contact details"

@@ -474,7 +474,7 @@ export function ApproveRentalRequestDialog({
             <h4 className="font-medium">Welcome message</h4>
           </div>
           <p className="text-sm text-muted-foreground">
-            After approval, Tenanta creates the tenant lease and sends the
+            After approval, Homelet creates the tenant lease and sends the
             tenancy agreement email. Use this as the welcome message for the new
             tenant.
           </p>

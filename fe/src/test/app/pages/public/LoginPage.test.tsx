@@ -57,7 +57,7 @@ describe('LoginPage', () => {
     );
     await userEvent.click(screen.getByRole('button', { name: 'Sign In' }));
 
-    expect(window.localStorage.getItem('tenanta_token')).toBe('tenant-token');
+    expect(window.localStorage.getItem('homelet_token')).toBe('tenant-token');
     expect(mockNavigate).toHaveBeenCalledWith(routes.tenantRoot);
   });
 

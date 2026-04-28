@@ -1,37 +1,48 @@
-import { Link } from "react-router";
-import { ArrowLeft } from "lucide-react";
-import { useState } from "react";
-import type { FormEvent } from "react";
-import { Button } from "../../components/Button";
-import { Card } from "../../components/Card";
-import { Input } from "../../components/Input";
-import { apiPost } from "../../lib/api";
-import { env } from "../../lib/env";
-import { api, routes } from "../../lib/urls";
-import type { BuildingRegistrationRequestResponse } from "../../lib/responses";
+import { Link } from 'react-router';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
+import { Button } from '../../components/Button';
+import { Card } from '../../components/Card';
+import { Input } from '../../components/Input';
+import { BuildingRegistrationSuccess } from '../../components/BuildingRegistrationSuccess';
+import { AppBreadcrumbs } from '../../components/AppBreadcrumbs';
+import { apiPost } from '../../lib/api';
+import { env } from '../../lib/env';
+import { api, routes } from '../../lib/urls';
+import type {
+  BuildingRegistrationRequestResponse,
+  PlatformAdminContacts,
+} from '../../lib/responses';
 
 export function RegisterBuildingRequest() {
   const [formState, setFormState] = useState({
-    name: "",
-    address_line1: "",
-    address_line2: "",
-    city: "",
-    state: "",
+    name: '',
+    address_line1: '',
+    address_line2: '',
+    city: '',
+    state: '',
     country: env.defaultCountry,
-    description: "",
+    description: '',
     for_sale: false,
-    sale_price: "",
+    sale_price: '',
   });
   const [submitting, setSubmitting] = useState(false);
-  const [status, setStatus] = useState<{ type: "idle" | "error" | "success"; message?: string }>({
-    type: "idle",
+  const [status, setStatus] = useState<{
+    type: 'idle' | 'error' | 'success';
+    message?: string;
+  }>({
+    type: 'idle',
   });
-  const [submittedRequestId, setSubmittedRequestId] = useState<number | null>(null);
+  const [submittedRequestId, setSubmittedRequestId] = useState<number | null>(
+    null,
+  );
+  const [adminContacts, setAdminContacts] =
+    useState<PlatformAdminContacts | null>(null);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setSubmitting(true);
-    setStatus({ type: "idle" });
+    setStatus({ type: 'idle' });
 
     try {
       const payload = {
@@ -43,21 +54,27 @@ export function RegisterBuildingRequest() {
         country: formState.country,
         description: formState.description || null,
         for_sale: formState.for_sale,
-        sale_price: formState.for_sale && formState.sale_price ? Number(formState.sale_price) : null,
+        sale_price:
+          formState.for_sale && formState.sale_price
+            ? Number(formState.sale_price)
+            : null,
       };
       const data = await apiPost<BuildingRegistrationRequestResponse>(
         api.buildingRegistrationRequests,
-        payload
+        payload,
       );
       setSubmittedRequestId(data.request.id);
+      setAdminContacts(data.admin_contacts ?? null);
       setStatus({
-        type: "success",
-        message: "Your building registration request is pending admin approval.",
+        type: 'success',
+        message:
+          'Your building registration request is pending admin approval.',
       });
     } catch (error) {
       setStatus({
-        type: "error",
-        message: (error as Error).message || "Unable to submit registration request.",
+        type: 'error',
+        message:
+          (error as Error).message || 'Unable to submit registration request.',
       });
     } finally {
       setSubmitting(false);
@@ -66,14 +83,12 @@ export function RegisterBuildingRequest() {
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div className="flex items-center gap-4">
-        <Link to={routes.adminBuildings}>
-          <Button variant="ghost" size="sm">
-            <ArrowLeft size={20} className="mr-2" />
-            Back
-          </Button>
-        </Link>
-      </div>
+      <AppBreadcrumbs
+        items={[
+          { label: 'Building Requests', to: routes.adminBuildingRequests },
+          { label: 'Register Building' },
+        ]}
+      />
 
       <div>
         <h1 className="text-3xl mb-2">Register Building</h1>
@@ -83,25 +98,21 @@ export function RegisterBuildingRequest() {
       </div>
 
       <Card>
-        {status.type === "success" ? (
-          <div className="space-y-4">
-            <div className="rounded-lg border border-success/20 bg-success/10 p-4">
-              <p className="text-success">{status.message}</p>
-              {submittedRequestId ? (
-                <p className="text-sm text-muted-foreground mt-2">
-                  Reference ID: {submittedRequestId}
-                </p>
-              ) : null}
-            </div>
-            <div className="flex items-center gap-3">
-              <Link to={routes.adminBuildings}>
-                <Button>Return to Buildings</Button>
-              </Link>
-              <Link to={routes.adminBuildingRequests}>
-                <Button variant="secondary">View Requests</Button>
-              </Link>
-            </div>
-          </div>
+        {status.type === 'success' ? (
+          <BuildingRegistrationSuccess
+            requestId={submittedRequestId}
+            adminContacts={adminContacts}
+            actions={
+              <>
+                <Link to={routes.adminBuildings}>
+                  <Button>Return to Buildings</Button>
+                </Link>
+                <Link to={routes.adminBuildingRequests}>
+                  <Button variant="secondary">View Requests</Button>
+                </Link>
+              </>
+            }
+          />
         ) : (
           <form className="space-y-6" onSubmit={handleSubmit}>
             <Input
@@ -109,7 +120,9 @@ export function RegisterBuildingRequest() {
               placeholder="e.g., Skyline Tower"
               required
               value={formState.name}
-              onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))}
+              onChange={(event) =>
+                setFormState((prev) => ({ ...prev, name: event.target.value }))
+              }
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -119,7 +132,10 @@ export function RegisterBuildingRequest() {
                 required
                 value={formState.address_line1}
                 onChange={(event) =>
-                  setFormState((prev) => ({ ...prev, address_line1: event.target.value }))
+                  setFormState((prev) => ({
+                    ...prev,
+                    address_line1: event.target.value,
+                  }))
                 }
               />
               <Input
@@ -127,7 +143,12 @@ export function RegisterBuildingRequest() {
                 placeholder="Lagos"
                 required
                 value={formState.city}
-                onChange={(event) => setFormState((prev) => ({ ...prev, city: event.target.value }))}
+                onChange={(event) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    city: event.target.value,
+                  }))
+                }
               />
             </div>
 
@@ -137,7 +158,12 @@ export function RegisterBuildingRequest() {
                 placeholder="Lagos"
                 required
                 value={formState.state}
-                onChange={(event) => setFormState((prev) => ({ ...prev, state: event.target.value }))}
+                onChange={(event) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    state: event.target.value,
+                  }))
+                }
               />
               <Input
                 label="Country"
@@ -145,7 +171,10 @@ export function RegisterBuildingRequest() {
                 required
                 value={formState.country}
                 onChange={(event) =>
-                  setFormState((prev) => ({ ...prev, country: event.target.value }))
+                  setFormState((prev) => ({
+                    ...prev,
+                    country: event.target.value,
+                  }))
                 }
               />
               <Input
@@ -153,7 +182,10 @@ export function RegisterBuildingRequest() {
                 placeholder="Suite 4"
                 value={formState.address_line2}
                 onChange={(event) =>
-                  setFormState((prev) => ({ ...prev, address_line2: event.target.value }))
+                  setFormState((prev) => ({
+                    ...prev,
+                    address_line2: event.target.value,
+                  }))
                 }
               />
             </div>
@@ -166,7 +198,10 @@ export function RegisterBuildingRequest() {
                 placeholder="Describe the building and its amenities..."
                 value={formState.description}
                 onChange={(event) =>
-                  setFormState((prev) => ({ ...prev, description: event.target.value }))
+                  setFormState((prev) => ({
+                    ...prev,
+                    description: event.target.value,
+                  }))
                 }
               />
             </div>
@@ -177,7 +212,10 @@ export function RegisterBuildingRequest() {
                 type="checkbox"
                 checked={formState.for_sale}
                 onChange={(event) =>
-                  setFormState((prev) => ({ ...prev, for_sale: event.target.checked }))
+                  setFormState((prev) => ({
+                    ...prev,
+                    for_sale: event.target.checked,
+                  }))
                 }
                 className="h-4 w-4"
               />
@@ -194,18 +232,21 @@ export function RegisterBuildingRequest() {
                 required
                 value={formState.sale_price}
                 onChange={(event) =>
-                  setFormState((prev) => ({ ...prev, sale_price: event.target.value }))
+                  setFormState((prev) => ({
+                    ...prev,
+                    sale_price: event.target.value,
+                  }))
                 }
               />
             ) : null}
 
-            {status.type === "error" ? (
+            {status.type === 'error' ? (
               <p className="text-sm text-destructive">{status.message}</p>
             ) : null}
 
             <div className="flex items-center gap-4 pt-4">
               <Button type="submit" disabled={submitting}>
-                {submitting ? "Submitting..." : "Submit Request"}
+                {submitting ? 'Submitting...' : 'Submit Request'}
               </Button>
               <Link to={routes.adminBuildings}>
                 <Button type="button" variant="ghost">

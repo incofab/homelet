@@ -1,9 +1,9 @@
 ---
-name: tenanta-controller-refactor
-description: Use when a Tenanta controller has accumulated business logic that should be moved into services or support classes. This skill is specifically for auditing Laravel controllers, identifying logic-heavy methods, extracting reusable domain workflows or formatters, preserving behavior, updating docs/api.md when needed, and adding regression coverage for the refactor.
+name: homelet-controller-refactor
+description: Use when a Homelet controller has accumulated business logic that should be moved into services or support classes. This skill is specifically for auditing Laravel controllers, identifying logic-heavy methods, extracting reusable domain workflows or formatters, preserving behavior, updating docs/api.md when needed, and adding regression coverage for the refactor.
 ---
 
-# Tenanta Controller Refactor
+# Homelet Controller Refactor
 
 Use this skill when the user asks to clean up controllers or when a controller has become responsible for too much domain logic.
 

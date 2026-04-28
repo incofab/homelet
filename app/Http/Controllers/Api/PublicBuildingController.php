@@ -13,12 +13,14 @@ class PublicBuildingController extends Controller
         $buildings = paginateFromRequest(
             Building::query()
                 ->whereHas('apartments', function ($query) {
-                    $query->where('is_public', true);
+                    $query->where('is_public', true)
+                        ->where('status', 'vacant');
                 })
                 ->with(['media'])
                 ->withCount([
                     'apartments as public_apartments_count' => function ($query) {
-                        $query->where('is_public', true);
+                        $query->where('is_public', true)
+                            ->where('status', 'vacant');
                     },
                 ])
                 ->latest('id')
@@ -35,6 +37,7 @@ class PublicBuildingController extends Controller
             'media',
             'apartments' => function ($query) {
                 $query->where('is_public', true)
+                    ->where('status', 'vacant')
                     ->with('media')
                     ->latest('id');
             },

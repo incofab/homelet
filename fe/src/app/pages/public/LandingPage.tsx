@@ -134,13 +134,13 @@ export function LandingPage() {
         </div>
       </header>
 
-      {/* Public Buildings */}
+      {/* Available Buildings */}
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4">
           <div className="mb-8">
-            <h2 className="text-3xl mb-2">Buildings</h2>
+            <h2 className="text-3xl mb-2">Buildings with available apartments</h2>
             <p className="text-muted-foreground">
-              Browse buildings and contact property teams directly
+              Browse properties with vacant apartments ready for rent
             </p>
           </div>
 
@@ -151,8 +151,8 @@ export function LandingPage() {
           ) : publicBuildings.length === 0 ? (
             <EmptyState
               icon={<Building2 size={32} className="text-muted-foreground" />}
-              title="No public buildings yet"
-              description="Buildings with public apartment listings will show up here when available."
+              title="No available apartments yet"
+              description="Buildings with vacant public apartments will show up here when available."
             />
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -192,7 +192,7 @@ export function LandingPage() {
                         <div className="flex items-center gap-2">
                           <DollarSign size={20} className="text-primary" />
                           <span className="text-xl text-primary">
-                            {building.publicApartments} public apartments
+                            {building.publicApartments} available apartments
                           </span>
                         </div>
                         <Link to={routes.buildingPublic(building.id)}>

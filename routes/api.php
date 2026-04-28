@@ -47,7 +47,9 @@ Route::prefix('auth')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('buildings', BuildingController::class);
     Route::get('apartments/{apartment}', [ApartmentController::class, 'show']);
+    Route::get('building-registration-requests', [BuildingRegistrationRequestController::class, 'index']);
     Route::post('building-registration-requests', [BuildingRegistrationRequestController::class, 'store']);
+    Route::get('building-registration-requests/{buildingRegistrationRequest}', [BuildingRegistrationRequestController::class, 'show']);
     Route::post('buildings/{building}/managers', [BuildingManagerController::class, 'store']);
     Route::delete('buildings/{building}/managers/{user}', [BuildingManagerController::class, 'destroy']);
     Route::post('buildings/{building}/apartments', [ApartmentController::class, 'store']);

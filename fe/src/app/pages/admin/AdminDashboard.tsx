@@ -7,6 +7,8 @@ import {
   AlertCircle,
   Wrench,
   ArrowRight,
+  FileText,
+  MapPin,
 } from 'lucide-react';
 import { Link } from 'react-router';
 import {
@@ -40,7 +42,7 @@ import type {
   AdminDashboardResponse,
   DashboardContext,
 } from '../../lib/responses';
-import type { Payment } from '../../lib/models';
+import type { BuildingRegistrationRequest, Payment } from '../../lib/models';
 
 type MeResponse = {
   user?: { role?: string };
@@ -60,6 +62,11 @@ export function AdminDashboard() {
     (data: unknown) => extractRecord<MeResponse>(data),
     [],
   );
+  const selectBuildingRegistrationRequests = useCallback(
+    (data: unknown) =>
+      PaginatedData.from<BuildingRegistrationRequest>(data, 'requests'),
+    [],
+  );
   const dashboardQuery = useApiQuery<unknown, AdminDashboardResponse>(
     api.dashboardAdmin,
     {
@@ -75,9 +82,18 @@ export function AdminDashboard() {
       select: selectPayments,
     },
   );
-  const payments = paymentsQuery.data?.items ?? [];
   const isPlatformAdmin =
     meQuery.data?.dashboard_context?.is_platform_admin ?? false;
+  const buildingRegistrationRequestsQuery = useApiQuery<
+    unknown,
+    PaginatedData<BuildingRegistrationRequest>
+  >(`${api.adminBuildingRegistrationRequests}?status=pending&per_page=5`, {
+    enabled: isPlatformAdmin,
+    select: selectBuildingRegistrationRequests,
+  });
+  const payments = paymentsQuery.data?.items ?? [];
+  const pendingBuildingRegistrationRequests =
+    buildingRegistrationRequestsQuery.data?.items ?? [];
 
   const counts = dashboardQuery.data?.counts;
   const occupancyRate = counts
@@ -194,41 +210,116 @@ export function AdminDashboard() {
       </div>
 
       {isPlatformAdmin ? (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-          <MetricCard
-            title="Total Buildings"
-            value={counts?.buildings?.toString() ?? '—'}
-            icon={<Building2 size={32} />}
-          />
-          <MetricCard
-            title="Total Units"
-            value={counts?.apartments?.toString() ?? '—'}
-            icon={<Home size={32} />}
-          />
-          <MetricCard
-            title="Total Tenants"
-            value={counts?.tenants?.toString() ?? '—'}
-            icon={<Users size={32} />}
-          />
-          <MetricCard
-            title="Overdue Payments"
-            value={dashboardQuery.data?.overdue_payments?.toString() ?? '—'}
-            icon={<AlertCircle size={32} />}
-          />
-          <MetricCard
-            title="Maintenance Requests"
-            value={dashboardQuery.data?.maintenance_requests?.toString() ?? '—'}
-            icon={<Wrench size={32} />}
-          />
-          <MetricCard
-            title="Expiring Leases"
-            value={
-              dashboardQuery.data?.expiring_leases_next_90_days?.toString() ??
-              '—'
-            }
-            icon={<TrendingUp size={32} />}
-          />
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <MetricCard
+              title="Total Buildings"
+              value={counts?.buildings?.toString() ?? '—'}
+              icon={<Building2 size={32} />}
+            />
+            <MetricCard
+              title="Total Units"
+              value={counts?.apartments?.toString() ?? '—'}
+              icon={<Home size={32} />}
+            />
+            <MetricCard
+              title="Total Tenants"
+              value={counts?.tenants?.toString() ?? '—'}
+              icon={<Users size={32} />}
+            />
+            <MetricCard
+              title="Overdue Payments"
+              value={dashboardQuery.data?.overdue_payments?.toString() ?? '—'}
+              icon={<AlertCircle size={32} />}
+            />
+            <MetricCard
+              title="Maintenance Requests"
+              value={
+                dashboardQuery.data?.maintenance_requests?.toString() ?? '—'
+              }
+              icon={<Wrench size={32} />}
+            />
+            <MetricCard
+              title="Expiring Leases"
+              value={
+                dashboardQuery.data?.expiring_leases_next_90_days?.toString() ??
+                '—'
+              }
+              icon={<TrendingUp size={32} />}
+            />
+          </div>
+
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <CardTitle>Pending Building Registration Requests</CardTitle>
+                <Link to={routes.adminBuildingRequests}>
+                  <span className="text-sm text-primary hover:underline">
+                    View all
+                  </span>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {buildingRegistrationRequestsQuery.loading ? (
+                <p className="text-muted-foreground">Loading requests...</p>
+              ) : buildingRegistrationRequestsQuery.error ? (
+                <p className="text-sm text-destructive">
+                  {buildingRegistrationRequestsQuery.error}
+                </p>
+              ) : pendingBuildingRegistrationRequests.length === 0 ? (
+                <EmptyState
+                  icon={
+                    <FileText size={28} className="text-muted-foreground" />
+                  }
+                  title="No pending building requests"
+                  description="Submitted buildings that need approval will appear here."
+                />
+              ) : (
+                <div className="divide-y divide-border">
+                  {pendingBuildingRegistrationRequests.map((request) => {
+                    const location = [
+                      request.city,
+                      request.state,
+                      request.country,
+                    ]
+                      .filter(Boolean)
+                      .join(', ');
+
+                    return (
+                      <Link
+                        key={request.id}
+                        to={routes.adminBuildingRequest(request.id)}
+                        className="flex flex-col gap-3 py-4 transition-colors first:pt-0 last:pb-0 hover:text-primary sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="min-w-0 space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-medium">{request.name}</span>
+                            <StatusBadge
+                              status={formatStatusLabel(request.status)}
+                              type="request"
+                            />
+                          </div>
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                            <span>{request.owner_name ?? 'Owner'}</span>
+                            <span className="inline-flex items-center gap-1">
+                              <MapPin size={14} />
+                              {location || 'Location unavailable'}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="inline-flex items-center gap-2 text-sm text-primary">
+                          Review
+                          <ArrowRight size={16} />
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

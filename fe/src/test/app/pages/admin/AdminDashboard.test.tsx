@@ -41,6 +41,28 @@ describe('AdminDashboard', () => {
         response: () => apiSuccess(dashboardPayload),
       },
       {
+        match: (url) => url.includes(api.adminBuildingRegistrationRequests),
+        response: () =>
+          apiSuccess({
+            requests: {
+              data: [
+                {
+                  id: 7,
+                  name: 'Harbor Court',
+                  status: 'pending',
+                  city: 'Lagos',
+                  state: 'Lagos',
+                  country: 'NG',
+                  owner_name: 'Jane Owner',
+                },
+              ],
+              current_page: 1,
+              last_page: 1,
+              total: 1,
+            },
+          }),
+      },
+      {
         match: (url) => url.includes(api.payments),
         response: () => apiSuccess([]),
       },
@@ -52,6 +74,15 @@ describe('AdminDashboard', () => {
     expect(screen.getByText('Total Tenants')).toBeInTheDocument();
     expect(screen.getByText('Overdue Payments')).toBeInTheDocument();
     expect(screen.getByText('Maintenance Requests')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Pending Building Registration Requests'),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('Harbor Court')).toBeInTheDocument();
+    expect(screen.getByText('Jane Owner')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Harbor Court/i })).toHaveAttribute(
+      'href',
+      '/admin/building-requests/7',
+    );
     expect(screen.queryByText('Revenue Trend')).not.toBeInTheDocument();
     expect(screen.queryByText('Pending Payments')).not.toBeInTheDocument();
   });

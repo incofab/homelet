@@ -58,7 +58,7 @@ class BuildingController extends Controller
         $this->authorize('view', $building);
 
         return $this->success('Building loaded.', [
-            'building' => $building->load('media'),
+            'building' => $building->load(['media', 'users']),
         ]);
     }
 

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { apiPost } from '../../lib/api';
 import { api, routes } from '../../lib/urls';
 import type { CreateApartmentResponse } from '../../lib/responses';
@@ -8,6 +8,7 @@ import { ApartmentForm } from './ApartmentForm';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
+import { AppBreadcrumbs } from '../../components/AppBreadcrumbs';
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { extractRecord } from '../../lib/paginatedData';
 import type { ApartmentDetail } from '../../lib/models';
@@ -49,11 +50,6 @@ const isSupportedApartmentType = (
     'three_bedroom',
     'custom',
   ].includes(type ?? '');
-
-const isSupportedApartmentStatus = (
-  status?: string,
-): status is BulkApartmentRow['status'] =>
-  ['vacant', 'occupied', 'maintenance'].includes(status ?? '');
 
 export function CreateApartment() {
   const { buildingId } = useParams();
@@ -131,14 +127,20 @@ export function CreateApartment() {
   if (mode === 'bulk' && !isDuplicating) {
     return (
       <div className="max-w-5xl space-y-6">
-        <div className="flex items-center gap-4">
-          <Link to={routes.adminBuildingApartments(buildingId ?? '')}>
-            <Button variant="ghost" size="sm">
-              <ArrowLeft size={20} className="mr-2" />
-              Back
-            </Button>
-          </Link>
-        </div>
+        <AppBreadcrumbs
+          items={[
+            { label: 'Buildings', to: routes.adminBuildings },
+            {
+              label: 'Building',
+              to: routes.adminBuilding(buildingId ?? ''),
+            },
+            {
+              label: 'Apartments',
+              to: routes.adminBuildingApartments(buildingId ?? ''),
+            },
+            { label: 'Add Apartments' },
+          ]}
+        />
 
         <div>
           <h1 className="text-3xl mb-2">Add Apartments</h1>
@@ -382,7 +384,18 @@ export function CreateApartment() {
       ) : null}
 
       <ApartmentForm
-        backTo={routes.adminBuildingApartments(buildingId ?? '')}
+        breadcrumbs={[
+          { label: 'Buildings', to: routes.adminBuildings },
+          {
+            label: 'Building',
+            to: routes.adminBuilding(buildingId ?? ''),
+          },
+          {
+            label: 'Apartments',
+            to: routes.adminBuildingApartments(buildingId ?? ''),
+          },
+          { label: isDuplicating ? 'Duplicate Apartment' : 'Add Apartment' },
+        ]}
         cancelTo={routes.adminBuildingApartments(buildingId ?? '')}
         heading={isDuplicating ? 'Duplicate Apartment' : 'Add New Apartment'}
         subheading={
@@ -407,9 +420,7 @@ export function CreateApartment() {
                 floor: sourceApartment.floor ?? '',
                 description: sourceApartment.description ?? '',
                 amenities: (sourceApartment.amenities ?? []).join('\n'),
-                status: isSupportedApartmentStatus(sourceApartment.status)
-                  ? sourceApartment.status
-                  : 'vacant',
+                status: 'vacant',
                 isPublic: sourceApartment.is_public ?? true,
               }
             : undefined

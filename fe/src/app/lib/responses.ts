@@ -55,6 +55,14 @@ export interface CreateApartmentResponse {
 
 export interface BuildingRegistrationRequestResponse {
   request: BuildingRegistrationRequest;
+  admin_contacts?: PlatformAdminContacts;
+}
+
+export interface PlatformAdminContacts {
+  email?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  support_hours?: string | null;
 }
 
 export interface BuildingRegistrationApproveResponse {

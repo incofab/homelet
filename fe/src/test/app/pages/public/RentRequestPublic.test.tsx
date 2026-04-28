@@ -1,9 +1,18 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { RentRequestPublic } from '../../../../app/pages/public/RentRequestPublic';
 import { apiSuccess, mockFetch, renderWithRoute } from '../../../testUtils';
 import { api, routePaths, routes } from '../../../../app/lib/urls';
+import { appToast } from '../../../../app/lib/toast';
+
+vi.mock('../../../../app/lib/toast', () => ({
+  appToast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+  },
+}));
 
 const apartment = {
   id: 7,
@@ -69,6 +78,9 @@ describe('RentRequestPublic', () => {
         'Request submitted successfully. The landlord or manager will contact you soon.',
       ),
     ).toBeInTheDocument();
+    expect(appToast.success).toHaveBeenCalledWith(
+      'Rental request created successfully.',
+    );
     const request = fetchMock.mock.calls.find(
       ([url, init]) =>
         String(url).includes(api.publicRentalRequests) &&

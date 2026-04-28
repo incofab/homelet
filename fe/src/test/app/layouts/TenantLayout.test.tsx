@@ -10,7 +10,7 @@ describe("TenantLayout", () => {
     cleanup();
     vi.restoreAllMocks();
     window.localStorage.clear();
-    window.localStorage.setItem("tenanta_token", "tenant-token");
+    window.localStorage.setItem("homelet_token", "tenant-token");
   });
 
   it("renders tenant routes for users with tenant dashboard access", async () => {

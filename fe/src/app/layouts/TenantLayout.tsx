@@ -78,7 +78,7 @@ export function TenantLayout() {
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-10">
         <div className="px-4 lg:px-8 py-4 flex items-center justify-between gap-4">
-          <h1 className="text-xl text-primary">Tenanta</h1>
+          <h1 className="text-xl text-primary">Homelet</h1>
           <Button variant="ghost" size="sm" onClick={logout}>
             <LogOut size={16} className="mr-2" />
             {loggingOut ? 'Logging out...' : 'Logout'}

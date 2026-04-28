@@ -9,9 +9,9 @@ import { api } from "../../../app/lib/urls";
 
 describe("ImpersonationBanner", () => {
   it("restores the original account when stop impersonate is clicked", async () => {
-    window.localStorage.setItem("tenanta_token", "impersonated-token");
+    window.localStorage.setItem("homelet_token", "impersonated-token");
     window.localStorage.setItem(
-      "tenanta_impersonation",
+      "homelet_impersonation",
       JSON.stringify({
         originalToken: "admin-token",
         impersonatorId: 1,
@@ -49,8 +49,8 @@ describe("ImpersonationBanner", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Stop Impersonate" }));
 
-    expect(window.localStorage.getItem("tenanta_token")).toBe("admin-token");
-    expect(window.localStorage.getItem("tenanta_impersonation")).toBeNull();
+    expect(window.localStorage.getItem("homelet_token")).toBe("admin-token");
+    expect(window.localStorage.getItem("homelet_impersonation")).toBeNull();
     expect(await screen.findByText("Users list")).toBeInTheDocument();
   });
 

@@ -35,7 +35,20 @@ export function EditApartment() {
 
   return (
     <ApartmentForm
-      backTo={id ? routes.adminApartment(id) : routes.adminBuildings}
+      breadcrumbs={[
+        { label: 'Buildings', to: routes.adminBuildings },
+        {
+          label: apartment?.building?.name ?? 'Building',
+          to: buildingId
+            ? routes.adminBuilding(buildingId)
+            : routes.adminBuildings,
+        },
+        {
+          label: apartment?.unit_code ?? 'Apartment',
+          to: id ? routes.adminApartment(id) : routes.adminBuildings,
+        },
+        { label: 'Edit' },
+      ]}
       cancelTo={id ? routes.adminApartment(id) : routes.adminBuildings}
       heading="Edit Apartment"
       subheading="Update this apartment's listing details"

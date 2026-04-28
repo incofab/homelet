@@ -1,8 +1,9 @@
 import { Link, useParams } from 'react-router';
-import { ArrowLeft, Mail, MapPin, Phone, Home } from 'lucide-react';
+import { Mail, MapPin, Phone, Home } from 'lucide-react';
 import { useCallback } from 'react';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
+import { AppBreadcrumbs } from '../../components/AppBreadcrumbs';
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { env } from '../../lib/env';
@@ -48,12 +49,12 @@ export function BuildingDetailPublic() {
     <div className="min-h-screen bg-background">
       <header className="bg-card border-b border-border sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to={routes.root}>
-            <Button variant="ghost">
-              <ArrowLeft size={20} className="mr-2" />
-              Back to Listings
-            </Button>
-          </Link>
+          <AppBreadcrumbs
+            items={[
+              { label: 'Listings', to: routes.root },
+              { label: building?.name ?? 'Building' },
+            ]}
+          />
           <Link to={routes.login}>
             <Button variant="ghost">Login</Button>
           </Link>
@@ -156,7 +157,7 @@ export function BuildingDetailPublic() {
                   <Home size={20} className="text-primary" />
                   <div>
                     <p className="text-sm text-muted-foreground">
-                      Public apartments
+                      Available apartments
                     </p>
                     <p className="text-2xl">{apartments.length}</p>
                   </div>

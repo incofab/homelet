@@ -1,4 +1,4 @@
-# UI/UX Design Prompt — RentPilot (Tenanta)
+# UI/UX Design Prompt — Homelet
 
 You are an expert product UI/UX designer. Create a modern, aesthetically pleasing, and scalable UI design system and screen set for a multi-tenant property management platform called **RentPilot (working title)**. The product serves **landlords/building admins**, **managers**, **tenants**, and **public visitors**. It is a **mobile-first** experience that must scale beautifully to tablet and desktop. The frontend will likely be built with **Flutter**, but the design should be platform-agnostic.
 

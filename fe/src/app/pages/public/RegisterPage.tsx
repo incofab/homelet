@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
+import { AppBreadcrumbs } from '../../components/AppBreadcrumbs';
 import { Home } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
@@ -43,7 +44,9 @@ export function RegisterPage() {
       const data = await apiPost<AuthResponse>(api.authRegister, formState);
       clearImpersonationState();
       setAuthToken(data.token);
-      navigate(getRedirectTarget(location.search, routeForDashboard(data.dashboard)));
+      navigate(
+        getRedirectTarget(location.search, routeForDashboard(data.dashboard)),
+      );
     } catch (error) {
       setStatus({
         type: 'error',
@@ -57,6 +60,12 @@ export function RegisterPage() {
   return (
     <div className="min-h-screen bg-muted flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md">
+        <div className="mb-6 flex justify-center">
+          <AppBreadcrumbs
+            items={[{ label: 'Home', to: routes.root }, { label: 'Register' }]}
+          />
+        </div>
+
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Home size={32} className="text-primary" />
@@ -148,12 +157,6 @@ export function RegisterPage() {
               Sign in
             </Link>
           </div>
-        </div>
-
-        <div className="mt-6 text-center">
-          <Link to={routes.root}>
-            <Button variant="ghost">Back to Home</Button>
-          </Link>
         </div>
       </div>
     </div>

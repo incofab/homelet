@@ -34,7 +34,11 @@ class BuildingRegistrationRequest extends Model
         'address_line2',
         'city',
         'state',
+        'postal_code',
         'country',
+        'latitude',
+        'longitude',
+        'formatted_address',
         'description',
         'for_sale',
         'sale_price',
@@ -47,6 +51,8 @@ class BuildingRegistrationRequest extends Model
     protected $casts = [
         'for_sale' => 'boolean',
         'sale_price' => TrimDecimal::class,
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
         'approved_at' => 'datetime',
         'rejected_at' => 'datetime',
     ];

@@ -11,12 +11,8 @@ return new class extends Migration
         Schema::create('buildings', function (Blueprint $table) {
             $table->id();
             $table->foreignId('owner_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('address_id')->constrained('addresses')->restrictOnDelete();
             $table->string('name');
-            $table->string('address_line1');
-            $table->string('address_line2')->nullable();
-            $table->string('city');
-            $table->string('state');
-            $table->string('country');
             $table->text('description')->nullable();
 
             $table->boolean('for_sale')->default(false);

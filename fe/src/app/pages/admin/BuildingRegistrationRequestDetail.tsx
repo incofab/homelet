@@ -1,47 +1,87 @@
-import { useCallback, useState } from "react";
-import { Link, useParams } from "react-router";
-import { ArrowLeft, Mail, Phone, MapPin, Building2 } from "lucide-react";
-import { Button } from "../../components/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/Card";
-import { StatusBadge } from "../../components/StatusBadge";
-import { useApiQuery } from "../../hooks/useApiQuery";
-import { apiPost } from "../../lib/api";
-import { formatDate, formatMoney, formatStatusLabel } from "../../lib/format";
-import { api, routes } from "../../lib/urls";
-import { extractRecord } from "../../lib/paginatedData";
-import type { BuildingRegistrationRequest } from "../../lib/models";
-import type { BuildingRegistrationApproveResponse, BuildingRegistrationRequestResponse } from "../../lib/responses";
+import { useCallback, useState } from 'react';
+import { Link, useParams } from 'react-router';
+import { Mail, Phone, MapPin, Building2 } from 'lucide-react';
+import { Button } from '../../components/Button';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '../../components/Card';
+import { StatusBadge } from '../../components/StatusBadge';
+import { useApiQuery } from '../../hooks/useApiQuery';
+import { apiPost } from '../../lib/api';
+import { formatDate, formatMoney, formatStatusLabel } from '../../lib/format';
+import { api, routes } from '../../lib/urls';
+import { extractRecord } from '../../lib/paginatedData';
+import type { BuildingRegistrationRequest } from '../../lib/models';
+import { AppBreadcrumbs } from '../../components/AppBreadcrumbs';
+import type {
+  BuildingRegistrationApproveResponse,
+  BuildingRegistrationRequestResponse,
+  DashboardContext,
+} from '../../lib/responses';
+
+type MeResponse = {
+  dashboard_context?: DashboardContext;
+};
 
 export function BuildingRegistrationRequestDetail() {
   const { id } = useParams();
-  const [rejectionReason, setRejectionReason] = useState("");
+  const [rejectionReason, setRejectionReason] = useState('');
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [approving, setApproving] = useState(false);
   const [rejecting, setRejecting] = useState(false);
-  const [approvedBuildingId, setApprovedBuildingId] = useState<number | null>(null);
-
-  const selectRequest = useCallback(
-    (data: unknown) => extractRecord<BuildingRegistrationRequest>(data, "request"),
-    []
+  const [approvedBuildingId, setApprovedBuildingId] = useState<number | null>(
+    null,
   );
 
+  const selectRequest = useCallback(
+    (data: unknown) =>
+      extractRecord<BuildingRegistrationRequest>(data, 'request'),
+    [],
+  );
+  const selectProfile = useCallback(
+    (data: unknown) => extractRecord<MeResponse>(data),
+    [],
+  );
+
+  const meQuery = useApiQuery<unknown, MeResponse>(api.authMe, {
+    select: selectProfile,
+  });
+
+  const isPlatformAdmin =
+    meQuery.data?.dashboard_context?.is_platform_admin ?? false;
+  const requestPath =
+    !id || meQuery.loading
+      ? null
+      : isPlatformAdmin
+        ? api.adminBuildingRegistrationRequest(id)
+        : api.buildingRegistrationRequest(id);
+
   const requestQuery = useApiQuery<unknown, BuildingRegistrationRequest | null>(
-    id ? api.adminBuildingRegistrationRequest(id) : null,
+    requestPath,
     {
-      enabled: Boolean(id),
-      deps: [id],
+      enabled: Boolean(requestPath),
+      deps: [requestPath],
       select: selectRequest,
-    }
+    },
   );
 
   const request = requestQuery.data;
-  const status = request?.status?.toLowerCase?.() ?? "";
+  const status = request?.status?.toLowerCase?.() ?? '';
   const location = request
-    ? [request.address_line1, request.address_line2, request.city, request.state, request.country]
+    ? [
+        request.address_line1,
+        request.address_line2,
+        request.city,
+        request.state,
+        request.country,
+      ]
         .filter(Boolean)
-        .join(", ")
-    : "";
+        .join(', ')
+    : '';
 
   const handleApprove = async () => {
     if (!id || approving) return;
@@ -50,13 +90,13 @@ export function BuildingRegistrationRequestDetail() {
     setApproving(true);
     try {
       const data = await apiPost<BuildingRegistrationApproveResponse>(
-        api.adminBuildingRegistrationApprove(id)
+        api.adminBuildingRegistrationApprove(id),
       );
       if (data.building?.id) setApprovedBuildingId(data.building.id);
-      setActionMessage("Request approved. The building has been created.");
+      setActionMessage('Request approved. The building has been created.');
       await requestQuery.refetch();
     } catch (error) {
-      setActionError((error as Error).message || "Unable to approve request.");
+      setActionError((error as Error).message || 'Unable to approve request.');
     } finally {
       setApproving(false);
     }
@@ -65,7 +105,7 @@ export function BuildingRegistrationRequestDetail() {
   const handleReject = async () => {
     if (!id || rejecting) return;
     if (!rejectionReason.trim()) {
-      setActionError("Please provide a rejection reason.");
+      setActionError('Please provide a rejection reason.');
       return;
     }
     setActionMessage(null);
@@ -74,12 +114,12 @@ export function BuildingRegistrationRequestDetail() {
     try {
       await apiPost<BuildingRegistrationRequestResponse>(
         api.adminBuildingRegistrationReject(id),
-        { rejection_reason: rejectionReason }
+        { rejection_reason: rejectionReason },
       );
-      setActionMessage("Request rejected.");
+      setActionMessage('Request rejected.');
       await requestQuery.refetch();
     } catch (error) {
-      setActionError((error as Error).message || "Unable to reject request.");
+      setActionError((error as Error).message || 'Unable to reject request.');
     } finally {
       setRejecting(false);
     }
@@ -87,22 +127,27 @@ export function BuildingRegistrationRequestDetail() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link to={routes.adminBuildingRequests}>
-          <Button variant="ghost" size="sm">
-            <ArrowLeft size={20} className="mr-2" />
-            Back
-          </Button>
-        </Link>
-      </div>
+      <AppBreadcrumbs
+        items={[
+          { label: 'Building Requests', to: routes.adminBuildingRequests },
+          { label: request?.name ?? 'Request' },
+        ]}
+      />
 
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl mb-2">Building Registration Request</h1>
-          <p className="text-muted-foreground">Review submission details and take action.</p>
+          <p className="text-muted-foreground">
+            {isPlatformAdmin
+              ? 'Review submission details and take action.'
+              : 'Review your submitted building registration details.'}
+          </p>
         </div>
         {request ? (
-          <StatusBadge status={formatStatusLabel(request.status)} type="request" />
+          <StatusBadge
+            status={formatStatusLabel(request.status)}
+            type="request"
+          />
         ) : null}
       </div>
 
@@ -112,7 +157,9 @@ export function BuildingRegistrationRequestDetail() {
         </Card>
       ) : !request ? (
         <Card>
-          <p className="text-muted-foreground">Request not found.</p>
+          <p className="text-muted-foreground">
+            {requestQuery.error || 'Request not found.'}
+          </p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -126,24 +173,36 @@ export function BuildingRegistrationRequestDetail() {
                   <h2 className="text-2xl mb-1">{request.name}</h2>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <MapPin size={16} />
-                    <span>{location || "Location unavailable"}</span>
+                    <span>{location || 'Location unavailable'}</span>
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Description</p>
-                  <p>{request.description || "No description provided."}</p>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Description
+                  </p>
+                  <p>{request.description || 'No description provided.'}</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">For Sale</p>
-                    <p>{request.for_sale ? "Yes" : "No"}</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      For Sale
+                    </p>
+                    <p>{request.for_sale ? 'Yes' : 'No'}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Sale Price</p>
-                    <p>{request.for_sale ? formatMoney(request.sale_price ?? null) : "—"}</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Sale Price
+                    </p>
+                    <p>
+                      {request.for_sale
+                        ? formatMoney(request.sale_price ?? null)
+                        : '—'}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Country</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Country
+                    </p>
                     <p>{request.country}</p>
                   </div>
                 </div>
@@ -160,7 +219,7 @@ export function BuildingRegistrationRequestDetail() {
                     <Building2 size={20} className="text-primary" />
                   </div>
                   <div>
-                    <p>{request.owner_name || "Authenticated owner"}</p>
+                    <p>{request.owner_name || 'Authenticated owner'}</p>
                     <p className="text-sm text-muted-foreground">Owner</p>
                   </div>
                 </div>
@@ -190,7 +249,10 @@ export function BuildingRegistrationRequestDetail() {
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Current</span>
-                  <StatusBadge status={formatStatusLabel(request.status)} type="request" />
+                  <StatusBadge
+                    status={formatStatusLabel(request.status)}
+                    type="request"
+                  />
                 </div>
                 {request.approved_at ? (
                   <p className="text-sm text-muted-foreground">
@@ -204,29 +266,39 @@ export function BuildingRegistrationRequestDetail() {
                 ) : null}
                 {request.rejection_reason ? (
                   <div className="text-sm">
-                    <p className="text-muted-foreground mb-1">Rejection reason</p>
+                    <p className="text-muted-foreground mb-1">
+                      Rejection reason
+                    </p>
                     <p>{request.rejection_reason}</p>
                   </div>
                 ) : null}
               </CardContent>
             </Card>
 
-            {status === "pending" ? (
+            {status === 'pending' && isPlatformAdmin ? (
               <Card>
                 <CardHeader>
                   <CardTitle>Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Button className="w-full" onClick={handleApprove} disabled={approving}>
-                    {approving ? "Approving..." : "Approve Request"}
+                  <Button
+                    className="w-full"
+                    onClick={handleApprove}
+                    disabled={approving}
+                  >
+                    {approving ? 'Approving...' : 'Approve Request'}
                   </Button>
                   <div>
-                    <label className="block text-sm mb-2">Rejection Reason</label>
+                    <label className="block text-sm mb-2">
+                      Rejection Reason
+                    </label>
                     <textarea
                       className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                       rows={3}
                       value={rejectionReason}
-                      onChange={(event) => setRejectionReason(event.target.value)}
+                      onChange={(event) =>
+                        setRejectionReason(event.target.value)
+                      }
                       placeholder="Share why the request is rejected"
                     />
                   </div>
@@ -236,10 +308,14 @@ export function BuildingRegistrationRequestDetail() {
                     onClick={handleReject}
                     disabled={rejecting}
                   >
-                    {rejecting ? "Rejecting..." : "Reject Request"}
+                    {rejecting ? 'Rejecting...' : 'Reject Request'}
                   </Button>
-                  {actionError ? <p className="text-sm text-destructive">{actionError}</p> : null}
-                  {actionMessage ? <p className="text-sm text-success">{actionMessage}</p> : null}
+                  {actionError ? (
+                    <p className="text-sm text-destructive">{actionError}</p>
+                  ) : null}
+                  {actionMessage ? (
+                    <p className="text-sm text-success">{actionMessage}</p>
+                  ) : null}
                   {approvedBuildingId ? (
                     <Link to={routes.adminBuilding(approvedBuildingId)}>
                       <Button variant="secondary" className="w-full">
@@ -255,7 +331,11 @@ export function BuildingRegistrationRequestDetail() {
                   <CardTitle>Next Steps</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {status === "approved" ? (
+                  {!isPlatformAdmin && status === 'pending' ? (
+                    <p className="text-sm text-muted-foreground">
+                      This request is pending platform admin review.
+                    </p>
+                  ) : status === 'approved' ? (
                     <p className="text-sm text-muted-foreground">
                       This request has already been approved.
                     </p>

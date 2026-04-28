@@ -200,7 +200,7 @@ export function AdminLayout() {
       >
         <div className="flex items-center justify-between px-4 py-3">
           <div>
-            <h1 className={`text-xl ${sidebarTheme.brand}`}>Tenanta</h1>
+            <h1 className={`text-xl ${sidebarTheme.brand}`}>Homelet</h1>
             <p className={`text-xs ${sidebarTheme.muted}`}>{roleLabel}</p>
           </div>
           <button
@@ -266,7 +266,7 @@ export function AdminLayout() {
         className={`hidden lg:block fixed left-0 top-0 bottom-0 w-64 border-r ${sidebarTheme.shell}`}
       >
         <div className="p-6">
-          <h1 className={`text-2xl ${sidebarTheme.brand}`}>Tenanta</h1>
+          <h1 className={`text-2xl ${sidebarTheme.brand}`}>Homelet</h1>
           <p className={`mt-1 text-sm ${sidebarTheme.muted}`}>Dashboard</p>
           <p
             className={`mt-4 inline-flex rounded-full px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] ${sidebarTheme.badge}`}

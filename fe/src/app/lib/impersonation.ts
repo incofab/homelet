@@ -6,8 +6,8 @@ export interface ImpersonationState {
   impersonatedUserName: string;
 }
 
-const IMPERSONATION_STORAGE_KEY = "tenanta_impersonation";
-export const IMPERSONATION_CHANGED_EVENT = "tenanta:impersonation-changed";
+const IMPERSONATION_STORAGE_KEY = "homelet_impersonation";
+export const IMPERSONATION_CHANGED_EVENT = "homelet:impersonation-changed";
 
 const dispatchImpersonationChanged = () => {
   if (typeof window === "undefined") return;

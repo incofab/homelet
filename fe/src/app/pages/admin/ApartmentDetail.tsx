@@ -1,8 +1,9 @@
 import { useParams, Link } from 'react-router';
-import { ArrowLeft, Copy, Edit, Bed, Bath, Maximize } from 'lucide-react';
+import { Copy, Edit, Bed, Bath, Maximize } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { StatusBadge } from '../../components/StatusBadge';
+import { AppBreadcrumbs } from '../../components/AppBreadcrumbs';
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { env } from '../../lib/env';
@@ -14,10 +15,10 @@ import type { ApartmentDetail, Media } from '../../lib/models';
 import { AssignTenantForm } from './AssignTenantForm';
 import { AdminMediaManager } from '../../components/AdminMediaManager';
 import { RecordPaymentDialog } from './RecordPaymentDialog';
+import { appToast } from '../../lib/toast';
 
 export function ApartmentDetail() {
   const { id } = useParams();
-  const [copyStatus, setCopyStatus] = useState('');
   const selectApartment = useCallback(
     (data: unknown) => extractRecord<ApartmentDetail>(data, 'apartment'),
     [],
@@ -82,22 +83,32 @@ export function ApartmentDetail() {
 
     try {
       await window.navigator.clipboard.writeText(rentRequestUrl);
-      setCopyStatus('Link copied.');
+      appToast.success('Link copied to clipboard.');
     } catch (error) {
-      setCopyStatus('Copy failed. Select and copy the link manually.');
+      appToast.error('Copy failed. Select and copy the link manually.');
     }
   }, [rentRequestUrl]);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link to={routes.adminBuilding(buildingId)}>
-          <Button variant="ghost" size="sm">
-            <ArrowLeft size={20} className="mr-2" />
-            Back
-          </Button>
-        </Link>
-      </div>
+      <AppBreadcrumbs
+        items={[
+          { label: 'Buildings', to: routes.adminBuildings },
+          {
+            label: apartment?.building?.name ?? 'Building',
+            to: buildingId
+              ? routes.adminBuilding(buildingId)
+              : routes.adminBuildings,
+          },
+          {
+            label: 'Apartments',
+            to: buildingId
+              ? routes.adminBuildingApartments(buildingId)
+              : routes.adminBuildings,
+          },
+          { label: apartment?.unit_code ?? 'Apartment' },
+        ]}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -290,9 +301,6 @@ export function ApartmentDetail() {
                     </Button>
                   </a>
                 </div>
-                {copyStatus ? (
-                  <p className="text-xs text-muted-foreground">{copyStatus}</p>
-                ) : null}
                 {!isVacant ? (
                   <p className="text-xs text-muted-foreground">
                     Request sharing is available when the apartment is vacant.

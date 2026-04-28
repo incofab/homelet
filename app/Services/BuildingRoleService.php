@@ -42,16 +42,24 @@ class BuildingRoleService
             ->where('users.id', $user->id)
             ->value('building_users.role');
 
+        if ($building->owner_id === $user->id) {
+            $assignedRole = Building::ROLE_LANDLORD;
+        }
+
         if (! $assignedRole) {
             abort(404);
         }
 
-        if (! $this->buildingPolicy->removeRole($actor, $building, $assignedRole)) {
+        if ($assignedRole === Building::ROLE_LANDLORD && $actor->id !== $building->owner_id) {
             abort(403);
         }
 
         if ($building->owner_id === $user->id && $assignedRole === Building::ROLE_LANDLORD) {
             throw new HttpResponseException($this->primaryLandlordError());
+        }
+
+        if (! $this->buildingPolicy->removeRole($actor, $building, $assignedRole)) {
+            abort(403);
         }
 
         $building->users()->detach($user->id);

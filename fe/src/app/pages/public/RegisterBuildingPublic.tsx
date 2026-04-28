@@ -1,14 +1,19 @@
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Home, ArrowLeft } from 'lucide-react';
+import { Home } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Input } from '../../components/Input';
+import { BuildingRegistrationSuccess } from '../../components/BuildingRegistrationSuccess';
+import { AppBreadcrumbs } from '../../components/AppBreadcrumbs';
 import { apiPost, getAuthToken } from '../../lib/api';
 import { env } from '../../lib/env';
 import { api, routeForDashboard, routes, withRedirect } from '../../lib/urls';
-import type { BuildingRegistrationRequestResponse } from '../../lib/responses';
+import type {
+  BuildingRegistrationRequestResponse,
+  PlatformAdminContacts,
+} from '../../lib/responses';
 
 export function RegisterBuildingPublic() {
   const location = useLocation();
@@ -39,6 +44,8 @@ export function RegisterBuildingPublic() {
   const [submittedRequestId, setSubmittedRequestId] = useState<number | null>(
     null,
   );
+  const [adminContacts, setAdminContacts] =
+    useState<PlatformAdminContacts | null>(null);
 
   useEffect(() => {
     if (!authToken) {
@@ -71,6 +78,7 @@ export function RegisterBuildingPublic() {
         payload,
       );
       setSubmittedRequestId(data.request.id);
+      setAdminContacts(data.admin_contacts ?? null);
       setStatus({
         type: 'success',
         message:
@@ -95,12 +103,12 @@ export function RegisterBuildingPublic() {
     <div className="min-h-screen bg-muted flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-3xl">
         <div className="flex items-center justify-between mb-6">
-          <Link to={routes.root}>
-            <Button variant="ghost" size="sm">
-              <ArrowLeft size={18} className="mr-2" />
-              Back to Home
-            </Button>
-          </Link>
+          <AppBreadcrumbs
+            items={[
+              { label: 'Home', to: routes.root },
+              { label: 'Register Building' },
+            ]}
+          />
           <div className="flex items-center gap-2">
             <Home size={24} className="text-primary" />
             <span className="text-xl text-primary">{env.appName}</span>
@@ -117,19 +125,15 @@ export function RegisterBuildingPublic() {
           </div>
 
           {status.type === 'success' ? (
-            <div className="space-y-4">
-              <div className="rounded-lg border border-success/20 bg-success/10 p-4">
-                <p className="text-success">{status.message}</p>
-                {submittedRequestId ? (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Reference ID: {submittedRequestId}
-                  </p>
-                ) : null}
-              </div>
-              <Link to={routeForDashboard()}>
-                <Button>Back to Home</Button>
-              </Link>
-            </div>
+            <BuildingRegistrationSuccess
+              requestId={submittedRequestId}
+              adminContacts={adminContacts}
+              actions={
+                <Link to={routeForDashboard()}>
+                  <Button>Go to Dashboard</Button>
+                </Link>
+              }
+            />
           ) : (
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-4">

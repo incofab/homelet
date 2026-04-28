@@ -29,15 +29,35 @@ User: {
 Building: {
   id: number, eg 1
   owner_id: number, eg 1
+  address_id: number, eg 10
   name: string, eg "Sunrise Apartments"
+  address: Address
   address_line1: string, eg "12 Main St"
   address_line2: string|null, eg "Suite 4"
   city: string, eg "Lagos"
   state: string, eg "Lagos"
+  postal_code: string|null, eg "100001"
   country: string, eg "NG"
   description: string|null, eg "Modern apartments"
   for_sale: boolean, eg false
   sale_price: number|null, eg 120000000
+  managers: array<{ id: number, name: string, email: string|null, role: string }>, eg [{ "id": 2, "name": "Manager Name", "email": "manager@example.com", "role": "manager" }]
+}
+```
+
+### Address
+```
+Address: {
+  id: number, eg 10
+  address_line1: string, eg "12 Main St"
+  address_line2: string|null, eg "Suite 4"
+  city: string, eg "Lagos"
+  state: string, eg "Lagos"
+  postal_code: string|null, eg "100001"
+  country: string, eg "NG"
+  latitude: string|null, eg "6.5244000"
+  longitude: string|null, eg "3.3792000"
+  formatted_address: string|null, eg "12 Main St, Lagos, NG"
 }
 ```
 
@@ -45,9 +65,13 @@ Building: {
 ```
 BuildingSummary: {
   id: number, eg 1
+  address_id: number, eg 10
   name: string, eg "Sunrise Apartments"
+  address: Address
+  address_line1: string, eg "12 Main St"
   city: string, eg "Lagos"
   state: string, eg "Lagos"
+  postal_code: string|null, eg "100001"
   country: string, eg "NG"
   for_sale: boolean, eg false
   sale_price: number|null, eg 120000000
@@ -74,10 +98,24 @@ BuildingRegistrationRequest: {
   address_line2: string|null, eg "Suite 4"
   city: string, eg "Lagos"
   state: string, eg "Lagos"
+  postal_code: string|null, eg "100001"
   country: string, eg "NG"
+  latitude: number|null, eg 6.5244
+  longitude: number|null, eg 3.3792
+  formatted_address: string|null, eg "12 Main St, Lagos, NG"
   description: string|null, eg "Modern apartments"
   for_sale: boolean, eg false
   sale_price: number|null, eg 120000000
+}
+```
+
+### PlatformAdminContacts
+```
+PlatformAdminContacts: {
+  email: string|null, eg "admin@homelet.test"
+  phone: string|null, eg "+234 800 000 0000"
+  whatsapp: string|null, eg "+234 800 000 0000"
+  support_hours: string|null, eg "Monday to Friday, 9:00 AM - 5:00 PM WAT"
 }
 ```
 
@@ -318,7 +356,11 @@ BuildingCreateRequest: {
   address_line2: string|null, eg "Suite 4"
   city: string, eg "Lagos"
   state: string, eg "Lagos"
+  postal_code: string|null, eg "100001"
   country: string, eg "NG"
+  latitude: number|null, eg 6.5244
+  longitude: number|null, eg 3.3792
+  formatted_address: string|null, eg "12 Main St, Lagos, NG"
   description: string|null, eg "Modern apartments"
   for_sale: boolean, eg false
   sale_price: number|null, eg 120000000
@@ -349,6 +391,15 @@ BuildingRegistrationRequestCreateRequest: {
 ```
 BuildingUpdateRequest: {
   name: string, eg "Sunrise Apartments"
+  address_line1: string, eg "12 Main St"
+  address_line2: string|null, eg "Suite 4"
+  city: string, eg "Lagos"
+  state: string, eg "Lagos"
+  postal_code: string|null, eg "100001"
+  country: string, eg "NG"
+  latitude: number|null, eg 6.5244
+  longitude: number|null, eg 3.3792
+  formatted_address: string|null, eg "12 Main St, Lagos, NG"
   description: string, eg "Renovated units"
   for_sale: boolean, eg true
   sale_price: number|null, eg 120000000
@@ -360,6 +411,7 @@ BuildingUpdateRequest: {
 BuildingManagerCreateRequest: {
   email: string, eg "manager@example.com"
   name: string, eg "Manager Name"
+  role: string, eg "manager" (`landlord`, `manager`, or `caretaker`)
 }
 ```
 

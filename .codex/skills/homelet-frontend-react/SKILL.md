@@ -1,9 +1,9 @@
 ---
-name: tenanta-frontend-react
-description: Use when implementing or fixing the React frontend in this Tenanta repository, including admin, tenant, public, and shared UI pages; API integration; route wiring; local state; hooks; component extraction; and Vitest/Testing Library coverage. This skill should also be used when frontend changes must stay aligned with backend API contracts, docs, and the project's existing UI patterns.
+name: homelet-frontend-react
+description: Use when implementing or fixing the React frontend in this Homelet repository, including admin, tenant, public, and shared UI pages; API integration; route wiring; local state; hooks; component extraction; and Vitest/Testing Library coverage. This skill should also be used when frontend changes must stay aligned with backend API contracts, docs, and the project's existing UI patterns.
 ---
 
-# Tenanta Frontend React
+# Homelet Frontend React
 
 Use this skill for frontend-only work and for the frontend half of fullstack work.
 

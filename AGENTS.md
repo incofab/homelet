@@ -58,7 +58,7 @@ we are building a property management system for tenants and landlords
 - `fe/src/app/pages` contains route-level screens; `fe/src/app/routes.ts` defines route mappings.
 - `fe/src/app/components` holds reusable UI components; `fe/src/app/layouts` holds layout wrappers.
 - `fe/src/styles` contains global CSS (`index.css`, `tailwind.css`, `theme.css`, `fonts.css`).
-- `fe/src/imports` stores design reference material (e.g., `tenanta-design-spec.md`).
+- `fe/src/imports` stores design reference material (e.g., `homelet-design-spec.md`).
 
 ## Build, Test, and Development Commands
 
@@ -106,12 +106,12 @@ we are building a property management system for tenants and landlords
 
 Project-local Codex skills live under `.codex/skills`. Use them whenever the task matches their purpose.
 
-- `.codex/skills/tenanta-backend-api`: Use for Laravel backend/API work in this repo, including routes, controllers, requests, policies, models, services, migrations, jobs, mails, and PHPUnit feature tests.
-- `.codex/skills/tenanta-frontend-react`: Use for React/Vite frontend work in this repo, including admin, tenant, and public pages, API integration, shared hooks, models, route wiring, and Vitest coverage.
-- `.codex/skills/tenanta-fullstack-feature`: Use for end-to-end feature delivery that spans backend, frontend, docs, and tests.
-- `.codex/skills/tenanta-docs-sync`: Use whenever implementation changes require updates to `docs/api.md`, `docs/tasks.md`, `docs/prd.md`, or repo workflow guidance.
-- `.codex/skills/tenanta-controller-refactor`: Use when controllers contain business logic that should move into `app/Services` or `app/Support`.
+- `.codex/skills/homelet-backend-api`: Use for Laravel backend/API work in this repo, including routes, controllers, requests, policies, models, services, migrations, jobs, mails, and PHPUnit feature tests.
+- `.codex/skills/homelet-frontend-react`: Use for React/Vite frontend work in this repo, including admin, tenant, and public pages, API integration, shared hooks, models, route wiring, and Vitest coverage.
+- `.codex/skills/homelet-fullstack-feature`: Use for end-to-end feature delivery that spans backend, frontend, docs, and tests.
+- `.codex/skills/homelet-docs-sync`: Use whenever implementation changes require updates to `docs/api.md`, `docs/tasks.md`, `docs/prd.md`, or repo workflow guidance.
+- `.codex/skills/homelet-controller-refactor`: Use when controllers contain business logic that should move into `app/Services` or `app/Support`.
 
-When a task spans multiple layers, prefer `tenanta-fullstack-feature` first, then load the backend/frontend/doc-specific skills as needed.
+When a task spans multiple layers, prefer `homelet-fullstack-feature` first, then load the backend/frontend/doc-specific skills as needed.
 
 # Task

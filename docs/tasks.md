@@ -78,7 +78,10 @@
 Create migrations/models:
 
 - `buildings`
-  - `id`, `owner_id`, `name`, `address_line1`, `address_line2`, `city`, `state`, `country`, `description`
+  - `id`, `owner_id`, `address_id`, `name`, `description`
+
+- `addresses`
+  - `id`, `address_line1`, `address_line2`, `city`, `state`, `postal_code`, `country`, `latitude`, `longitude`, `formatted_address`, `address_hash`
 
 - Pivot: `building_users`
   - `building_id`, `user_id`, `role_in_building` (`admin|manager`)

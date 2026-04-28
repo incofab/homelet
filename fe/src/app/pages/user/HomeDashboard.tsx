@@ -33,7 +33,7 @@ const accountActions = [
 const ctaActions = [
   {
     title: "Register a Building",
-    description: "Start managing a new property on Tenanta.",
+    description: "Start managing a new property on Homelet.",
     href: routes.registerBuilding,
     icon: Building2,
   },

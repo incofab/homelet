@@ -17,7 +17,10 @@ export function CreateBuilding() {
 
   return (
     <BuildingForm
-      backTo={routes.adminBuildings}
+      breadcrumbs={[
+        { label: 'Buildings', to: routes.adminBuildings },
+        { label: 'Add Building' },
+      ]}
       cancelTo={routes.adminBuildings}
       heading="Add New Building"
       subheading="Create a new property in your portfolio"
@@ -39,7 +42,10 @@ export function CreateBuilding() {
         setStatus({ type: 'idle' });
 
         try {
-          const data = await apiPost<CreateBuildingResponse>(api.buildings, payload);
+          const data = await apiPost<CreateBuildingResponse>(
+            api.buildings,
+            payload,
+          );
           navigate(routes.adminBuilding(data.building.id));
         } catch (error) {
           setStatus({

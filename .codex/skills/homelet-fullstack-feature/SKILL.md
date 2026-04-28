@@ -1,9 +1,9 @@
 ---
-name: tenanta-fullstack-feature
-description: Use when implementing or modifying a Tenanta feature end-to-end across backend, frontend, docs, and tests. This skill covers feature delivery that spans Laravel APIs, React pages, route and model syncing, API documentation updates, task list updates, and verification across PHPUnit and Vitest.
+name: homelet-fullstack-feature
+description: Use when implementing or modifying a Homelet feature end-to-end across backend, frontend, docs, and tests. This skill covers feature delivery that spans Laravel APIs, React pages, route and model syncing, API documentation updates, task list updates, and verification across PHPUnit and Vitest.
 ---
 
-# Tenanta Fullstack Feature
+# Homelet Fullstack Feature
 
 Use this skill when a request spans backend and frontend, or when the user says to implement a feature fully.
 

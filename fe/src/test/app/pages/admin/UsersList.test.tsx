@@ -86,7 +86,7 @@ describe("UsersList", () => {
   });
 
   it("allows an admin to impersonate a non admin user", async () => {
-    window.localStorage.setItem("tenanta_token", "admin-token");
+    window.localStorage.setItem("homelet_token", "admin-token");
 
     mockFetch([
       {
@@ -130,8 +130,8 @@ describe("UsersList", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: "Impersonate" }));
 
-    expect(window.localStorage.getItem("tenanta_token")).toBe("impersonated-token");
-    expect(window.localStorage.getItem("tenanta_impersonation")).toContain("Tenant User");
+    expect(window.localStorage.getItem("homelet_token")).toBe("impersonated-token");
+    expect(window.localStorage.getItem("homelet_impersonation")).toContain("Tenant User");
     expect(mockNavigate).toHaveBeenCalledWith(routes.tenantRoot);
   });
 });

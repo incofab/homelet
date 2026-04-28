@@ -9,7 +9,7 @@ export const env = {
     'http://localhost',
   ),
   apiPrefix: getEnvValue(import.meta.env.VITE_API_PREFIX, '/api'),
-  appName: getEnvValue(import.meta.env.VITE_APP_NAME, 'Tenanta'),
+  appName: getEnvValue(import.meta.env.VITE_APP_NAME, 'Homelet'),
   appTagline: getEnvValue(
     import.meta.env.VITE_APP_TAGLINE,
     'Find your perfect home',
@@ -33,7 +33,7 @@ export const env = {
   ),
   authTokenKey: getEnvValue(
     import.meta.env.VITE_AUTH_TOKEN_KEY,
-    'tenanta_token',
+    'homelet_token',
   ),
 };
 

@@ -3,10 +3,10 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Builder;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -104,12 +104,13 @@ class User extends Authenticatable
         $buildingRole = $this->buildings()
             ->select('building_users.role')
             ->whereIn('building_users.role', [
+                Building::ROLE_LANDLORD,
                 Building::ROLE_MANAGER,
                 Building::ROLE_CARETAKER,
             ])
             ->orderByRaw(
-                "case building_users.role when ? then 0 when ? then 1 else 2 end",
-                [Building::ROLE_MANAGER, Building::ROLE_CARETAKER]
+                'case building_users.role when ? then 0 when ? then 1 when ? then 2 else 3 end',
+                [Building::ROLE_LANDLORD, Building::ROLE_MANAGER, Building::ROLE_CARETAKER]
             )
             ->value('building_users.role');
 

@@ -29,7 +29,11 @@ return new class extends Migration
             $table->string('address_line2')->nullable();
             $table->string('city');
             $table->string('state');
+            $table->string('postal_code')->nullable();
             $table->string('country');
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
+            $table->string('formatted_address')->nullable();
             $table->text('description')->nullable();
             $table->boolean('for_sale')->default(false);
             $table->unsignedBigInteger('sale_price')->nullable();

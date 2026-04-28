@@ -13,7 +13,8 @@ class PublicRentalRequestController extends Controller
     public function showApartment(Apartment $apartment): JsonResponse
     {
         $apartment->load([
-            'building:id,name,address_line1,address_line2,city,state,country,contact_email,contact_phone',
+            'building:id,name,address_id,contact_email,contact_phone',
+            'building.address',
             'media',
             'reviews.user:id,name',
         ]);

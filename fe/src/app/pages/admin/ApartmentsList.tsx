@@ -1,9 +1,10 @@
 import { useParams, Link } from 'react-router';
-import { ArrowLeft, Copy, Plus, Search } from 'lucide-react';
+import { Copy, Plus, Search } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { StatusBadge } from '../../components/StatusBadge';
 import { EmptyState } from '../../components/EmptyState';
+import { AppBreadcrumbs } from '../../components/AppBreadcrumbs';
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { formatMoney, formatStatusLabel } from '../../lib/format';
 import { api, routes } from '../../lib/urls';
@@ -42,14 +43,16 @@ export function ApartmentsList() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link to={routes.adminBuilding(buildingId ?? '')}>
-          <Button variant="ghost" size="sm">
-            <ArrowLeft size={20} className="mr-2" />
-            Back to Building
-          </Button>
-        </Link>
-      </div>
+      <AppBreadcrumbs
+        items={[
+          { label: 'Buildings', to: routes.adminBuildings },
+          {
+            label: buildingQuery.data?.name ?? 'Building',
+            to: routes.adminBuilding(buildingId ?? ''),
+          },
+          { label: 'Apartments' },
+        ]}
+      />
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>

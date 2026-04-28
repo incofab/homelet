@@ -4,6 +4,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApartmentDetail } from '../../../../app/pages/admin/ApartmentDetail';
 import { apiSuccess, mockFetch, renderWithRoute } from '../../../testUtils';
 import { api, routePaths, routes } from '../../../../app/lib/urls';
+import { appToast } from '../../../../app/lib/toast';
+
+vi.mock('../../../../app/lib/toast', () => ({
+  appToast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+  },
+}));
 
 const apartmentPayload = {
   id: 1,
@@ -85,8 +94,10 @@ describe('ApartmentDetail', () => {
       path: `${routes.adminRoot}/${routePaths.adminApartment}`,
     });
 
-    expect(await screen.findByText('A1')).toBeInTheDocument();
-    expect(screen.getByText('Harbor Point')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'A1' }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText('Harbor Point').length).toBeGreaterThan(0);
     expect(screen.getByText('No amenities listed.')).toBeInTheDocument();
     expect(screen.getByText('Next best action')).toBeInTheDocument();
     expect(screen.getByText('Share rental request link')).toBeInTheDocument();
@@ -120,7 +131,7 @@ describe('ApartmentDetail', () => {
     expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith(
       expect.stringContaining(routes.rentRequest(1)),
     );
-    expect(screen.getByText('Link copied.')).toBeInTheDocument();
+    expect(appToast.success).toHaveBeenCalledWith('Link copied to clipboard.');
 
     await userEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(window.confirm).toHaveBeenCalledWith(
@@ -263,7 +274,9 @@ describe('ApartmentDetail', () => {
       path: `${routes.adminRoot}/${routePaths.adminApartment}`,
     });
 
-    expect(await screen.findByText('A1')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'A1' }),
+    ).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Delete' }));
 

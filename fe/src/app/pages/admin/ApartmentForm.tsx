@@ -1,10 +1,13 @@
 import { Link } from 'react-router';
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { ArrowLeft } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Input } from '../../components/Input';
+import {
+  AppBreadcrumbs,
+  type AppBreadcrumbItem,
+} from '../../components/AppBreadcrumbs';
 
 type ApartmentType =
   | 'one_room'
@@ -39,7 +42,7 @@ type ApartmentFormValues = {
 };
 
 type ApartmentFormProps = {
-  backTo: string;
+  breadcrumbs: AppBreadcrumbItem[];
   cancelTo: string;
   heading: string;
   subheading: string;
@@ -63,7 +66,7 @@ const DEFAULT_VALUES: ApartmentFormValues = {
 };
 
 export function ApartmentForm({
-  backTo,
+  breadcrumbs,
   cancelTo,
   heading,
   subheading,
@@ -107,14 +110,7 @@ export function ApartmentForm({
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div className="flex items-center gap-4">
-        <Link to={backTo}>
-          <Button variant="ghost" size="sm">
-            <ArrowLeft size={20} className="mr-2" />
-            Back
-          </Button>
-        </Link>
-      </div>
+      <AppBreadcrumbs items={breadcrumbs} />
 
       <div>
         <h1 className="text-3xl mb-2">{heading}</h1>

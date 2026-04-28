@@ -1,6 +1,6 @@
 # 📄 PRODUCT REQUIREMENTS DOCUMENT (PRD)
 
-## Product Name: Tenanta (Working Title)
+## Product Name: Homelet
 
 Backend: Laravel (API-Only)
 Architecture: RESTful API + Role-Based Access Control
@@ -100,10 +100,8 @@ Users Table:
 ## 6.1 A Building Can Have:
 
 - name
-- address
-- city
-- state
-- country
+- address_id (FK → addresses.id)
+- normalized address details via addresses table
 - description
 - total_apartments (auto calculated)
 - owner_id (FK → users.id)

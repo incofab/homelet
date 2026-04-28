@@ -1,9 +1,9 @@
 ---
-name: tenanta-backend-api
-description: Use when implementing or changing Laravel backend features in this Tenanta repository, including routes, controllers, form requests, policies, models, services, migrations, seeders, jobs, mails, and PHPUnit feature tests. This skill should also be used for API bug fixes, authorization changes, data model changes, and any backend task that must keep docs/api.md and tests aligned with the implementation.
+name: homelet-backend-api
+description: Use when implementing or changing Laravel backend features in this Homelet repository, including routes, controllers, form requests, policies, models, services, migrations, seeders, jobs, mails, and PHPUnit feature tests. This skill should also be used for API bug fixes, authorization changes, data model changes, and any backend task that must keep docs/api.md and tests aligned with the implementation.
 ---
 
-# Tenanta Backend API
+# Homelet Backend API
 
 Use this skill for backend-only work and for the backend half of fullstack work.
 

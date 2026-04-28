@@ -1,9 +1,9 @@
-import { Link, useParams } from 'react-router';
-import { ArrowLeft } from 'lucide-react';
+import { useParams } from 'react-router';
 import { Button } from './Button';
 import { Card, CardContent, CardHeader, CardTitle } from './Card';
 import { StatusBadge } from './StatusBadge';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { AppBreadcrumbs } from './AppBreadcrumbs';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { apiPut } from '../lib/api';
 import { api } from '../lib/urls';
@@ -14,8 +14,8 @@ import type { MaintenanceRequestResponse } from '../lib/responses';
 import { useCallback, useState } from 'react';
 
 interface MaintenanceRequestDetailViewProps {
-  backTo: string;
-  backLabel: string;
+  parentTo: string;
+  parentLabel: string;
   canUpdateStatus?: boolean;
 }
 
@@ -31,8 +31,8 @@ const confirmStatusUpdate = (status: string) =>
   );
 
 export function MaintenanceRequestDetailView({
-  backTo,
-  backLabel,
+  parentTo,
+  parentLabel,
   canUpdateStatus = false,
 }: MaintenanceRequestDetailViewProps) {
   const { id } = useParams();
@@ -79,14 +79,12 @@ export function MaintenanceRequestDetailView({
 
   return (
     <div className="max-w-5xl space-y-6">
-      <div>
-        <Link to={backTo}>
-          <Button variant="ghost" size="sm">
-            <ArrowLeft size={20} className="mr-2" />
-            {backLabel}
-          </Button>
-        </Link>
-      </div>
+      <AppBreadcrumbs
+        items={[
+          { label: parentLabel, to: parentTo },
+          { label: request?.title ?? 'Maintenance Request' },
+        ]}
+      />
 
       {requestQuery.loading ? (
         <Card>

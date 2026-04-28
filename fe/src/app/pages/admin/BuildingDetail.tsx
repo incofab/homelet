@@ -1,11 +1,11 @@
 import { useParams, Link } from 'react-router';
 import {
-  ArrowLeft,
   MapPin,
   Users,
   Plus,
   Edit,
   DollarSign,
+  Trash2,
   Home as HomeIcon,
 } from 'lucide-react';
 import { Button } from '../../components/Button';
@@ -18,18 +18,38 @@ import {
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import { StatusBadge } from '../../components/StatusBadge';
 import { EmptyState } from '../../components/EmptyState';
+import { Input } from '../../components/Input';
 import { useApiQuery } from '../../hooks/useApiQuery';
+import { apiDelete, apiPost } from '../../lib/api';
 import { env } from '../../lib/env';
 import { formatMoney, formatStatusLabel } from '../../lib/format';
 import { api, routes } from '../../lib/urls';
 import { PaginatedData, extractRecord } from '../../lib/paginatedData';
 import { useCallback, useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
 import type { ApartmentSummary, Building, Media } from '../../lib/models';
 import { AssignTenantForm } from './AssignTenantForm';
 import { AdminMediaManager } from '../../components/AdminMediaManager';
+import { appToast } from '../../lib/toast';
+import { AppBreadcrumbs } from '../../components/AppBreadcrumbs';
+
+const BUILDING_ROLE_OPTIONS = [
+  { value: 'manager', label: 'Manager' },
+  { value: 'caretaker', label: 'Caretaker' },
+  { value: 'landlord', label: 'Landlord' },
+] as const;
 
 export function BuildingDetail() {
   const { id } = useParams();
+  const [showManagerForm, setShowManagerForm] = useState(false);
+  const [managerForm, setManagerForm] = useState({
+    name: '',
+    email: '',
+    role: 'manager',
+  });
+  const [managerSubmitting, setManagerSubmitting] = useState(false);
+  const [managerError, setManagerError] = useState<string | null>(null);
+  const [removingUserId, setRemovingUserId] = useState<number | null>(null);
   const selectBuilding = useCallback(
     (data: unknown) => extractRecord<Building>(data, 'building'),
     [],
@@ -40,6 +60,13 @@ export function BuildingDetail() {
   );
   const selectMedia = useCallback(
     (data: unknown) => PaginatedData.from<Media>(data, 'media'),
+    [],
+  );
+  const selectProfile = useCallback(
+    (data: unknown) =>
+      extractRecord<{ user?: { id?: number }; dashboard_context?: unknown }>(
+        data,
+      ),
     [],
   );
   const buildingQuery = useApiQuery<unknown, Building>(
@@ -66,8 +93,15 @@ export function BuildingDetail() {
       select: selectMedia,
     },
   );
+  const meQuery = useApiQuery<
+    unknown,
+    { user?: { id?: number }; dashboard_context?: unknown }
+  >(api.authMe, {
+    select: selectProfile,
+  });
 
   const building = buildingQuery.data;
+  const currentUserId = meQuery.data?.user?.id ?? null;
   const apartments = apartmentsQuery.data?.items ?? [];
   const media = mediaQuery.data?.items ?? building?.media ?? [];
   const vacantApartments = useMemo(
@@ -96,17 +130,77 @@ export function BuildingDetail() {
     .join(', ');
   const image = media[0]?.url ?? env.buildingPlaceholderImage;
 
+  const handleManagerSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!id || managerSubmitting) return;
+
+    setManagerSubmitting(true);
+    setManagerError(null);
+
+    try {
+      await apiPost(api.buildingManagers(id), {
+        name: managerForm.name || null,
+        email: managerForm.email,
+        role: managerForm.role,
+      });
+      setManagerForm({ name: '', email: '', role: 'manager' });
+      setShowManagerForm(false);
+      appToast.success('Building role added successfully.');
+      await buildingQuery.refetch();
+    } catch (error) {
+      const message = (error as Error).message || 'Unable to add manager.';
+      setManagerError(message);
+      appToast.error(message);
+    } finally {
+      setManagerSubmitting(false);
+    }
+  };
+
+  const canRemoveBuildingRole = (manager: {
+    id: number;
+    role?: string;
+  }): boolean => {
+    const role = manager.role?.toLowerCase?.() ?? 'manager';
+
+    if (role === 'landlord') {
+      return (
+        currentUserId === building?.owner_id &&
+        manager.id !== building?.owner_id
+      );
+    }
+
+    return true;
+  };
+
+  const handleRemoveBuildingRole = async (manager: {
+    id: number;
+    name: string;
+    role?: string;
+  }) => {
+    if (!id || removingUserId) return;
+    if (!window.confirm(`Remove ${manager.name} from this building?`)) return;
+
+    setRemovingUserId(manager.id);
+
+    try {
+      await apiDelete(api.buildingManager(id, manager.id));
+      appToast.success('Building role removed successfully.');
+      await buildingQuery.refetch();
+    } catch (error) {
+      appToast.error((error as Error).message || 'Unable to remove role.');
+    } finally {
+      setRemovingUserId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link to={routes.adminBuildings}>
-          <Button variant="ghost" size="sm">
-            <ArrowLeft size={20} className="mr-2" />
-            Back
-          </Button>
-        </Link>
-      </div>
+      <AppBreadcrumbs
+        items={[
+          { label: 'Buildings', to: routes.adminBuildings },
+          { label: building?.name ?? 'Building' },
+        ]}
+      />
 
       {/* Building Info */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -254,12 +348,97 @@ export function BuildingDetail() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Managers</CardTitle>
-                <Button variant="ghost" size="sm">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Add manager"
+                  onClick={() => {
+                    setManagerError(null);
+                    setShowManagerForm((current) => !current);
+                  }}
+                >
                   <Plus size={18} />
                 </Button>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              {showManagerForm ? (
+                <form className="space-y-3" onSubmit={handleManagerSubmit}>
+                  <Input
+                    label="Manager Name"
+                    placeholder="Jane Manager"
+                    value={managerForm.name}
+                    onChange={(event) =>
+                      setManagerForm((current) => ({
+                        ...current,
+                        name: event.target.value,
+                      }))
+                    }
+                  />
+                  <Input
+                    label="Manager Email"
+                    type="email"
+                    placeholder="manager@example.com"
+                    required
+                    value={managerForm.email}
+                    onChange={(event) =>
+                      setManagerForm((current) => ({
+                        ...current,
+                        email: event.target.value,
+                      }))
+                    }
+                  />
+                  <div>
+                    <label
+                      htmlFor="building-role"
+                      className="block text-sm mb-2 text-foreground"
+                    >
+                      Role
+                    </label>
+                    <select
+                      id="building-role"
+                      className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                      value={managerForm.role}
+                      onChange={(event) =>
+                        setManagerForm((current) => ({
+                          ...current,
+                          role: event.target.value,
+                        }))
+                      }
+                    >
+                      {BUILDING_ROLE_OPTIONS.map((role) => (
+                        <option key={role.value} value={role.value}>
+                          {role.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {managerError ? (
+                    <p className="text-sm text-destructive">{managerError}</p>
+                  ) : null}
+                  <div className="flex gap-2">
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={managerSubmitting}
+                    >
+                      {managerSubmitting ? 'Adding...' : 'Add Manager'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setManagerError(null);
+                        setShowManagerForm(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              ) : null}
+
               {(building?.managers ?? []).length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No managers assigned.
@@ -275,12 +454,29 @@ export function BuildingDetail() {
                         <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                           <Users size={20} className="text-primary" />
                         </div>
-                        <div>
+                        <div className="min-w-0 flex-1">
                           <p>{manager.name}</p>
                           <p className="text-sm text-muted-foreground">
                             {manager.email ?? ''}
                           </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatStatusLabel(manager.role ?? 'manager')}
+                            {manager.id === building?.owner_id
+                              ? ' · Primary owner'
+                              : ''}
+                          </p>
                         </div>
+                        {canRemoveBuildingRole(manager) ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            aria-label={`Remove ${manager.name}`}
+                            disabled={removingUserId === manager.id}
+                            onClick={() => handleRemoveBuildingRole(manager)}
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        ) : null}
                       </div>
                     </div>
                   ))}

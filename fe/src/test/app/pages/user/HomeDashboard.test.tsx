@@ -6,7 +6,7 @@ import { api, routes } from "../../../../app/lib/urls";
 
 describe("HomeDashboard", () => {
   it("renders account shortcuts and platform calls to action", async () => {
-    window.localStorage.setItem("tenanta_token", "home-token");
+    window.localStorage.setItem("homelet_token", "home-token");
 
     mockFetch([
       {

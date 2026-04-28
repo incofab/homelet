@@ -1,4 +1,4 @@
-// Centralized route and API endpoints for the Tenanta frontend.
+// Centralized route and API endpoints for the Homelet frontend.
 
 export const routes = {
   // Public routes
@@ -130,6 +130,8 @@ export const api = {
   publicBuildingsForSale: '/public/buildings-for-sale',
   publicRentalRequests: '/public/rental-requests',
   buildingRegistrationRequests: '/building-registration-requests',
+  buildingRegistrationRequest: (id: string | number) =>
+    `/building-registration-requests/${id}`,
 
   // Auth API
   authLogin: '/auth/login',
@@ -148,6 +150,10 @@ export const api = {
     `/buildings/${buildingId}/tenants`,
   buildingApartments: (buildingId: string | number) =>
     `/buildings/${buildingId}/apartments`,
+  buildingManagers: (buildingId: string | number) =>
+    `/buildings/${buildingId}/managers`,
+  buildingManager: (buildingId: string | number, userId: string | number) =>
+    `/buildings/${buildingId}/managers/${userId}`,
   buildingMedia: (id: string | number) => `/buildings/${id}/media`,
   buildingMediaItem: (id: string | number, mediaId: string | number) =>
     `/buildings/${id}/media/${mediaId}`,

@@ -3,11 +3,28 @@ export interface UserProfile {
   name: string;
 }
 
+export interface Address {
+  id: number;
+  address_line1: string;
+  address_line2?: string | null;
+  city: string;
+  state: string;
+  postal_code?: string | null;
+  country: string;
+  latitude?: string | number | null;
+  longitude?: string | number | null;
+  formatted_address?: string | null;
+}
+
 export interface Building {
   id: number;
+  owner_id?: number;
   name: string;
+  address_id?: number;
+  address?: Address;
   city?: string;
   state?: string;
+  postal_code?: string | null;
   country?: string;
   address_line1?: string;
   address_line2?: string;
@@ -28,8 +45,12 @@ export interface Building {
 export interface BuildingSummary {
   id: number;
   name: string;
+  address_id?: number;
+  address?: Address;
+  address_line1?: string;
   city?: string;
   state?: string;
+  postal_code?: string | null;
   country?: string;
   contact_email?: string | null;
   contact_phone?: string | null;
@@ -55,7 +76,11 @@ export interface BuildingRegistrationRequest {
   address_line2?: string | null;
   city: string;
   state: string;
+  postal_code?: string | null;
   country: string;
+  latitude?: string | number | null;
+  longitude?: string | number | null;
+  formatted_address?: string | null;
   description?: string | null;
   for_sale?: boolean;
   sale_price?: number | null;
@@ -65,6 +90,7 @@ export interface BuildingManager {
   id: number;
   name: string;
   email?: string;
+  role?: string;
 }
 
 export interface ApartmentSummary {
@@ -100,8 +126,11 @@ export interface ApartmentDetail {
   building?: {
     id?: number;
     name?: string;
+    address_id?: number;
+    address?: Address;
     city?: string;
     state?: string;
+    postal_code?: string | null;
     address_line1?: string;
     address_line2?: string;
   };
@@ -376,10 +405,13 @@ export interface PublicApartment {
   building?: {
     id?: number;
     name?: string;
+    address_id?: number;
+    address?: Address;
     address_line1?: string;
     address_line2?: string;
     city?: string;
     state?: string;
+    postal_code?: string | null;
     country?: string;
     contact_email?: string | null;
     contact_phone?: string | null;
@@ -390,10 +422,13 @@ export interface PublicApartment {
 export interface PublicBuilding {
   id: number;
   name: string;
+  address_id?: number;
+  address?: Address;
   address_line1?: string;
   address_line2?: string;
   city?: string;
   state?: string;
+  postal_code?: string | null;
   country?: string;
   description?: string;
   contact_email?: string | null;
@@ -406,8 +441,12 @@ export interface PublicBuilding {
 export interface PublicBuildingForSale {
   id: number;
   name: string;
+  address_id?: number;
+  address?: Address;
+  address_line1?: string;
   city?: string;
   state?: string;
+  postal_code?: string | null;
   for_sale?: boolean;
   sale_price?: number;
   units?: number;

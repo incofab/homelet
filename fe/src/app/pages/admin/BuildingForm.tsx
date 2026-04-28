@@ -1,11 +1,14 @@
 import { Link } from 'react-router';
-import { ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Input } from '../../components/Input';
 import { env } from '../../lib/env';
+import {
+  AppBreadcrumbs,
+  type AppBreadcrumbItem,
+} from '../../components/AppBreadcrumbs';
 
 interface BuildingFormValues {
   name: string;
@@ -33,7 +36,7 @@ interface BuildingFormPayload {
 }
 
 interface BuildingFormProps {
-  backTo: string;
+  breadcrumbs: AppBreadcrumbItem[];
   cancelTo: string;
   heading: string;
   subheading: string;
@@ -57,7 +60,7 @@ const emptyValues: BuildingFormValues = {
 };
 
 export function BuildingForm({
-  backTo,
+  breadcrumbs,
   cancelTo,
   heading,
   subheading,
@@ -94,14 +97,7 @@ export function BuildingForm({
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div className="flex items-center gap-4">
-        <Link to={backTo}>
-          <Button variant="ghost" size="sm">
-            <ArrowLeft size={20} className="mr-2" />
-            Back
-          </Button>
-        </Link>
-      </div>
+      <AppBreadcrumbs items={breadcrumbs} />
 
       <div>
         <h1 className="text-3xl mb-2">{heading}</h1>

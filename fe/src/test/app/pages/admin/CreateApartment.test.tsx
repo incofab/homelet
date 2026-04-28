@@ -150,7 +150,7 @@ describe('CreateApartment', () => {
     });
   });
 
-  it('prefills the create form when duplicating an apartment', async () => {
+  it('prefills copied details but resets status to vacant when duplicating an apartment', async () => {
     const fetchMock = mockFetch([
       {
         match: (url, init) =>
@@ -164,7 +164,7 @@ describe('CreateApartment', () => {
               type: 'two_bedroom',
               yearly_price: 1500000,
               floor: '3',
-              status: 'vacant',
+              status: 'occupied',
               is_public: true,
               description: 'Copied details',
               amenities: ['Parking'],
@@ -187,6 +187,7 @@ describe('CreateApartment', () => {
     expect(await screen.findByDisplayValue('Unit 12')).toBeInTheDocument();
     expect(screen.getByDisplayValue('1500000')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Copied details')).toBeInTheDocument();
+    expect(screen.getByLabelText('Status')).toHaveValue('vacant');
 
     await userEvent.clear(screen.getByPlaceholderText('e.g., Unit 302'));
     await userEvent.type(
@@ -211,6 +212,7 @@ describe('CreateApartment', () => {
       type: 'two_bedroom',
       yearly_price: 1500000,
       description: 'Copied details',
+      status: 'vacant',
       amenities: ['Parking'],
     });
   });

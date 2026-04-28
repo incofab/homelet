@@ -3,7 +3,7 @@ import { apiRoot, env } from "./env";
 type ApiErrorPayload = Record<string, string[]> | null;
 type ApiActivityListener = (pendingRequests: number) => void;
 
-export const AUTH_TOKEN_CHANGED_EVENT = "tenanta:auth-token-changed";
+export const AUTH_TOKEN_CHANGED_EVENT = "homelet:auth-token-changed";
 
 const apiActivityListeners = new Set<ApiActivityListener>();
 let pendingApiRequests = 0;

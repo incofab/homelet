@@ -6,7 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-test('public can list buildings with public apartments and contact details', function () {
+test('public can list buildings with available public apartments and contact details', function () {
     $visibleBuilding = Building::factory()->create([
         'contact_email' => 'leasing@harbor.test',
         'contact_phone' => '555-0101',
@@ -23,6 +23,15 @@ test('public can list buildings with public apartments and contact details', fun
     Apartment::factory()->create([
         'building_id' => $hiddenBuilding->id,
         'is_public' => false,
+        'status' => 'vacant',
+    ]);
+
+    $occupiedPublicBuilding = Building::factory()->create();
+
+    Apartment::factory()->create([
+        'building_id' => $occupiedPublicBuilding->id,
+        'is_public' => true,
+        'status' => 'occupied',
     ]);
 
     $response = $this->getJson('/api/public/buildings');
@@ -32,10 +41,11 @@ test('public can list buildings with public apartments and contact details', fun
         ->assertJsonCount(1, 'data.buildings.data')
         ->assertJsonPath('data.buildings.data.0.id', $visibleBuilding->id)
         ->assertJsonPath('data.buildings.data.0.contact_email', 'leasing@harbor.test')
-        ->assertJsonPath('data.buildings.data.0.contact_phone', '555-0101');
+        ->assertJsonPath('data.buildings.data.0.contact_phone', '555-0101')
+        ->assertJsonPath('data.buildings.data.0.public_apartments_count', 1);
 });
 
-test('public can view a building with its public apartments', function () {
+test('public can view a building with its available public apartments', function () {
     $building = Building::factory()->create([
         'contact_email' => 'info@sunrise.test',
         'contact_phone' => '555-3434',
@@ -52,6 +62,14 @@ test('public can view a building with its public apartments', function () {
         'building_id' => $building->id,
         'unit_code' => 'B2',
         'is_public' => false,
+        'status' => 'vacant',
+    ]);
+
+    Apartment::factory()->create([
+        'building_id' => $building->id,
+        'unit_code' => 'C3',
+        'is_public' => true,
+        'status' => 'occupied',
     ]);
 
     $response = $this->getJson("/api/public/buildings/{$building->id}");

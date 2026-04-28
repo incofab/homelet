@@ -4,7 +4,6 @@ import {
   Bed,
   Bath,
   Maximize,
-  ArrowLeft,
   Star,
   Mail,
   Phone,
@@ -14,6 +13,7 @@ import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { StatusBadge } from '../../components/StatusBadge';
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
+import { AppBreadcrumbs } from '../../components/AppBreadcrumbs';
 import { useCallback, useMemo, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { apiPost } from '../../lib/api';
@@ -23,6 +23,7 @@ import { useApiQuery } from '../../hooks/useApiQuery';
 import { api, routes } from '../../lib/urls';
 import { extractRecord } from '../../lib/paginatedData';
 import type { PublicApartment } from '../../lib/models';
+import { appToast } from '../../lib/toast';
 
 type ApartmentDetailPublicProps = {
   requestMode?: boolean;
@@ -130,9 +131,11 @@ export function ApartmentDetailPublic({
         message:
           'Request submitted successfully. The landlord or manager will contact you soon.',
       });
+      appToast.success('Rental request created successfully.');
       setFormState({ name: '', email: '', phone: '', message: '' });
       setShowRentalForm(false);
     } catch (error) {
+      appToast.error((error as Error).message || 'Unable to submit request.');
       setFormStatus({
         type: 'error',
         message: (error as Error).message || 'Unable to submit request.',
@@ -147,12 +150,12 @@ export function ApartmentDetailPublic({
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to={routes.root}>
-            <Button variant="ghost">
-              <ArrowLeft size={20} className="mr-2" />
-              {requestMode ? 'Back to Home' : 'Back to Listings'}
-            </Button>
-          </Link>
+          <AppBreadcrumbs
+            items={[
+              { label: requestMode ? 'Home' : 'Listings', to: routes.root },
+              { label: apartment?.unit_code ?? 'Apartment' },
+            ]}
+          />
           <Link to={routes.login}>
             <Button variant="ghost">Login</Button>
           </Link>

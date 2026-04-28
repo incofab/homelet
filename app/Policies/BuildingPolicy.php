@@ -33,15 +33,15 @@ class BuildingPolicy
             return true;
         }
 
-        if ($role === Building::ROLE_LANDLORD) {
-            return false;
-        }
-
         return $user->hasBuildingRole($building, Building::ROLE_LANDLORD);
     }
 
     public function removeRole(User $user, Building $building, string $role): bool
     {
+        if ($role === Building::ROLE_LANDLORD) {
+            return $user->id === $building->owner_id;
+        }
+
         if ($user->isPlatformAdmin()) {
             return true;
         }
