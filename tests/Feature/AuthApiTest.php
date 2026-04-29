@@ -100,6 +100,31 @@ test('me returns the authenticated user', function () {
         ->assertJsonPath('data.dashboard_context.primary_dashboard', 'home');
 });
 
+test('me returns a json 401 response for unauthenticated api requests', function () {
+    $response = $this->get('/api/auth/me');
+
+    $response
+        ->assertStatus(401)
+        ->assertJsonPath('message', 'Unauthenticated.');
+
+    expect($response->headers->get('content-type'))->toContain('application/json');
+});
+
+test('protected api post requests return json 401 without an accept header', function () {
+    $response = $this->post('/api/expenses', [
+        'building_id' => 1,
+        'title' => 'Generator service',
+        'amount' => 120000,
+        'expense_date' => '2026-04-10',
+    ]);
+
+    $response
+        ->assertStatus(401)
+        ->assertJsonPath('message', 'Unauthenticated.');
+
+    expect($response->headers->get('content-type'))->toContain('application/json');
+});
+
 test('login returns admin dashboard for platform admins', function () {
     $user = assignPlatformAdmin(User::factory()->create([
         'password' => 'secret1234',

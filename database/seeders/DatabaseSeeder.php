@@ -19,7 +19,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(RbacSeeder::class);
 
-        $user = User::factory()->create([
+        $user = User::create([
+            'email_verified_at' => now(),
             'name' => 'Admin User',
             'email' => 'admin@email.com',
             'phone' => '2348000000000',

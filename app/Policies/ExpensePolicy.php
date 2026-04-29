@@ -27,4 +27,14 @@ class ExpensePolicy
     {
         return $user->canManageBuilding($building);
     }
+
+    public function update(User $user, Expense $expense): bool
+    {
+        return $expense->canBeUpdatedBy($user);
+    }
+
+    public function delete(User $user, Expense $expense): bool
+    {
+        return $expense->canBeDeletedBy($user);
+    }
 }

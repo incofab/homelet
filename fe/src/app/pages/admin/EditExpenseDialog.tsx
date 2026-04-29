@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { LoaderCircle, Plus } from "lucide-react";
+import { LoaderCircle, Pencil } from "lucide-react";
 import { Button } from "../../components/Button";
 import {
   Dialog,
@@ -10,43 +10,58 @@ import {
   DialogTitle,
 } from "../../components/ui/dialog";
 import { useApiQuery } from "../../hooks/useApiQuery";
-import { apiPost } from "../../lib/api";
-import type { Building, ExpenseCategory } from "../../lib/models";
+import { apiPut } from "../../lib/api";
+import type { Building, Expense, ExpenseCategory } from "../../lib/models";
 import { api } from "../../lib/urls";
 
-type RecordExpenseDialogProps = {
+type EditExpenseDialogProps = {
+  expense: Expense;
   buildings: Building[];
-  defaultBuildingId?: string;
   onSuccess?: () => Promise<void> | void;
 };
 
-const today = () => new Date().toISOString().slice(0, 10);
+const normalizeDateInput = (value?: string | null) => {
+  if (!value) {
+    return "";
+  }
+
+  return value.slice(0, 10);
+};
 
 const selectCategories = (data: unknown) => {
   const record = (data ?? {}) as Record<string, unknown>;
   return Array.isArray(record.categories) ? (record.categories as ExpenseCategory[]) : [];
 };
 
-export function RecordExpenseDialog({
+const buildFormState = (expense: Expense) => ({
+  buildingId: String(expense.building_id),
+  categoryId: expense.expense_category_id ? String(expense.expense_category_id) : "",
+  title: expense.title ?? "",
+  vendorName: expense.vendor_name ?? "",
+  amount: expense.amount ? String(expense.amount) : "",
+  expenseDate: normalizeDateInput(expense.expense_date),
+  paymentMethod: expense.payment_method ?? "bank_transfer",
+  reference: expense.reference ?? "",
+  description: expense.description ?? "",
+  notes: expense.notes ?? "",
+});
+
+export function EditExpenseDialog({
+  expense,
   buildings,
-  defaultBuildingId,
   onSuccess,
-}: RecordExpenseDialogProps) {
+}: EditExpenseDialogProps) {
   const [open, setOpen] = useState(false);
-  const [formState, setFormState] = useState({
-    buildingId: defaultBuildingId ?? "",
-    categoryId: "",
-    title: "",
-    vendorName: "",
-    amount: "",
-    expenseDate: today(),
-    paymentMethod: "bank_transfer",
-    reference: "",
-    description: "",
-    notes: "",
-  });
+  const [formState, setFormState] = useState(() => buildFormState(expense));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) {
+      setFormState(buildFormState(expense));
+      setError(null);
+    }
+  }, [expense, open]);
 
   const categoriesQuery = useApiQuery<unknown, ExpenseCategory[]>(
     open && formState.buildingId ? api.buildingExpenseCategories(formState.buildingId) : null,
@@ -59,29 +74,14 @@ export function RecordExpenseDialog({
 
   const availableBuildings = useMemo(() => buildings ?? [], [buildings]);
 
-  const resetState = useCallback(() => {
-    setFormState({
-      buildingId: defaultBuildingId ?? "",
-      categoryId: "",
-      title: "",
-      vendorName: "",
-      amount: "",
-      expenseDate: today(),
-      paymentMethod: "bank_transfer",
-      reference: "",
-      description: "",
-      notes: "",
-    });
-    setError(null);
-  }, [defaultBuildingId]);
-
-  const handleOpenChange = (nextOpen: boolean) => {
+  const handleOpenChange = useCallback((nextOpen: boolean) => {
     setOpen(nextOpen);
 
     if (!nextOpen) {
-      resetState();
+      setFormState(buildFormState(expense));
+      setError(null);
     }
-  };
+  }, [expense]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -94,7 +94,7 @@ export function RecordExpenseDialog({
     setError(null);
 
     try {
-      await apiPost(api.expenses, {
+      await apiPut(api.expense(expense.id), {
         building_id: Number(formState.buildingId),
         expense_category_id: formState.categoryId ? Number(formState.categoryId) : null,
         title: formState.title.trim(),
@@ -110,7 +110,7 @@ export function RecordExpenseDialog({
       await onSuccess?.();
       handleOpenChange(false);
     } catch (requestError) {
-      setError((requestError as Error).message || "Unable to record expense.");
+      setError((requestError as Error).message || "Unable to update expense.");
     } finally {
       setSubmitting(false);
     }
@@ -118,36 +118,28 @@ export function RecordExpenseDialog({
 
   return (
     <>
-      <Button
-        onClick={() => {
-          setFormState((prev) => ({
-            ...prev,
-            buildingId: prev.buildingId || defaultBuildingId || "",
-          }));
-          setOpen(true);
-        }}
-      >
-        <Plus size={20} className="mr-2" />
-        Record Expense
+      <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
+        <Pencil size={16} className="mr-2" />
+        Edit
       </Button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Record Expense</DialogTitle>
+            <DialogTitle>Edit Expense</DialogTitle>
             <DialogDescription>
-              Capture operating costs, vendors, references, and optional building categories.
+              Update the selected expense record and keep the building and category in sync.
             </DialogDescription>
           </DialogHeader>
 
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm text-foreground" htmlFor="expense-building">
+                <label className="mb-2 block text-sm text-foreground" htmlFor={`expense-building-${expense.id}`}>
                   Building
                 </label>
                 <select
-                  id="expense-building"
+                  id={`expense-building-${expense.id}`}
                   className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                   value={formState.buildingId}
                   onChange={(event) =>
@@ -170,11 +162,11 @@ export function RecordExpenseDialog({
               </div>
 
               <div>
-                <label className="mb-2 block text-sm text-foreground" htmlFor="expense-category">
+                <label className="mb-2 block text-sm text-foreground" htmlFor={`expense-category-${expense.id}`}>
                   Category
                 </label>
                 <select
-                  id="expense-category"
+                  id={`expense-category-${expense.id}`}
                   className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                   value={formState.categoryId}
                   onChange={(event) =>
@@ -194,46 +186,44 @@ export function RecordExpenseDialog({
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm text-foreground" htmlFor="expense-title">
+                <label className="mb-2 block text-sm text-foreground" htmlFor={`expense-title-${expense.id}`}>
                   Title
                 </label>
                 <input
-                  id="expense-title"
+                  id={`expense-title-${expense.id}`}
                   type="text"
                   className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                   value={formState.title}
                   onChange={(event) =>
                     setFormState((prev) => ({ ...prev, title: event.target.value }))
                   }
-                  placeholder="Generator service"
                   required
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm text-foreground" htmlFor="expense-vendor">
+                <label className="mb-2 block text-sm text-foreground" htmlFor={`expense-vendor-${expense.id}`}>
                   Vendor
                 </label>
                 <input
-                  id="expense-vendor"
+                  id={`expense-vendor-${expense.id}`}
                   type="text"
                   className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                   value={formState.vendorName}
                   onChange={(event) =>
                     setFormState((prev) => ({ ...prev, vendorName: event.target.value }))
                   }
-                  placeholder="PowerFix Ltd"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div>
-                <label className="mb-2 block text-sm text-foreground" htmlFor="expense-amount">
+                <label className="mb-2 block text-sm text-foreground" htmlFor={`expense-amount-${expense.id}`}>
                   Amount
                 </label>
                 <input
-                  id="expense-amount"
+                  id={`expense-amount-${expense.id}`}
                   type="number"
                   min="0"
                   className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -246,11 +236,11 @@ export function RecordExpenseDialog({
               </div>
 
               <div>
-                <label className="mb-2 block text-sm text-foreground" htmlFor="expense-date">
+                <label className="mb-2 block text-sm text-foreground" htmlFor={`expense-date-${expense.id}`}>
                   Expense Date
                 </label>
                 <input
-                  id="expense-date"
+                  id={`expense-date-${expense.id}`}
                   type="date"
                   className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                   value={formState.expenseDate}
@@ -262,19 +252,20 @@ export function RecordExpenseDialog({
               </div>
 
               <div>
-                <label className="mb-2 block text-sm text-foreground" htmlFor="expense-method">
+                <label className="mb-2 block text-sm text-foreground" htmlFor={`expense-method-${expense.id}`}>
                   Payment Method
                 </label>
                 <select
-                  id="expense-method"
+                  id={`expense-method-${expense.id}`}
                   className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                   value={formState.paymentMethod}
                   onChange={(event) =>
                     setFormState((prev) => ({ ...prev, paymentMethod: event.target.value }))
                   }
                 >
-                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="">Select method</option>
                   <option value="cash">Cash</option>
+                  <option value="bank_transfer">Bank Transfer</option>
                   <option value="card">Card</option>
                   <option value="cheque">Cheque</option>
                   <option value="other">Other</option>
@@ -283,68 +274,62 @@ export function RecordExpenseDialog({
             </div>
 
             <div>
-              <label className="mb-2 block text-sm text-foreground" htmlFor="expense-reference">
+              <label className="mb-2 block text-sm text-foreground" htmlFor={`expense-reference-${expense.id}`}>
                 Reference
               </label>
               <input
-                id="expense-reference"
+                id={`expense-reference-${expense.id}`}
                 type="text"
                 className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                 value={formState.reference}
                 onChange={(event) =>
                   setFormState((prev) => ({ ...prev, reference: event.target.value }))
                 }
-                placeholder="Invoice or transfer reference"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm text-foreground" htmlFor="expense-description">
+              <label className="mb-2 block text-sm text-foreground" htmlFor={`expense-description-${expense.id}`}>
                 Description
               </label>
               <textarea
-                id="expense-description"
-                className="min-h-24 w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                id={`expense-description-${expense.id}`}
+                className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                rows={3}
                 value={formState.description}
                 onChange={(event) =>
                   setFormState((prev) => ({ ...prev, description: event.target.value }))
                 }
-                placeholder="What was paid for?"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm text-foreground" htmlFor="expense-notes">
+              <label className="mb-2 block text-sm text-foreground" htmlFor={`expense-notes-${expense.id}`}>
                 Notes
               </label>
               <textarea
-                id="expense-notes"
-                className="min-h-24 w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                id={`expense-notes-${expense.id}`}
+                className="w-full rounded-lg border border-border bg-input-background px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                rows={3}
                 value={formState.notes}
                 onChange={(event) =>
                   setFormState((prev) => ({ ...prev, notes: event.target.value }))
                 }
-                placeholder="Optional accounting or approval notes"
               />
             </div>
 
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-            <div className="flex items-center gap-3 pt-2">
-              <Button type="submit" disabled={submitting}>
-                {submitting ? (
-                  <>
-                    <LoaderCircle size={18} className="mr-2 animate-spin" />
-                    Recording...
-                  </>
-                ) : (
-                  "Save Expense"
-                )}
-              </Button>
-              <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
-                Cancel
-              </Button>
-            </div>
+            <Button type="submit" className="w-full" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <LoaderCircle size={18} className="mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
           </form>
         </DialogContent>
       </Dialog>

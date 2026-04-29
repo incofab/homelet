@@ -134,6 +134,10 @@ Returns the current authenticated user.
 
 Request: none
 
+Authorization:
+
+- Bearer token required.
+
 Response:
 
 ```json
@@ -156,6 +160,10 @@ Response:
 ```
 
 Model references: `User`.
+
+Unauthenticated response:
+
+- `401` JSON response with `{"message":"Unauthenticated."}`.
 
 ### POST `/api/auth/logout`
 
@@ -1542,6 +1550,12 @@ Response:
         "recorder": {
           "id": 6,
           "name": "John Manager"
+        },
+        "permissions": {
+          "can_update": true,
+          "can_delete": true,
+          "update_denial_reason": null,
+          "delete_denial_reason": null
         }
       }
     ]
@@ -1592,13 +1606,104 @@ Response:
   "success": true,
   "message": "Expense recorded.",
   "data": {
-    "expense": "Expense"
+    "expense": {
+      "id": 8,
+      "permissions": {
+        "can_update": true,
+        "can_delete": true,
+        "update_denial_reason": null,
+        "delete_denial_reason": null
+      }
+    }
   },
   "errors": null
 }
 ```
 
 Model references: `Expense`.
+
+### PUT `/api/expenses/{expense}`
+
+Update an existing expense record.
+
+Authorization:
+
+- Platform admin can update any expense.
+- Landlord for the building can update any expense in that building.
+- The user who recorded the expense can update it only while it remains the latest recorded expense for that building.
+
+Validation notes:
+
+- `expense_category_id` is optional.
+- When provided, the category must belong to the selected building.
+- `payment_method` can be `cash`, `bank_transfer`, `card`, `cheque`, or `other`.
+
+Request body:
+
+```json
+{
+  "building_id": 2,
+  "expense_category_id": 4,
+  "title": "Generator overhaul",
+  "vendor_name": "PowerFix Ltd",
+  "amount": 145000,
+  "expense_date": "2026-04-10",
+  "payment_method": "bank_transfer",
+  "reference": "EXP-100",
+  "description": "Quarterly generator servicing",
+  "notes": "Updated after invoice reconciliation"
+}
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "message": "Expense updated.",
+  "data": {
+    "expense": {
+      "id": 8,
+      "permissions": {
+        "can_update": true,
+        "can_delete": true,
+        "update_denial_reason": null,
+        "delete_denial_reason": null
+      }
+    }
+  },
+  "errors": null
+}
+```
+
+Model references: `Expense`.
+
+### DELETE `/api/expenses/{expense}`
+
+Delete an existing expense record.
+
+Authorization:
+
+- Platform admin can delete any expense.
+- Landlord for the building can delete any expense in that building within 2 hours of creation.
+- The user who recorded the expense can delete it only while it remains the latest recorded expense for that building and only within 2 hours of creation.
+
+Request: none
+
+Response:
+
+```json
+{
+  "success": true,
+  "message": "Expense deleted.",
+  "data": null,
+  "errors": null
+}
+```
+
+Notes:
+
+- Expense list responses now include `permissions.can_update`, `permissions.can_delete`, `permissions.update_denial_reason`, and `permissions.delete_denial_reason` for each expense row.
 
 ### GET `/api/buildings/{building}/expense-categories`
 

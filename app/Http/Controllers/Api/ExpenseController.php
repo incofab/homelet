@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Expense\StoreExpenseRequest;
+use App\Http\Requests\Expense\UpdateExpenseRequest;
 use App\Models\Building;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
@@ -38,7 +39,7 @@ class ExpenseController extends Controller
                 })
                 ->orderByDesc('expense_date')
                 ->orderByDesc('id')
-        );
+        )->through(fn (Expense $expense): array => $this->serializeExpense($request, $expense));
 
         return $this->success('Expenses loaded.', [
             'expenses' => $expenses,
@@ -51,20 +52,9 @@ class ExpenseController extends Controller
 
         $this->authorize('create', [Expense::class, $building]);
 
-        $categoryId = $request->integer('expense_category_id');
-        if ($categoryId) {
-            $category = ExpenseCategory::query()->findOrFail($categoryId);
-
-            if ($category->building_id !== $building->id) {
-                throw ValidationException::withMessages([
-                    'expense_category_id' => ['The selected category does not belong to this building.'],
-                ]);
-            }
-        }
-
         $expense = Expense::query()->create([
             'building_id' => $building->id,
-            'expense_category_id' => $categoryId ?: null,
+            'expense_category_id' => $this->resolveExpenseCategoryId($request, $building),
             'recorded_by' => $request->user('sanctum')->id,
             'title' => $request->string('title')->toString(),
             'vendor_name' => $request->input('vendor_name'),
@@ -74,14 +64,84 @@ class ExpenseController extends Controller
             'reference' => $request->input('reference'),
             'description' => $request->input('description'),
             'notes' => $request->input('notes'),
-        ])->load([
-            'building:id,name',
+        ]);
+
+        return $this->success('Expense recorded.', [
+            'expense' => $this->serializeExpense($request, $expense),
+        ], 201);
+    }
+
+    public function update(UpdateExpenseRequest $request, Expense $expense): JsonResponse
+    {
+        $this->authorize('update', $expense);
+
+        $building = Building::query()->findOrFail($request->integer('building_id'));
+
+        $this->authorize('create', [Expense::class, $building]);
+
+        $expense->update([
+            'building_id' => $building->id,
+            'expense_category_id' => $this->resolveExpenseCategoryId($request, $building),
+            'title' => $request->string('title')->toString(),
+            'vendor_name' => $request->input('vendor_name'),
+            'amount' => $request->integer('amount'),
+            'expense_date' => $request->date('expense_date')->toDateString(),
+            'payment_method' => $request->input('payment_method'),
+            'reference' => $request->input('reference'),
+            'description' => $request->input('description'),
+            'notes' => $request->input('notes'),
+        ]);
+
+        return $this->success('Expense updated.', [
+            'expense' => $this->serializeExpense($request, $expense->refresh()),
+        ]);
+    }
+
+    public function destroy(Request $request, Expense $expense): JsonResponse
+    {
+        $this->authorize('delete', $expense);
+
+        $expense->delete();
+
+        return $this->success('Expense deleted.');
+    }
+
+    private function resolveExpenseCategoryId(Request $request, Building $building): ?int
+    {
+        $categoryId = $request->integer('expense_category_id');
+        if (! $categoryId) {
+            return null;
+        }
+
+        $category = ExpenseCategory::query()->findOrFail($categoryId);
+
+        if ($category->building_id !== $building->id) {
+            throw ValidationException::withMessages([
+                'expense_category_id' => ['The selected category does not belong to this building.'],
+            ]);
+        }
+
+        return $category->id;
+    }
+
+    private function serializeExpense(Request $request, Expense $expense): array
+    {
+        $actor = $request->user('sanctum');
+
+        $expense->loadMissing([
+            'building:id,name,owner_id',
             'category:id,building_id,name,color',
             'recorder:id,name',
         ]);
 
-        return $this->success('Expense recorded.', [
-            'expense' => $expense,
-        ], 201);
+        return [
+            ...$expense->toArray(),
+            'permissions' => [
+                'can_update' => $expense->canBeUpdatedBy($actor),
+                'can_delete' => $expense->canBeDeletedBy($actor),
+                'update_denial_reason' => $expense->updateRestrictionReasonFor($actor),
+                'delete_denial_reason' => $expense->deleteRestrictionReasonFor($actor),
+            ],
+        ];
     }
 }

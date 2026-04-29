@@ -287,6 +287,8 @@ GET /api/tenant/payments
 
 GET /api/expenses
 POST /api/expenses
+PUT /api/expenses/{expense}
+DELETE /api/expenses/{expense}
 GET /api/buildings/{building}/expense-categories
 POST /api/buildings/{building}/expense-categories
 PUT /api/buildings/{building}/expense-categories/{expenseCategory}
@@ -297,6 +299,9 @@ DELETE /api/buildings/{building}/expense-categories/{expenseCategory}
 - Expenses are scoped to a building.
 - Only platform admins, landlords, and managers for a building can record expenses for it.
 - Expense categories can only be used with expenses from the same building.
+- Only the landlord for the building or the user who recorded an expense can edit or delete it.
+- The user who recorded an expense can only edit or delete it while it remains the latest recorded expense for that building.
+- Expense deletion is only allowed within 2 hours of the record being created.
 - Landlord and manager dashboards should expose expenses as an operational workflow.
 
 Use:

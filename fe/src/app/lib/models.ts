@@ -236,9 +236,17 @@ export interface Expense {
   reference?: string | null;
   description?: string | null;
   notes?: string | null;
+  created_at?: string;
+  updated_at?: string;
   building?: { id?: number; name?: string };
   category?: ExpenseCategory | null;
   recorder?: { id?: number; name?: string };
+  permissions?: {
+    can_update: boolean;
+    can_delete: boolean;
+    update_denial_reason?: string | null;
+    delete_denial_reason?: string | null;
+  };
 }
 
 export interface MaintenanceRequest {

@@ -89,6 +89,10 @@ export const apiRequest = async <T>(
   const token = getAuthToken();
   const headers = new Headers(options.headers);
 
+  if (!headers.has("Accept")) {
+    headers.set("Accept", "application/json");
+  }
+
   if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }

@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Trash2 } from "lucide-react";
+import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
 import { EmptyState } from "../../components/EmptyState";
 import { useApiQuery } from "../../hooks/useApiQuery";
 import { formatDate, formatMoney, formatStatusLabel } from "../../lib/format";
+import { apiDelete } from "../../lib/api";
 import { PaginatedData } from "../../lib/paginatedData";
 import type { Building, Expense } from "../../lib/models";
 import { api } from "../../lib/urls";
+import { EditExpenseDialog } from "./EditExpenseDialog";
 import { ManageExpenseCategoriesDialog } from "./ManageExpenseCategoriesDialog";
 import { RecordExpenseDialog } from "./RecordExpenseDialog";
 
@@ -40,6 +44,8 @@ export function ExpensesList() {
   });
 
   const expenses = expensesQuery.data?.items ?? [];
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deletingExpenseId, setDeletingExpenseId] = useState<number | null>(null);
 
   const summary = useMemo(() => {
     const currentMonthPrefix = new Date().toISOString().slice(0, 7);
@@ -65,6 +71,24 @@ export function ExpensesList() {
   const handleRefresh = useCallback(async () => {
     await expensesQuery.refetch();
   }, [expensesQuery]);
+
+  const handleDelete = useCallback(async (expense: Expense) => {
+    if (!window.confirm(`Delete "${expense.title}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    setDeletingExpenseId(expense.id);
+    setDeleteError(null);
+
+    try {
+      await apiDelete(api.expense(expense.id));
+      await handleRefresh();
+    } catch (error) {
+      setDeleteError((error as Error).message || "Unable to delete expense.");
+    } finally {
+      setDeletingExpenseId(null);
+    }
+  }, [handleRefresh]);
 
   return (
     <div className="space-y-6">
@@ -120,6 +144,7 @@ export function ExpensesList() {
       </div>
 
       <Card>
+        {deleteError ? <p className="mb-4 text-sm text-destructive">{deleteError}</p> : null}
         {expensesQuery.loading ? (
           <p className="text-muted-foreground">Loading expenses...</p>
         ) : expenses.length === 0 ? (
@@ -140,6 +165,7 @@ export function ExpensesList() {
                   <th className="px-4 py-3 text-left">Reference</th>
                   <th className="px-4 py-3 text-left">Recorded By</th>
                   <th className="px-4 py-3 text-left">Amount</th>
+                  <th className="px-4 py-3 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -162,6 +188,43 @@ export function ExpensesList() {
                     <td className="px-4 py-3 text-muted-foreground">{expense.reference ?? "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground">{expense.recorder?.name ?? "—"}</td>
                     <td className="px-4 py-3">{formatMoney(expense.amount)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col items-start gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {expense.permissions?.can_update ? (
+                            <EditExpenseDialog
+                              expense={expense}
+                              buildings={buildings}
+                              onSuccess={handleRefresh}
+                            />
+                          ) : null}
+                          {expense.permissions?.can_delete ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={deletingExpenseId === expense.id}
+                              onClick={() => void handleDelete(expense)}
+                            >
+                              <Trash2 size={16} className="mr-2" />
+                              {deletingExpenseId === expense.id ? "Deleting..." : "Delete"}
+                            </Button>
+                          ) : null}
+                          {!expense.permissions?.can_update && !expense.permissions?.can_delete ? (
+                            <span className="text-sm text-muted-foreground">No actions available</span>
+                          ) : null}
+                        </div>
+                        {expense.permissions?.update_denial_reason && !expense.permissions.can_update ? (
+                          <p className="text-xs text-muted-foreground">
+                            {expense.permissions.update_denial_reason}
+                          </p>
+                        ) : null}
+                        {expense.permissions?.delete_denial_reason && !expense.permissions.can_delete ? (
+                          <p className="text-xs text-muted-foreground">
+                            {expense.permissions.delete_denial_reason}
+                          </p>
+                        ) : null}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

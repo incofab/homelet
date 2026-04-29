@@ -178,6 +178,7 @@ export const api = {
   leaseRenew: (id: string | number) => `/leases/${id}/renew`,
   payments: '/payments',
   expenses: '/expenses',
+  expense: (id: string | number) => `/expenses/${id}`,
   buildingExpenseCategories: (id: string | number) =>
     `/buildings/${id}/expense-categories`,
   buildingExpenseCategory: (

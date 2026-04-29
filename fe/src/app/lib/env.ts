@@ -6,7 +6,7 @@ const getEnvValue = (value: string | undefined, fallback: string) => {
 export const env = {
   apiBaseUrl: getEnvValue(
     import.meta.env.VITE_API_BASE_URL,
-    'http://localhost',
+    'https://google.com',
   ),
   apiPrefix: getEnvValue(import.meta.env.VITE_API_PREFIX, '/api'),
   appName: getEnvValue(import.meta.env.VITE_APP_NAME, 'Homelet'),

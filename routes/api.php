@@ -62,6 +62,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('payments', [PaymentController::class, 'index']);
     Route::post('expenses', [ExpenseController::class, 'store']);
     Route::get('expenses', [ExpenseController::class, 'index']);
+    Route::put('expenses/{expense}', [ExpenseController::class, 'update']);
+    Route::delete('expenses/{expense}', [ExpenseController::class, 'destroy']);
     Route::get('buildings/{building}/expense-categories', [ExpenseCategoryController::class, 'index']);
     Route::post('buildings/{building}/expense-categories', [ExpenseCategoryController::class, 'store']);
     Route::put('buildings/{building}/expense-categories/{expenseCategory}', [ExpenseCategoryController::class, 'update']);

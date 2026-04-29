@@ -93,7 +93,13 @@ export function ManageExpenseCategoriesDialog({
 
   return (
     <>
-      <Button variant="secondary" onClick={() => setOpen(true)}>
+      <Button
+        variant="secondary"
+        onClick={() => {
+          setBuildingId((current) => current || defaultBuildingId || "");
+          setOpen(true);
+        }}
+      >
         Manage Categories
       </Button>
 
