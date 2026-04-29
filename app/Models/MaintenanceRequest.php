@@ -18,6 +18,11 @@ class MaintenanceRequest extends Model
         'status',
     ];
 
+    protected $casts = [
+        'apartment_id' => 'integer',
+        'tenant_id' => 'integer',
+    ];
+
     public function apartment()
     {
         return $this->belongsTo(Apartment::class);

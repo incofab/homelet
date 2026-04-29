@@ -281,7 +281,7 @@ describe("ExpensesList", () => {
     expect(screen.getByLabelText("Expense Date")).toHaveValue("2026-04-10");
   });
 
-  it("shows restriction reasons when an expense cannot be changed", async () => {
+  it("hides action controls when an expense cannot be changed", async () => {
     mockFetch([
       {
         match: (url) => url.includes(api.buildings),
@@ -320,17 +320,9 @@ describe("ExpensesList", () => {
       path: "/admin/expenses",
     });
 
-    expect(await screen.findByText("No actions available")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "An expense can only be edited while it remains the latest recorded expense for the building."
-      )
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "An expense can only be deleted while it remains the latest recorded expense for the building."
-      )
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Generator service")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
   });
 
   it("can create expense categories for a building", async () => {

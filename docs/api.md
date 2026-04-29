@@ -1629,7 +1629,8 @@ Update an existing expense record.
 Authorization:
 
 - Platform admin can update any expense.
-- Landlord for the building can update the expense while it remains the latest recorded expense for that building.
+- A building user assigned the `landlord` role can update the expense while it remains the latest recorded expense for that building.
+- The building owner can update the expense while it remains the latest recorded expense for that building.
 - Manager for the building can update the expense while it remains the latest recorded expense for that building.
 - The user who recorded the expense can update it while it remains the latest recorded expense for that building.
 
@@ -1686,7 +1687,8 @@ Delete an existing expense record.
 Authorization:
 
 - Platform admin can delete any expense.
-- Landlord for the building can delete the expense while it remains the latest recorded expense for that building.
+- A building user assigned the `landlord` role can delete the expense while it remains the latest recorded expense for that building.
+- The building owner can delete the expense while it remains the latest recorded expense for that building.
 - Manager for the building can delete the expense while it remains the latest recorded expense for that building.
 - The user who recorded the expense can delete it while it remains the latest recorded expense for that building.
 

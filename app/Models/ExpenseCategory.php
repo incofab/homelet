@@ -16,6 +16,10 @@ class ExpenseCategory extends Model
         'description',
     ];
 
+    protected $casts = [
+        'building_id' => 'integer',
+    ];
+
     public function building()
     {
         return $this->belongsTo(Building::class);

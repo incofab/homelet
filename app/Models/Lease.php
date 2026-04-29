@@ -20,6 +20,8 @@ class Lease extends Model
     ];
 
     protected $casts = [
+        'apartment_id' => 'integer',
+        'tenant_id' => 'integer',
         'start_date' => 'date',
         'end_date' => 'date',
         'rent_amount' => TrimDecimal::class,

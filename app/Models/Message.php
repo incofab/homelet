@@ -17,6 +17,8 @@ class Message extends Model
     ];
 
     protected $casts = [
+        'conversation_id' => 'integer',
+        'sender_id' => 'integer',
         'read_at' => 'datetime',
     ];
 

@@ -26,6 +26,9 @@ class Expense extends Model
     ];
 
     protected $casts = [
+        'building_id' => 'integer',
+        'expense_category_id' => 'integer',
+        'recorded_by' => 'integer',
         'amount' => TrimDecimal::class,
         'expense_date' => 'date',
     ];
@@ -66,7 +69,7 @@ class Expense extends Model
         }
 
         if (! $this->canBeManagedBy($user)) {
-            return 'Only the landlord, a manager for the building, or the person who recorded this expense can edit it.';
+            return 'Only a building landlord, the building owner, a manager for the building, or the person who recorded this expense can edit it.';
         }
 
         return 'An expense can only be edited while it remains the latest recorded expense for the building.';
@@ -79,7 +82,7 @@ class Expense extends Model
         }
 
         if (! $this->canBeManagedBy($user)) {
-            return 'Only the landlord, a manager for the building, or the person who recorded this expense can delete it.';
+            return 'Only a building landlord, the building owner, a manager for the building, or the person who recorded this expense can delete it.';
         }
 
         return 'An expense can only be deleted while it remains the latest recorded expense for the building.';
@@ -103,9 +106,14 @@ class Expense extends Model
             ->exists();
     }
 
-    private function isLandlordOwnedBy(User $user): bool
+    private function isBuildingOwner(User $user): bool
     {
         return $this->building?->owner_id === $user->id;
+    }
+
+    private function isLandlord(User $user): bool
+    {
+        return $this->building ? $user->hasBuildingRole($this->building, Building::ROLE_LANDLORD) : false;
     }
 
     private function isManagedBy(User $user): bool
@@ -120,6 +128,9 @@ class Expense extends Model
 
     private function canBeManagedBy(User $user): bool
     {
-        return $this->isLandlordOwnedBy($user) || $this->isManagedBy($user) || $this->isRecordedBy($user);
+        return $this->isBuildingOwner($user)
+            || $this->isLandlord($user)
+            || $this->isManagedBy($user)
+            || $this->isRecordedBy($user);
     }
 }

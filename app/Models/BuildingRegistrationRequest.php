@@ -49,6 +49,10 @@ class BuildingRegistrationRequest extends Model
     ];
 
     protected $casts = [
+        'user_id' => 'integer',
+        'building_id' => 'integer',
+        'approved_by' => 'integer',
+        'rejected_by' => 'integer',
         'for_sale' => 'boolean',
         'sale_price' => TrimDecimal::class,
         'latitude' => 'decimal:7',

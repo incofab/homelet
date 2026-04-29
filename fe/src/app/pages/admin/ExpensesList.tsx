@@ -189,39 +189,24 @@ export function ExpensesList() {
                     <td className="px-4 py-3 text-muted-foreground">{expense.recorder?.name ?? "—"}</td>
                     <td className="px-4 py-3">{formatMoney(expense.amount)}</td>
                     <td className="px-4 py-3">
-                      <div className="flex flex-col items-start gap-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {expense.permissions?.can_update ? (
-                            <EditExpenseDialog
-                              expense={expense}
-                              buildings={buildings}
-                              onSuccess={handleRefresh}
-                            />
-                          ) : null}
-                          {expense.permissions?.can_delete ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              disabled={deletingExpenseId === expense.id}
-                              onClick={() => void handleDelete(expense)}
-                            >
-                              <Trash2 size={16} className="mr-2" />
-                              {deletingExpenseId === expense.id ? "Deleting..." : "Delete"}
-                            </Button>
-                          ) : null}
-                          {!expense.permissions?.can_update && !expense.permissions?.can_delete ? (
-                            <span className="text-sm text-muted-foreground">No actions available</span>
-                          ) : null}
-                        </div>
-                        {expense.permissions?.update_denial_reason && !expense.permissions.can_update ? (
-                          <p className="text-xs text-muted-foreground">
-                            {expense.permissions.update_denial_reason}
-                          </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {expense.permissions?.can_update ? (
+                          <EditExpenseDialog
+                            expense={expense}
+                            buildings={buildings}
+                            onSuccess={handleRefresh}
+                          />
                         ) : null}
-                        {expense.permissions?.delete_denial_reason && !expense.permissions.can_delete ? (
-                          <p className="text-xs text-muted-foreground">
-                            {expense.permissions.delete_denial_reason}
-                          </p>
+                        {expense.permissions?.can_delete ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={deletingExpenseId === expense.id}
+                            onClick={() => void handleDelete(expense)}
+                          >
+                            <Trash2 size={16} className="mr-2" />
+                            {deletingExpenseId === expense.id ? "Deleting..." : "Delete"}
+                          </Button>
                         ) : null}
                       </div>
                     </td>

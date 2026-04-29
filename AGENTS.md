@@ -15,6 +15,7 @@ we are building a property management system for tenants and landlords
 - The PRD is in the docs/prd.md file
 - The API Documentation is in the docs/api.md file. Always update the api.md file when you make changes to the API or Controller methods.
 - The task list is in the docs/tasks.md file.
+- For every laravel model, always add casts for all integer and boolean columns (except the primary key column)
 
 ## Build, Test, and Development Commands
 

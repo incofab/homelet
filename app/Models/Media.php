@@ -24,6 +24,9 @@ class Media extends Model
     ];
 
     protected $casts = [
+        'model_id' => 'integer',
+        'size' => 'integer',
+        'created_by' => 'integer',
         'is_video' => 'boolean',
         'metadata' => 'array',
     ];

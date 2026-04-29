@@ -15,6 +15,12 @@ class Conversation extends Model
         'created_by',
     ];
 
+    protected $casts = [
+        'building_id' => 'integer',
+        'apartment_id' => 'integer',
+        'created_by' => 'integer',
+    ];
+
     public function building()
     {
         return $this->belongsTo(Building::class);

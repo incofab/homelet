@@ -299,7 +299,7 @@ DELETE /api/buildings/{building}/expense-categories/{expenseCategory}
 - Expenses are scoped to a building.
 - Only platform admins, landlords, and managers for a building can record expenses for it.
 - Expense categories can only be used with expenses from the same building.
-- Only the landlord for the building, a manager for the building, or the user who recorded an expense can edit or delete it.
+- Only a building user assigned the `landlord` role, the building owner, a manager for the building, or the user who recorded an expense can edit or delete it.
 - An expense can only be edited or deleted while it remains the latest recorded expense for that building.
 - Landlord and manager dashboards should expose expenses as an operational workflow.
 

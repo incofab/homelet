@@ -34,6 +34,11 @@ class RentalRequest extends Model
     ];
 
     protected $casts = [
+        'apartment_id' => 'integer',
+        'tenant_id' => 'integer',
+        'lease_id' => 'integer',
+        'approved_by' => 'integer',
+        'rejected_by' => 'integer',
         'approved_at' => 'datetime',
         'rejected_at' => 'datetime',
     ];

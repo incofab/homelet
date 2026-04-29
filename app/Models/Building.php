@@ -38,6 +38,8 @@ class Building extends Model
     ];
 
     protected $casts = [
+        'owner_id' => 'integer',
+        'address_id' => 'integer',
         'for_sale' => 'boolean',
         'sale_price' => TrimDecimal::class,
     ];

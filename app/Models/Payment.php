@@ -28,6 +28,8 @@ class Payment extends Model
     ];
 
     protected $casts = [
+        'lease_id' => 'integer',
+        'tenant_id' => 'integer',
         'payment_date' => 'date',
         'metadata' => 'array',
         'amount' => TrimDecimal::class,

@@ -23,6 +23,7 @@ class Apartment extends Model
     ];
 
     protected $casts = [
+        'building_id' => 'integer',
         'is_public' => 'boolean',
         'amenities' => 'array',
         'yearly_price' => TrimDecimal::class,
