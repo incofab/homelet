@@ -27,6 +27,7 @@ use App\Services\LogSmsService;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use SplFileInfo;
@@ -64,6 +65,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(MaintenanceRequest::class, MaintenanceRequestPolicy::class);
         Gate::policy(User::class, TenantPolicy::class);
         Gate::define('manageManagers', [BuildingPolicy::class, 'manageRoles']);
+
+        Schema::defaultStringLength(191);
     }
 
     /**

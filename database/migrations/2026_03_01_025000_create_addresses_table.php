@@ -12,10 +12,10 @@ return new class extends Migration
             $table->id();
             $table->string('address_line1');
             $table->string('address_line2')->nullable();
-            $table->string('city');
-            $table->string('state');
+            $table->string('city', 60);
+            $table->string('state', 50);
             $table->string('postal_code')->nullable();
-            $table->string('country');
+            $table->string('country', 50);
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();
             $table->string('formatted_address')->nullable();

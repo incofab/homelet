@@ -14,10 +14,10 @@ return new class extends Migration
             $table->foreignId('tenant_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('lease_id')->nullable()->constrained('leases')->nullOnDelete();
             $table->string('name');
-            $table->string('email');
+            $table->string('email', 191);
             $table->string('phone')->nullable();
             $table->text('message')->nullable();
-            $table->string('status')->default('new');
+            $table->string('status', 20)->default('new');
             $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('approved_at')->nullable();
             $table->foreignId('rejected_by')->nullable()->constrained('users')->nullOnDelete();
