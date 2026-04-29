@@ -181,7 +181,34 @@ test('creator cannot update an expense after another one has been recorded', fun
     ])->assertForbidden();
 });
 
-test('landlord can update an older expense for their building', function () {
+test('manager can update the latest expense for their building', function () {
+    Carbon::setTestNow(Carbon::parse('2026-04-10 12:00:00'));
+
+    $owner = User::factory()->create();
+    $manager = User::factory()->create();
+    $building = Building::factory()->create(['owner_id' => $owner->id]);
+    assignBuildingRole($building, $manager, Building::ROLE_MANAGER);
+
+    $expense = Expense::factory()->create([
+        'building_id' => $building->id,
+        'recorded_by' => $owner->id,
+        'title' => 'Cleaning supplies',
+        'created_at' => Carbon::now()->subHour(),
+        'updated_at' => Carbon::now()->subHour(),
+    ]);
+
+    Sanctum::actingAs($manager);
+
+    $this->putJson("/api/expenses/{$expense->id}", [
+        'building_id' => $building->id,
+        'title' => 'Cleaning contract',
+        'amount' => 70000,
+        'expense_date' => '2026-04-10',
+    ])->assertOk()
+        ->assertJsonPath('data.expense.title', 'Cleaning contract');
+});
+
+test('landlord cannot update an expense after a newer expense has been recorded', function () {
     Carbon::setTestNow(Carbon::parse('2026-04-10 12:00:00'));
 
     $owner = User::factory()->create();
@@ -192,14 +219,13 @@ test('landlord can update an older expense for their building', function () {
     $expense = Expense::factory()->create([
         'building_id' => $building->id,
         'recorded_by' => $manager->id,
-        'title' => 'Cleaning supplies',
         'created_at' => Carbon::now()->subHour(),
         'updated_at' => Carbon::now()->subHour(),
     ]);
 
     Expense::factory()->create([
         'building_id' => $building->id,
-        'recorded_by' => $manager->id,
+        'recorded_by' => $owner->id,
         'created_at' => Carbon::now()->subMinutes(15),
         'updated_at' => Carbon::now()->subMinutes(15),
     ]);
@@ -211,35 +237,10 @@ test('landlord can update an older expense for their building', function () {
         'title' => 'Cleaning contract',
         'amount' => 70000,
         'expense_date' => '2026-04-10',
-    ])->assertOk()
-        ->assertJsonPath('data.expense.title', 'Cleaning contract');
+    ])->assertForbidden();
 });
 
-test('creator can delete only the latest expense within two hours', function () {
-    Carbon::setTestNow(Carbon::parse('2026-04-10 12:00:00'));
-
-    $owner = User::factory()->create();
-    $manager = User::factory()->create();
-    $building = Building::factory()->create(['owner_id' => $owner->id]);
-    assignBuildingRole($building, $manager, Building::ROLE_MANAGER);
-
-    $expense = Expense::factory()->create([
-        'building_id' => $building->id,
-        'recorded_by' => $manager->id,
-        'created_at' => Carbon::now()->subMinutes(90),
-        'updated_at' => Carbon::now()->subMinutes(90),
-    ]);
-
-    Sanctum::actingAs($manager);
-
-    $this->deleteJson("/api/expenses/{$expense->id}")
-        ->assertOk()
-        ->assertJsonPath('message', 'Expense deleted.');
-
-    expect(Expense::query()->find($expense->id))->toBeNull();
-});
-
-test('creator cannot delete an expense after two hours have passed', function () {
+test('creator can delete the latest expense even after two hours have passed', function () {
     Carbon::setTestNow(Carbon::parse('2026-04-10 12:00:00'));
 
     $owner = User::factory()->create();
@@ -252,6 +253,37 @@ test('creator cannot delete an expense after two hours have passed', function ()
         'recorded_by' => $manager->id,
         'created_at' => Carbon::now()->subHours(3),
         'updated_at' => Carbon::now()->subHours(3),
+    ]);
+
+    Sanctum::actingAs($manager);
+
+    $this->deleteJson("/api/expenses/{$expense->id}")
+        ->assertOk()
+        ->assertJsonPath('message', 'Expense deleted.');
+
+    expect(Expense::query()->find($expense->id))->toBeNull();
+});
+
+test('manager cannot delete an expense after a newer one has been recorded', function () {
+    Carbon::setTestNow(Carbon::parse('2026-04-10 12:00:00'));
+
+    $owner = User::factory()->create();
+    $manager = User::factory()->create();
+    $building = Building::factory()->create(['owner_id' => $owner->id]);
+    assignBuildingRole($building, $manager, Building::ROLE_MANAGER);
+
+    $expense = Expense::factory()->create([
+        'building_id' => $building->id,
+        'recorded_by' => $owner->id,
+        'created_at' => Carbon::now()->subHour(),
+        'updated_at' => Carbon::now()->subHour(),
+    ]);
+
+    Expense::factory()->create([
+        'building_id' => $building->id,
+        'recorded_by' => $owner->id,
+        'created_at' => Carbon::now()->subMinutes(10),
+        'updated_at' => Carbon::now()->subMinutes(10),
     ]);
 
     Sanctum::actingAs($manager);

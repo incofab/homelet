@@ -6,7 +6,6 @@ use App\Casts\TrimDecimal;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 
 class Expense extends Model
 {
@@ -52,16 +51,12 @@ class Expense extends Model
             return true;
         }
 
-        if ($this->isLandlordOwnedBy($user)) {
-            return true;
-        }
-
-        return $this->isRecordedBy($user) && $this->isLatestForBuilding();
+        return $this->isLatestForBuilding() && $this->canBeManagedBy($user);
     }
 
     public function canBeDeletedBy(User $user): bool
     {
-        return $this->canBeUpdatedBy($user) && $this->isWithinDeleteWindow();
+        return $this->canBeUpdatedBy($user);
     }
 
     public function updateRestrictionReasonFor(User $user): ?string
@@ -70,28 +65,24 @@ class Expense extends Model
             return null;
         }
 
-        if (! $this->isLandlordOwnedBy($user) && ! $this->isRecordedBy($user)) {
-            return 'Only the landlord or the person who recorded this expense can edit it.';
+        if (! $this->canBeManagedBy($user)) {
+            return 'Only the landlord, a manager for the building, or the person who recorded this expense can edit it.';
         }
 
-        return 'Only the latest recorded expense can be edited by its creator.';
+        return 'An expense can only be edited while it remains the latest recorded expense for the building.';
     }
 
     public function deleteRestrictionReasonFor(User $user): ?string
     {
-        if (! $this->canBeUpdatedBy($user)) {
-            if (! $this->isLandlordOwnedBy($user) && ! $this->isRecordedBy($user)) {
-                return 'Only the landlord or the person who recorded this expense can delete it.';
-            }
-
-            return 'Only the latest recorded expense can be deleted by its creator.';
+        if ($this->canBeDeletedBy($user)) {
+            return null;
         }
 
-        if (! $this->isWithinDeleteWindow()) {
-            return 'Expenses can only be deleted within 2 hours of creation.';
+        if (! $this->canBeManagedBy($user)) {
+            return 'Only the landlord, a manager for the building, or the person who recorded this expense can delete it.';
         }
 
-        return null;
+        return 'An expense can only be deleted while it remains the latest recorded expense for the building.';
     }
 
     public function isLatestForBuilding(): bool
@@ -112,20 +103,23 @@ class Expense extends Model
             ->exists();
     }
 
-    public function isWithinDeleteWindow(): bool
-    {
-        return $this->created_at instanceof Carbon
-            ? $this->created_at->greaterThanOrEqualTo(now()->subHours(2))
-            : false;
-    }
-
     private function isLandlordOwnedBy(User $user): bool
     {
         return $this->building?->owner_id === $user->id;
     }
 
+    private function isManagedBy(User $user): bool
+    {
+        return $this->building ? $user->hasBuildingRole($this->building, Building::ROLE_MANAGER) : false;
+    }
+
     private function isRecordedBy(User $user): bool
     {
         return $this->recorded_by === $user->id;
+    }
+
+    private function canBeManagedBy(User $user): bool
+    {
+        return $this->isLandlordOwnedBy($user) || $this->isManagedBy($user) || $this->isRecordedBy($user);
     }
 }

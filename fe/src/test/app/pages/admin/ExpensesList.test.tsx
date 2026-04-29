@@ -305,8 +305,9 @@ describe("ExpensesList", () => {
                   can_update: false,
                   can_delete: false,
                   update_denial_reason:
-                    "Only the latest recorded expense can be edited by its creator.",
-                  delete_denial_reason: "Expenses can only be deleted within 2 hours of creation.",
+                    "An expense can only be edited while it remains the latest recorded expense for the building.",
+                  delete_denial_reason:
+                    "An expense can only be deleted while it remains the latest recorded expense for the building.",
                 },
               },
             ],
@@ -321,10 +322,14 @@ describe("ExpensesList", () => {
 
     expect(await screen.findByText("No actions available")).toBeInTheDocument();
     expect(
-      screen.getByText("Only the latest recorded expense can be edited by its creator.")
+      screen.getByText(
+        "An expense can only be edited while it remains the latest recorded expense for the building."
+      )
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Expenses can only be deleted within 2 hours of creation.")
+      screen.getByText(
+        "An expense can only be deleted while it remains the latest recorded expense for the building."
+      )
     ).toBeInTheDocument();
   });
 

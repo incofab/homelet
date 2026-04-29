@@ -201,7 +201,7 @@ Create migrations/models:
 - Create `expenses`
   - `id`, `building_id`, `expense_category_id` nullable, `recorded_by`, `title`, `vendor_name` nullable, `amount`, `expense_date`, `payment_method` nullable, `reference` nullable, `description` nullable, `notes` nullable
 - Add building-scoped APIs for expense category management and expense recording/listing.
-- Add expense edit/delete APIs with creator/landlord restrictions and a 2-hour delete window.
+- Add expense edit/delete APIs with landlord, manager, and creator restrictions based on the latest recorded expense.
 - Add admin-area frontend page for expenses with category creation and expense recording.
 
 **Acceptance**
